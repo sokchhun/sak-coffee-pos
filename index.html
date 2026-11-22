@@ -1,0 +1,2372 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>ស័ក្តិ កាហ្វេ (Sak Coffee) - Smart POS</title>
+
+  <!-- Google Fonts: Kantumruy Pro for crisp Khmer typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Kantumruy+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Kantumruy Pro"', '"Inter"', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            smartDark: '#2c3e50',
+            smartDarker: '#1f2d3a',
+            smartBlue: '#4a89dc',
+            smartGreen: '#27ae60',
+            smartOrange: '#f39c12',
+            smartRed: '#e74c3c',
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Kantumruy Pro', 'Inter', system-ui, sans-serif;
+      background-color: #eef2f6;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    input, textarea, select {
+      user-select: text;
+    }
+
+    /* Smooth custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* Dedicated 80mm Thermal Receipt Print Layout */
+    #thermal-print-area {
+      display: none;
+    }
+
+    @media print {
+      @page {
+        margin: 0;
+        size: 80mm auto;
+      }
+      html, body {
+        height: auto !important;
+        overflow: visible !important;
+        background: #ffffff !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
+      body > *:not(#thermal-print-area) {
+        display: none !important;
+      }
+      #thermal-print-area {
+        display: block !important;
+        width: 78mm !important;
+        margin: 0 auto !important;
+        padding: 4mm 3mm !important;
+        color: #000000 !important;
+        font-family: 'Kantumruy Pro', 'Inter', monospace !important;
+        font-size: 12px !important;
+        line-height: 1.45 !important;
+      }
+    }
+  </style>
+</head>
+<body class="text-slate-800 h-screen flex flex-col overflow-hidden">
+
+  <!-- ==================== 1. TOP DARK NAVIGATION BAR (#2c3e50) ==================== -->
+  <header class="bg-smartDark text-white shadow-md z-30 shrink-0">
+    <div class="px-3 sm:px-4 h-14 flex items-center justify-between gap-2">
+      
+      <!-- Brand Identity -->
+      <div class="flex items-center gap-2.5 shrink-0">
+        <div class="w-9 h-9 rounded-xl bg-smartOrange text-white flex items-center justify-center font-bold text-lg shadow-inner">
+          ☕
+        </div>
+        <div class="leading-tight">
+          <h1 id="header-shop-name" class="font-bold text-sm sm:text-base tracking-tight">ស័ក្តិ កាហ្វេ (Sak Coffee)</h1>
+          <p class="text-[10px] text-slate-300 hidden sm:block">Smart POS • CADT Edition</p>
+        </div>
+      </div>
+
+      <!-- Desktop / Tablet 5 Navigation Tabs -->
+      <nav class="hidden md:flex items-center gap-1 h-full">
+        <button onclick="switchTab('pos')" id="tab-pos" class="top-tab h-full px-3.5 text-sm font-semibold flex items-center gap-1.5 border-b-4 transition-all">
+          <span>🛒</span> លក់ (POS)
+        </button>
+        <button onclick="switchTab('orders')" id="tab-orders" class="top-tab h-full px-3.5 text-sm font-semibold flex items-center gap-1.5 border-b-4 transition-all">
+          <span>🧾</span> ប្រវត្តិលក់
+        </button>
+        <button onclick="switchTab('menu')" id="tab-menu" class="top-tab h-full px-3.5 text-sm font-semibold flex items-center gap-1.5 border-b-4 transition-all">
+          <span>📋</span> ម៉ឺនុយ
+        </button>
+        <button onclick="switchTab('reports')" id="tab-reports" class="top-tab h-full px-3.5 text-sm font-semibold flex items-center gap-1.5 border-b-4 transition-all">
+          <span>📊</span> របាយការណ៍
+        </button>
+        <button onclick="switchTab('settings')" id="tab-settings" class="top-tab h-full px-3.5 text-sm font-semibold flex items-center gap-1.5 border-b-4 transition-all">
+          <span>⚙️</span> កំណត់
+        </button>
+      </nav>
+
+      <!-- Sync Status & Live Clock -->
+      <div class="flex items-center gap-2 sm:gap-3 shrink-0">
+        <div id="sync-status-badge" class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-emerald-300 text-[11px] font-semibold">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="sync-status-text">Offline Ready</span>
+        </div>
+        <div class="text-right leading-tight hidden sm:block">
+          <div id="clock-time" class="text-xs font-bold text-white">--:--:--</div>
+          <div id="clock-date" class="text-[10px] text-slate-300">--/--/----</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mobile Navigation Tabs -->
+    <nav class="md:hidden grid grid-cols-5 bg-smartDarker border-t border-slate-700">
+      <button onclick="switchTab('pos')" id="mtab-pos" class="m-tab py-1.5 text-[11px] font-semibold flex flex-col items-center"><span>🛒</span>លក់</button>
+      <button onclick="switchTab('orders')" id="mtab-orders" class="m-tab py-1.5 text-[11px] font-semibold flex flex-col items-center"><span>🧾</span>ប្រវត្តិ</button>
+      <button onclick="switchTab('menu')" id="mtab-menu" class="m-tab py-1.5 text-[11px] font-semibold flex flex-col items-center"><span>📋</span>ម៉ឺនុយ</button>
+      <button onclick="switchTab('reports')" id="mtab-reports" class="m-tab py-1.5 text-[11px] font-semibold flex flex-col items-center"><span>📊</span>របាយការណ៍</button>
+      <button onclick="switchTab('settings')" id="mtab-settings" class="m-tab py-1.5 text-[11px] font-semibold flex flex-col items-center"><span>⚙️</span>កំណត់</button>
+    </nav>
+  </header>
+
+  <!-- ==================== MAIN WORKSPACE CONTAINER ==================== -->
+  <main class="flex-1 overflow-hidden relative">
+
+    <!-- ==================== TAB 1: POS SPLIT-SCREEN ==================== -->
+    <section id="view-pos" class="tab-view h-full flex flex-col lg:flex-row overflow-hidden">
+
+      <!-- LEFT CART PANEL (~38-40% width) -->
+      <div class="w-full lg:w-[40%] xl:w-[38%] bg-white border-r border-slate-300 flex flex-col h-[50%] lg:h-full shrink-0 shadow-sm z-10">
+        
+        <!-- Order Type Toggle & Clear Cart -->
+        <div class="p-2 bg-slate-100 border-b border-slate-200 flex items-center justify-between gap-2">
+          <div class="flex bg-slate-200 p-0.5 rounded-xl">
+            <button onclick="setOrderType('ញ៉ាំក្នុងហាង')" id="btn-dinein" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all">
+              🪑 ញ៉ាំក្នុងហាង
+            </button>
+            <button onclick="setOrderType('ខ្ចប់')" id="btn-takeaway" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all">
+              🛍️ ខ្ចប់
+            </button>
+          </div>
+
+          <button onclick="confirmClearCart()" class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-xs font-bold transition-colors">
+            🗑️ លុបទាំងអស់
+          </button>
+        </div>
+
+        <!-- Blue Table Header (#4a89dc) -->
+        <div class="bg-smartBlue text-white text-xs font-bold grid grid-cols-12 px-3 py-2.5 shrink-0">
+          <div class="col-span-6">ទំនិញ (Item)</div>
+          <div class="col-span-3 text-center">ចំនួន (Qty)</div>
+          <div class="col-span-3 text-right">តម្លៃ (Price)</div>
+        </div>
+
+        <!-- Cart Items List (Tap row to expand inline modifiers) -->
+        <div id="cart-list" class="flex-1 overflow-y-auto divide-y divide-slate-200 bg-white">
+          <!-- Rendered by JS -->
+        </div>
+
+        <!-- Discount Selector & Totals Footer -->
+        <div class="p-2.5 sm:p-3 bg-slate-50 border-t border-slate-300 space-y-2.5 shrink-0">
+          
+          <!-- Custom Discount Selector -->
+          <div class="space-y-1.5">
+            <div class="flex items-center gap-2">
+              <label for="pos-discount-select" class="text-xs font-bold text-slate-600 shrink-0">🏷️ បញ្ចុះតម្លៃ:</label>
+              <select id="pos-discount-select" onchange="onDiscountSelectChange()" class="flex-1 px-2.5 py-1.5 bg-white border border-slate-300 rounded-xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-smartBlue">
+                <!-- Populated from state.discounts -->
+              </select>
+            </div>
+            <!-- Custom Discount Input Row (shown only when 'custom' is selected) -->
+            <div id="custom-discount-box" class="hidden flex items-center gap-2 bg-amber-50 p-2 rounded-xl border border-amber-200">
+              <select id="custom-disc-type" onchange="renderCart()" class="px-2 py-1 bg-white border border-amber-300 rounded-lg text-xs font-bold">
+                <option value="percent">%</option>
+                <option value="fixed">$</option>
+              </select>
+              <input type="number" id="custom-disc-val" step="0.05" min="0" value="0" oninput="renderCart()" placeholder="ចំនួនបញ្ចុះ..." class="flex-1 px-2.5 py-1 bg-white border border-amber-300 rounded-lg text-xs font-bold focus:outline-none">
+            </div>
+          </div>
+
+          <!-- Totals Breakdown -->
+          <div class="bg-white border border-slate-200 rounded-xl p-2.5 space-y-1 text-xs">
+            <div class="flex justify-between text-slate-600">
+              <span>សរុបបណ្តោះអាសន្ន (Subtotal):</span>
+              <span id="cart-subtotal" class="font-bold">$0.00</span>
+            </div>
+            <div id="cart-discount-row" class="hidden flex justify-between text-rose-600">
+              <span id="cart-discount-label">បញ្ចុះតម្លៃ:</span>
+              <span id="cart-discount-amount" class="font-bold">-$0.00</span>
+            </div>
+            <div class="flex justify-between items-baseline pt-1.5 border-t border-slate-200">
+              <span class="font-bold text-slate-900 text-sm">សរុបរួម (Total):</span>
+              <div class="text-right">
+                <span id="cart-total-usd" class="text-lg font-extrabold text-smartDark">$0.00</span>
+                <span class="mx-1 text-slate-300">|</span>
+                <span id="cart-total-khr" class="text-sm font-bold text-smartBlue">0 ៛</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Large Green Checkout Button -->
+          <button onclick="openCheckoutModal()" id="btn-checkout" class="w-full py-3 rounded-xl bg-smartGreen hover:bg-emerald-700 active:scale-[0.99] text-white font-bold text-base shadow-md transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
+            <span>💵</span> គិតលុយ (Checkout)
+          </button>
+        </div>
+      </div>
+
+      <!-- RIGHT PRODUCT PANEL (~60-62% width) -->
+      <div class="flex-1 flex flex-col h-[50%] lg:h-full bg-[#eef2f6] overflow-hidden">
+        
+        <!-- Search Bar & Colorful Category Tabs -->
+        <div class="p-2.5 sm:p-3 bg-white border-b border-slate-200 space-y-2.5 shrink-0">
+          <div class="relative">
+            <span class="absolute inset-y-0 left-3 flex items-center text-slate-400 text-sm">🔍</span>
+            <input type="text" id="pos-search" oninput="renderProductGrid()" placeholder="ស្វែងរកភេសជ្ជៈ ឬនំ... (Search menu)" class="w-full pl-9 pr-9 py-2 bg-slate-100 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-smartBlue focus:bg-white transition-all">
+            <button onclick="clearPosSearch()" id="btn-clear-search" class="hidden absolute inset-y-0 right-3 items-center text-slate-400 hover:text-slate-600 text-sm">✕</button>
+          </div>
+
+          <div id="category-tabs" class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- 3-Column Touch Product Grid -->
+        <div class="flex-1 overflow-y-auto p-2.5 sm:p-3.5">
+          <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-3">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 2: ORDERS HISTORY (ប្រវត្តិលក់) ==================== -->
+    <section id="view-orders" class="tab-view hidden h-full overflow-y-auto p-4 sm:p-6">
+      <div class="max-w-6xl mx-auto space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 class="text-xl font-bold text-smartDark">ប្រវត្តិលក់ (Orders History)</h2>
+            <p class="text-xs sm:text-sm text-slate-500">ស្វែងរកតាមលេខវិក្កយបត្រ ឬថ្ងៃខែ • មើល/ព្រីនវិក្កយបត្រ 80mm ឡើងវិញ</p>
+          </div>
+          <div class="flex flex-wrap items-center gap-2">
+            <input type="date" id="orders-date-filter" onchange="renderOrdersTab()" class="px-3 py-2 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-smartBlue">
+            <input type="text" id="orders-search" oninput="renderOrdersTab()" placeholder="ស្វែងរក INV-..." class="px-3.5 py-2 bg-white border border-slate-300 rounded-xl text-xs sm:text-sm w-44 sm:w-56 focus:outline-none focus:ring-2 focus:ring-smartBlue">
+            <button onclick="clearOrdersFilter()" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 rounded-xl text-xs font-bold">ទាំងអស់</button>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-sm">
+              <thead>
+                <tr class="bg-smartBlue text-white text-xs font-bold">
+                  <th class="py-3 px-4">លេខវិក្កយបត្រ</th>
+                  <th class="py-3 px-4">កាលបរិច្ឆេទ</th>
+                  <th class="py-3 px-4">ប្រភេទ / បង់ប្រាក់</th>
+                  <th class="py-3 px-4">បញ្ចុះតម្លៃ</th>
+                  <th class="py-3 px-4 text-right">សរុប (USD / KHR)</th>
+                  <th class="py-3 px-4 text-right">សកម្មភាព</th>
+                </tr>
+              </thead>
+              <tbody id="orders-tbody" class="divide-y divide-slate-200">
+                <!-- Rendered by JS -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TAB 3: MENU MANAGEMENT (ម៉ឺនុយ) ==================== -->
+    <section id="view-menu" class="tab-view hidden h-full overflow-y-auto p-4 sm:p-6">
+      <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-5">
+        
+        <!-- Add / Edit Product Form with Photo Upload -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 h-fit">
+          <h3 id="menu-form-title" class="font-bold text-base text-smartDark mb-4 flex items-center gap-2">
+            <span>➕</span> បន្ថែមមុខទំនិញថ្មី
+          </h3>
+          <form id="menu-form" onsubmit="handleSaveMenuItem(event)" class="space-y-3.5">
+            <input type="hidden" id="mf-id">
+            
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">ឈ្មោះមុខទំនិញ (Product Name)</label>
+              <input type="text" id="mf-name" required placeholder="ឧ. Iced Latte" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-smartBlue">
+            </div>
+
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">ប្រភេទ (Category)</label>
+              <select id="mf-category" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-smartBlue">
+                <option value="កាហ្វេ">កាហ្វេ</option>
+                <option value="IT Signature">IT Signature</option>
+                <option value="តែ & ទឹកផ្លែឈើ">តែ &amp; ទឹកផ្លែឈើ</option>
+                <option value="នំ & អាហារសម្រន់">នំ &amp; អាហារសម្រន់</option>
+              </select>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">តម្លៃលក់ (USD $)</label>
+                <input type="number" id="mf-price" step="0.05" min="0.1" required placeholder="2.00" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-smartBlue">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">តម្លៃដើម (Cost $)</label>
+                <input type="number" id="mf-cost" step="0.05" min="0" required placeholder="0.75" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-smartBlue">
+              </div>
+            </div>
+
+            <!-- Product Photo Upload (Auto-Resized Canvas) -->
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+              <label class="block text-xs font-bold text-slate-700">រូបភាពផលិតផលពិត (Upload Photo)</label>
+              <div class="flex items-center gap-3">
+                <div id="mf-photo-preview" class="w-16 h-16 rounded-xl bg-white border border-slate-300 flex items-center justify-center overflow-hidden text-3xl shrink-0">
+                  ☕
+                </div>
+                <div class="flex-1 space-y-1.5">
+                  <input type="file" id="mf-photo-input" accept="image/*" onchange="handleProductPhotoUpload(event)" class="block w-full text-xs text-slate-500 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-bold file:bg-smartBlue file:text-white hover:file:bg-blue-600 cursor-pointer">
+                  <button type="button" id="mf-clear-photo-btn" onclick="clearProductPhoto()" class="hidden text-xs font-bold text-rose-600 hover:underline">
+                    🗑️ លុបរូបភាព (ប្រើ Emoji វិញ)
+                  </button>
+                </div>
+              </div>
+              <p class="text-[10px] text-slate-400">រូបភាពត្រូវបានបង្រួមស្វ័យប្រវត្តិ (200×200px) ដើម្បីរក្សាទុក Offline លឿន</p>
+            </div>
+
+            <!-- Fallback Emoji Icon -->
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">រូបតំណាង Emoji (ប្រើពេលគ្មានរូបភាព)</label>
+              <div class="flex items-center gap-2">
+                <input type="text" id="mf-emoji" value="☕" oninput="updatePhotoPreviewEmoji()" required class="w-14 text-center py-2 bg-slate-50 border border-slate-300 rounded-xl text-lg">
+                <div class="flex flex-wrap gap-1">
+                  <button type="button" onclick="setFormEmoji('☕')" class="p-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg">☕</button>
+                  <button type="button" onclick="setFormEmoji('🥛')" class="p-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg">🥛</button>
+                  <button type="button" onclick="setFormEmoji('🍊')" class="p-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg">🍊</button>
+                  <button type="button" onclick="setFormEmoji('🍵')" class="p-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg">🍵</button>
+                  <button type="button" onclick="setFormEmoji('🍋')" class="p-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg">🍋</button>
+                  <button type="button" onclick="setFormEmoji('🥤')" class="p-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg">🥤</button>
+                  <button type="button" onclick="setFormEmoji('🥐')" class="p-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg">🥐</button>
+                  <button type="button" onclick="setFormEmoji('🧁')" class="p-1.5 bg-slate-100 hover:bg-slate-200 rounded-lg">🧁</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex gap-2 pt-1">
+              <button type="submit" class="flex-1 py-2.5 bg-smartGreen hover:bg-emerald-700 text-white font-bold rounded-xl text-sm shadow-sm">
+                💾 រក្សាទុក
+              </button>
+              <button type="button" id="mf-cancel-btn" onclick="resetMenuForm()" class="hidden px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-sm">
+                បោះបង់
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Product List -->
+        <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+          <div class="p-4 border-b border-slate-200 flex items-center justify-between">
+            <div>
+              <h3 class="font-bold text-base text-smartDark">បញ្ជីម៉ឺនុយទាំងអស់ (Products)</h3>
+              <p class="text-xs text-slate-500">បិទ/បើកស្តុក កែប្រែតម្លៃ ឬដាក់រូបភាពផលិតផល</p>
+            </div>
+            <span id="menu-total-count" class="px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-xs font-bold">0 មុខ</span>
+          </div>
+          <div id="menu-manage-list" class="divide-y divide-slate-100 overflow-y-auto max-h-[680px]">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== TAB 4: UPGRADED REPORTS (ប្រចាំថ្ងៃ ខែ និងឆ្នាំ) ==================== -->
+    <section id="view-reports" class="tab-view hidden h-full overflow-y-auto p-4 sm:p-6">
+      <div class="max-w-6xl mx-auto space-y-5">
+        
+        <!-- Report Header & Mode Switcher -->
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div class="flex items-center gap-1.5 bg-slate-100 p-1 rounded-xl self-start">
+            <button onclick="setReportMode('daily')" id="rmode-daily" class="rmode-btn px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all">ប្រចាំថ្ងៃ (Daily)</button>
+            <button onclick="setReportMode('monthly')" id="rmode-monthly" class="rmode-btn px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all">ប្រចាំខែ (Monthly)</button>
+            <button onclick="setReportMode('yearly')" id="rmode-yearly" class="rmode-btn px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all">ប្រចាំឆ្នាំ (Yearly)</button>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-2">
+            <!-- Dynamic Period Picker -->
+            <input type="date" id="rep-picker-daily" onchange="renderReportsTab()" class="px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-smartBlue">
+            <input type="month" id="rep-picker-monthly" onchange="renderReportsTab()" class="hidden px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-smartBlue">
+            <select id="rep-picker-yearly" onchange="renderReportsTab()" class="hidden px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm font-bold focus:outline-none focus:ring-2 focus:ring-smartBlue">
+              <!-- Populated by JS -->
+            </select>
+
+            <button onclick="exportReportCSV()" class="px-4 py-2 bg-smartGreen hover:bg-emerald-700 text-white font-bold rounded-xl text-xs sm:text-sm shadow-sm flex items-center gap-1.5">
+              <span>📥</span> ទាញយក CSV
+            </button>
+          </div>
+        </div>
+
+        <!-- 5 KPI Summary Cards -->
+        <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+          <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+            <div class="text-[11px] font-bold text-slate-500">ចំណូលសរុប (USD)</div>
+            <div id="kpi-usd" class="text-xl sm:text-2xl font-extrabold text-smartGreen mt-1">$0.00</div>
+          </div>
+          <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+            <div class="text-[11px] font-bold text-slate-500">ចំណូលសរុប (KHR)</div>
+            <div id="kpi-khr" class="text-lg sm:text-xl font-extrabold text-smartBlue mt-1">0 ៛</div>
+          </div>
+          <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+            <div class="text-[11px] font-bold text-slate-500">ចំនួនវិក្កយបត្រ</div>
+            <div id="kpi-orders" class="text-xl sm:text-2xl font-extrabold text-smartDark mt-1">0</div>
+          </div>
+          <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+            <div class="text-[11px] font-bold text-slate-500">ការបញ្ចុះតម្លៃសរុប</div>
+            <div id="kpi-discount" class="text-xl sm:text-2xl font-extrabold text-rose-600 mt-1">$0.00</div>
+          </div>
+          <div class="col-span-2 lg:col-span-1 bg-emerald-50 p-4 rounded-2xl shadow-sm border border-emerald-200">
+            <div class="text-[11px] font-bold text-emerald-700">ប្រាក់ចំណេញប៉ាន់ស្មាន</div>
+            <div id="kpi-profit" class="text-xl sm:text-2xl font-extrabold text-emerald-800 mt-1">$0.00</div>
+          </div>
+        </div>
+
+        <!-- Yearly 12-Month Visual Bar Chart + Summary Table (Visible only in Yearly Mode) -->
+        <div id="rep-yearly-section" class="hidden space-y-5">
+          <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="font-bold text-base text-smartDark mb-4">ក្រាហ្វិកចំណូលប្រចាំឆ្នាំ (១២ ខែ)</h3>
+            <div id="rep-yearly-chart" class="h-52 flex items-end justify-between gap-1.5 sm:gap-3 pt-6 border-b border-slate-200">
+              <!-- Rendered by JS -->
+            </div>
+          </div>
+
+          <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="p-4 border-b border-slate-200 font-bold text-smartDark">តារាងសង្ខេបតាមខែ (មករា – ធ្នូ)</div>
+            <div class="overflow-x-auto">
+              <table class="w-full text-left border-collapse text-xs sm:text-sm">
+                <thead>
+                  <tr class="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
+                    <th class="py-2.5 px-4">ខែ</th>
+                    <th class="py-2.5 px-4 text-center">វិក្កយបត្រ</th>
+                    <th class="py-2.5 px-4 text-right">ចំណូល (USD)</th>
+                    <th class="py-2.5 px-4 text-right">ចំណូល (KHR)</th>
+                    <th class="py-2.5 px-4 text-right">បញ្ចុះតម្លៃ</th>
+                    <th class="py-2.5 px-4 text-right">ចំណេញប៉ាន់ស្មាន</th>
+                  </tr>
+                </thead>
+                <tbody id="rep-yearly-table-body" class="divide-y divide-slate-100"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Monthly Daily Breakdown Table (Visible only in Monthly Mode) -->
+        <div id="rep-monthly-section" class="hidden bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="p-4 border-b border-slate-200 font-bold text-smartDark">របាយការណ៍លម្អិតតាមថ្ងៃក្នុងខែ</div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs sm:text-sm">
+              <thead>
+                <tr class="bg-slate-100 text-slate-600 font-bold border-b border-slate-200">
+                  <th class="py-2.5 px-4">កាលបរិច្ឆេទ</th>
+                  <th class="py-2.5 px-4 text-center">វិក្កយបត្រ</th>
+                  <th class="py-2.5 px-4 text-right">ចំណូល (USD)</th>
+                  <th class="py-2.5 px-4 text-right">ចំណូល (KHR)</th>
+                  <th class="py-2.5 px-4 text-right">ចំណេញប៉ាន់ស្មាន</th>
+                </tr>
+              </thead>
+              <tbody id="rep-monthly-table-body" class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Payment Breakdown & Top Selling Items (Visible in all modes) -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="font-bold text-base text-smartDark mb-4">ការទូទាត់តាមប្រភេទ (Payment Breakdown)</h3>
+            <div id="rep-payment-bars" class="space-y-3.5"></div>
+          </div>
+
+          <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+            <h3 class="font-bold text-base text-smartDark mb-4">មុខទំនិញលក់ដាច់ជាងគេ (Top Selling Items)</h3>
+            <div id="rep-top-items" class="space-y-3"></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ==================== TAB 5: SETTINGS (កំណត់) ==================== -->
+    <section id="view-settings" class="tab-view hidden h-full overflow-y-auto p-4 sm:p-6">
+      <div class="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+        <!-- 1. Shop Information -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200">
+          <h3 class="font-bold text-base text-smartDark mb-4 flex items-center gap-2"><span>🏪</span> ព័ត៌មានហាង (Shop Info)</h3>
+          <form onsubmit="handleSaveShopSettings(event)" class="space-y-3">
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">ឈ្មោះហាង</label>
+              <input type="text" id="set-shop-name" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">អត្រាប្តូរប្រាក់ (1$ = ៛)</label>
+                <input type="number" id="set-rate" step="50" min="1000" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm">
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">ឈ្មោះ Wi-Fi</label>
+                <input type="text" id="set-wifi-name" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm">
+              </div>
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">លេខសម្ងាត់ Wi-Fi</label>
+              <input type="text" id="set-wifi-pass" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-slate-600 mb-1">សារខាងក្រោមវិក្កយបត្រ (Receipt Footer)</label>
+              <input type="text" id="set-footer" required class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-sm">
+            </div>
+            <button type="submit" class="w-full py-2.5 bg-smartBlue hover:bg-blue-600 text-white font-bold rounded-xl text-sm shadow-sm">
+              💾 រក្សាទុកព័ត៌មានហាង
+            </button>
+          </form>
+        </div>
+
+        <!-- 2. Shop KHQR Image Upload -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-between">
+          <div>
+            <h3 class="font-bold text-base text-smartDark mb-2 flex items-center gap-2"><span>📱</span> រូបភាព KHQR ធនាគារ (ABA / ACLEDA)</h3>
+            <p class="text-xs text-slate-500 mb-4">រូបភាពនេះនឹងបង្ហាញលើអេក្រង់គិតលុយពេលភ្ញៀវជ្រើសរើសបង់តាម KHQR / ធនាគារ។</p>
+            
+            <div class="flex flex-col sm:flex-row items-center gap-4">
+              <div id="set-khqr-preview" class="w-36 h-44 rounded-xl bg-slate-100 border-2 border-dashed border-slate-300 flex items-center justify-center overflow-hidden text-xs text-slate-400 text-center p-2 shrink-0">
+                មិនទាន់មានរូប KHQR
+              </div>
+              <div class="space-y-2.5 flex-1 w-full">
+                <input type="file" id="set-khqr-input" accept="image/*" onchange="handleKhqrUpload(event)" class="block w-full text-xs text-slate-500 file:mr-2 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-smartDark file:text-white hover:file:bg-slate-700 cursor-pointer">
+                <button type="button" id="set-khqr-remove-btn" onclick="removeKhqrImage()" class="hidden px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 rounded-lg text-xs font-bold">
+                  🗑️ លុបរូប KHQR
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Discount Manager -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+          <h3 class="font-bold text-base text-smartDark flex items-center gap-2"><span>🏷️</span> គ្រប់គ្រងការបញ្ចុះតម្លៃ (Discounts)</h3>
+          <form onsubmit="handleAddDiscount(event)" class="grid grid-cols-12 gap-2">
+            <input type="text" id="new-disc-name" required placeholder="ឈ្មោះ (ឧ. VIP)" class="col-span-5 px-2.5 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold">
+            <select id="new-disc-type" class="col-span-3 px-2 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold">
+              <option value="percent">% ភាគរយ</option>
+              <option value="fixed">$ ទឹកប្រាក់</option>
+            </select>
+            <input type="number" id="new-disc-val" step="0.05" min="0.05" required placeholder="10" class="col-span-2 px-2 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-bold">
+            <button type="submit" class="col-span-2 bg-smartGreen hover:bg-emerald-700 text-white font-bold rounded-xl text-xs">បន្ថែម</button>
+          </form>
+          <div id="settings-discount-list" class="divide-y divide-slate-100 border border-slate-200 rounded-xl overflow-hidden">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+
+        <!-- 4. Google Sheets Sync (Apps Script Backend) -->
+        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+          <h3 class="font-bold text-base text-smartDark flex items-center gap-2"><span>☁️</span> ភ្ជាប់ Google Sheets (Apps Script API)</h3>
+          <p class="text-xs text-slate-500">បញ្ចូល Web App URL ពី Google Apps Script ដើម្បីផ្ញើវិក្កយបត្រចូល Google Sheet ដោយស្វ័យប្រវត្តិ (នៅតែដំណើរការ Offline ធម្មតា)។</p>
+          <input type="url" id="set-gas-url" placeholder="https://script.google.com/macros/s/.../exec" class="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xl text-xs font-mono">
+          <div class="flex flex-wrap gap-2">
+            <button onclick="saveGasUrl()" class="px-4 py-2 bg-smartBlue hover:bg-blue-600 text-white font-bold rounded-xl text-xs">💾 រក្សាទុក URL</button>
+            <button onclick="syncMenuFromGoogleSheet()" class="px-4 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-bold rounded-xl text-xs">
+              🔄 សាកល្បងភ្ជាប់ / ទាញម៉ឺនុយពី Sheet
+            </button>
+          </div>
+        </div>
+
+        <!-- 5. Data Backup, Restore & Sample Data -->
+        <div class="lg:col-span-2 bg-white p-5 rounded-2xl shadow-sm border border-slate-200 space-y-3">
+          <h3 class="font-bold text-base text-smartDark flex items-center gap-2"><span>💾</span> រក្សាទុកទិន្នន័យ (Backup, Restore &amp; Testing)</h3>
+          <div class="flex flex-wrap items-center gap-2.5">
+            <button onclick="exportBackupJSON()" class="px-4 py-2.5 bg-smartDark hover:bg-slate-800 text-white font-bold rounded-xl text-xs sm:text-sm">
+              📦 ទាញយក Backup (.json)
+            </button>
+            <label class="px-4 py-2.5 bg-blue-50 hover:bg-blue-100 text-smartBlue border border-blue-200 font-bold rounded-xl text-xs sm:text-sm cursor-pointer">
+              📂 ស្ដារទិន្នន័យ (Import .json)
+              <input type="file" accept=".json" onchange="importBackupJSON(event)" class="hidden">
+            </label>
+            <button onclick="generateSampleOrders()" class="px-4 py-2.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold rounded-xl text-xs sm:text-sm">
+              🧪 បង្កើតទិន្នន័យសាកល្បង (សម្រាប់តេស្តរបាយការណ៍ ខែ/ឆ្នាំ)
+            </button>
+            <button onclick="confirmFactoryReset()" class="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-bold rounded-xl text-xs sm:text-sm">
+              ⚠️ កំណត់ឡើងវិញទាំងអស់
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================== 3-COLUMN SMART CHECKOUT MODAL ==================== -->
+  <div id="modal-checkout" class="fixed inset-0 z-50 hidden items-center justify-center p-2 sm:p-4 bg-slate-900/70 backdrop-blur-xs">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[95vh] flex flex-col overflow-hidden">
+      
+      <!-- Modal Header -->
+      <div class="bg-smartDark text-white px-4 py-3 flex items-center justify-between shrink-0">
+        <div class="font-bold text-base flex items-center gap-2">
+          <span>💵</span> ទូទាត់ប្រាក់ (Smart Checkout)
+        </div>
+        <button onclick="closeModal('modal-checkout')" class="w-8 h-8 rounded-lg hover:bg-white/10 flex items-center justify-center font-bold">✕</button>
+      </div>
+
+      <!-- 3-Column Body -->
+      <div class="p-3 sm:p-4 grid grid-cols-1 lg:grid-cols-12 gap-4 overflow-y-auto">
+        
+        <!-- LEFT COLUMN (4 cols): Payment Methods & KHQR Display -->
+        <div class="lg:col-span-4 space-y-3">
+          <div class="text-xs font-bold text-slate-600">វិធីទូទាត់ប្រាក់ (Payment Method):</div>
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" onclick="selectPaymentMethod('សាច់ប្រាក់ Cash')" data-pm="សាច់ប្រាក់ Cash" class="pm-btn py-2.5 px-2 rounded-xl border-2 text-xs font-bold transition-all">💵 សាច់ប្រាក់ Cash</button>
+            <button type="button" onclick="selectPaymentMethod('ABA KHQR')" data-pm="ABA KHQR" class="pm-btn py-2.5 px-2 rounded-xl border-2 text-xs font-bold transition-all">📱 ABA KHQR</button>
+            <button type="button" onclick="selectPaymentMethod('ACLEDA')" data-pm="ACLEDA" class="pm-btn py-2.5 px-2 rounded-xl border-2 text-xs font-bold transition-all">🏦 ACLEDA</button>
+            <button type="button" onclick="selectPaymentMethod('Wing')" data-pm="Wing" class="pm-btn py-2.5 px-2 rounded-xl border-2 text-xs font-bold transition-all">💸 Wing</button>
+          </div>
+
+          <!-- KHQR Display Area (shown when Bank/KHQR is selected) -->
+          <div id="co-khqr-box" class="hidden rounded-2xl border border-slate-200 bg-slate-50 p-3 text-center">
+            <!-- Dynamically populated with uploaded KHQR or clean SVG placeholder -->
+          </div>
+        </div>
+
+        <!-- CENTER COLUMN (4 cols): Total, Received, Change Summary -->
+        <div class="lg:col-span-4 space-y-3 flex flex-col justify-between">
+          <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 space-y-3">
+            <div class="text-center border-b border-slate-200 pb-3">
+              <div class="text-xs font-bold text-slate-500">ទឹកប្រាក់ត្រូវទូទាត់ (Total Due)</div>
+              <div id="co-total-usd" class="text-3xl font-extrabold text-smartBlue mt-1">$0.00</div>
+              <div id="co-total-khr" class="text-base font-bold text-slate-700">0 ៛</div>
+            </div>
+
+            <div class="space-y-1.5">
+              <div class="text-xs font-bold text-slate-600">ប្រាក់ទទួលបាន (Received):</div>
+              <div class="bg-white border-2 border-smartBlue rounded-xl p-2.5 text-right">
+                <div id="co-received-usd" class="text-2xl font-extrabold text-slate-900">$0.00</div>
+                <div id="co-received-khr" class="text-xs font-bold text-slate-500">0 ៛</div>
+              </div>
+            </div>
+
+            <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center justify-between">
+              <span class="text-sm font-bold text-emerald-800">ប្រាក់អាប់ (Change):</span>
+              <div class="text-right">
+                <div id="co-change-usd" class="text-xl font-extrabold text-smartGreen">$0.00</div>
+                <div id="co-change-khr" class="text-xs font-bold text-emerald-700">0 ៛</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT COLUMN (4 cols): Touch Numpad & USD/KHR Quick Cash -->
+        <div class="lg:col-span-4 space-y-2.5">
+          <!-- Quick Cash USD & KHR -->
+          <div class="grid grid-cols-4 gap-1.5">
+            <button type="button" onclick="quickCashUSD(1)" class="py-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg font-bold text-xs">$1</button>
+            <button type="button" onclick="quickCashUSD(2)" class="py-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg font-bold text-xs">$2</button>
+            <button type="button" onclick="quickCashUSD(5)" class="py-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg font-bold text-xs">$5</button>
+            <button type="button" onclick="quickCashUSD(10)" class="py-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg font-bold text-xs">$10</button>
+            <button type="button" onclick="quickCashUSD(20)" class="py-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg font-bold text-xs">$20</button>
+            <button type="button" onclick="quickCashKHR(10000)" class="py-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-smartBlue rounded-lg font-bold text-[11px]">10,000៛</button>
+            <button type="button" onclick="quickCashKHR(20000)" class="py-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-smartBlue rounded-lg font-bold text-[11px]">20,000៛</button>
+            <button type="button" onclick="quickCashKHR(50000)" class="py-2 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-smartBlue rounded-lg font-bold text-[11px]">50,000៛</button>
+          </div>
+
+          <!-- Touch Numpad -->
+          <div class="grid grid-cols-3 gap-1.5">
+            <button type="button" onclick="numpadPress('7')" class="h-12 bg-smartDark hover:bg-slate-700 active:scale-95 text-white rounded-xl font-bold text-lg">7</button>
+            <button type="button" onclick="numpadPress('8')" class="h-12 bg-smartDark hover:bg-slate-700 active:scale-95 text-white rounded-xl font-bold text-lg">8</button>
+            <button type="button" onclick="numpadPress('9')" class="h-12 bg-smartDark hover:bg-slate-700 active:scale-95 text-white rounded-xl font-bold text-lg">9</button>
+            <button type="button" onclick="numpadPress('4')" class="h-12 bg-smartDark hover:bg-slate-700 active:scale-95 text-white rounded-xl font-bold text-lg">4</button>
+            <button type="button" onclick="numpadPress('5')" class="h-12 bg-smartDark hover:bg-slate-700 active:scale-95 text-white rounded-xl font-bold text-lg">5</button>
+            <button type="button" onclick="numpadPress('6')" class="h-12 bg-smartDark hover:bg-slate-700 active:scale-95 text-white rounded-xl font-bold text-lg">6</button>
+            <button type="button" onclick="numpadPress('1')" class="h-12 bg-smartDark hover:bg-slate-700 active:scale-95 text-white rounded-xl font-bold text-lg">1</button>
+            <button type="button" onclick="numpadPress('2')" class="h-12 bg-smartDark hover:bg-slate-700 active:scale-95 text-white rounded-xl font-bold text-lg">2</button>
+            <button type="button" onclick="numpadPress('3')" class="h-12 bg-smartDark hover:bg-slate-700 active:scale-95 text-white rounded-xl font-bold text-lg">3</button>
+            <button type="button" onclick="numpadPress('C')" class="h-12 bg-smartRed hover:bg-red-700 active:scale-95 text-white rounded-xl font-bold text-sm">Clear</button>
+            <button type="button" onclick="numpadPress('0')" class="h-12 bg-smartDark hover:bg-slate-700 active:scale-95 text-white rounded-xl font-bold text-lg">0</button>
+            <button type="button" onclick="numpadPress('.')" class="h-12 bg-smartDark hover:bg-slate-700 active:scale-95 text-white rounded-xl font-bold text-lg">.</button>
+          </div>
+          <button type="button" onclick="numpadPress('EXACT')" class="w-full py-2 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border border-emerald-300 rounded-xl font-bold text-xs">
+            ✨ គ្រប់ចំនួន (Exact Amount)
+          </button>
+        </div>
+
+      </div>
+
+      <!-- Bottom Checkout Actions -->
+      <div class="p-3 sm:p-4 bg-slate-100 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-2 gap-2.5 shrink-0">
+        <button type="button" onclick="finalizeSale(true)" class="py-3.5 bg-smartGreen hover:bg-emerald-700 active:scale-[0.99] text-white font-bold rounded-xl text-sm sm:text-base shadow-md flex items-center justify-center gap-2">
+          <span>🖨️</span> បង់ប្រាក់ &amp; ព្រីនវិក្កយបត្រ (Pay &amp; Print 80mm)
+        </button>
+        <button type="button" onclick="finalizeSale(false)" class="py-3.5 bg-smartOrange hover:bg-amber-600 active:scale-[0.99] text-white font-bold rounded-xl text-sm sm:text-base shadow-md flex items-center justify-center gap-2">
+          <span>✅</span> បង់ប្រាក់ មិនព្រីន (Pay Only)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== 80MM RECEIPT PREVIEW MODAL ==================== -->
+  <div id="modal-receipt" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-900/70 backdrop-blur-xs">
+    <div class="bg-slate-100 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="bg-smartDark text-white px-4 py-3 flex items-center justify-between">
+        <span class="font-bold text-sm">វិក្កយបត្រ 80mm (Thermal Receipt)</span>
+        <button onclick="closeModal('modal-receipt')" class="text-slate-300 hover:text-white font-bold">✕</button>
+      </div>
+      <div class="p-4 overflow-y-auto flex justify-center">
+        <div id="receipt-preview-body" class="bg-white w-[300px] p-5 shadow border border-slate-200 text-xs text-slate-900"></div>
+      </div>
+      <div class="p-3 bg-white border-t border-slate-200 flex gap-2">
+        <button onclick="closeModal('modal-receipt')" class="px-4 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold rounded-xl text-sm">បិទ</button>
+        <button onclick="triggerThermalPrint()" class="flex-1 py-2.5 bg-smartGreen hover:bg-emerald-700 text-white font-bold rounded-xl text-sm flex items-center justify-center gap-1.5">
+          <span>🖨️</span> ព្រីនវិក្កយបត្រ
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== CUSTOM CONFIRM MODAL (No alert/confirm) ==================== -->
+  <div id="modal-confirm" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-5 space-y-4">
+      <div class="flex items-start gap-3">
+        <div class="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center text-lg shrink-0">⚠️</div>
+        <div>
+          <h3 id="confirm-title" class="font-bold text-slate-900 text-base">បញ្ជាក់</h3>
+          <p id="confirm-msg" class="text-sm text-slate-600 mt-1"></p>
+        </div>
+      </div>
+      <div class="flex gap-2.5">
+        <button onclick="closeModal('modal-confirm')" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-sm">បោះបង់</button>
+        <button id="confirm-yes-btn" class="flex-1 py-2.5 bg-smartRed hover:bg-red-700 text-white font-bold rounded-xl text-sm">យល់ព្រម</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== THERMAL PRINT CONTAINER ==================== -->
+  <div id="thermal-print-area"></div>
+
+  <!-- ==================== TOAST NOTIFICATION BOX ==================== -->
+  <div id="toast-box" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- ==================== JAVASCRIPT APPLICATION ==================== -->
+  <script>
+    // =========================================================================
+    // 1. CONSTANTS & DEFAULT DATA
+    // =========================================================================
+    const STORAGE_KEYS = {
+      MENU: 'sak_pos_v2_menu',
+      ORDERS: 'sak_pos_v2_orders',
+      SETTINGS: 'sak_pos_v2_settings',
+      DISCOUNTS: 'sak_pos_v2_discounts'
+    };
+
+    const CATEGORY_TABS = [
+      { id: 'ទាំងអស់', label: 'ទាំងអស់', color: 'bg-smartDark' },
+      { id: 'កាហ្វេ', label: '☕ កាហ្វេ', color: 'bg-amber-700' },
+      { id: 'IT Signature', label: '💻 IT Signature', color: 'bg-smartBlue' },
+      { id: 'តែ & ទឹកផ្លែឈើ', label: '🍵 តែ & ទឹកផ្លែឈើ', color: 'bg-emerald-600' },
+      { id: 'នំ & អាហារសម្រន់', label: '🥐 នំ & អាហារសម្រន់', color: 'bg-rose-500' }
+    ];
+
+    const DEFAULT_MENU = [
+      { id: 'p1', name: 'Hello World Americano', category: 'កាហ្វេ', price: 1.50, cost_usd: 0.50, emoji: '☕', photo: '', available: true },
+      { id: 'p2', name: 'Compile & Sip Latte', category: 'កាហ្វេ', price: 2.00, cost_usd: 0.75, emoji: '🥛', photo: '', available: true },
+      { id: 'p3', name: 'Syntax Error Orange Espresso', category: 'IT Signature', price: 2.25, cost_usd: 0.85, emoji: '🍊', photo: '', available: true },
+      { id: 'p4', name: 'Binary Matcha Latte 0101', category: 'IT Signature', price: 2.50, cost_usd: 0.95, emoji: '🍵', photo: '', available: true },
+      { id: 'p5', name: 'Cyber Security Lemon Tea', category: 'តែ & ទឹកផ្លែឈើ', price: 1.50, cost_usd: 0.45, emoji: '🍋', photo: '', available: true },
+      { id: 'p6', name: 'Passion Soda', category: 'តែ & ទឹកផ្លែឈើ', price: 1.75, cost_usd: 0.55, emoji: '🥤', photo: '', available: true },
+      { id: 'p7', name: 'Butter Croissant', category: 'នំ & អាហារសម្រន់', price: 1.50, cost_usd: 0.65, emoji: '🥐', photo: '', available: true },
+      { id: 'p8', name: 'Chocolate Muffin', category: 'នំ & អាហារសម្រន់', price: 1.25, cost_usd: 0.50, emoji: '🧁', photo: '', available: true }
+    ];
+
+    const DEFAULT_DISCOUNTS = [
+      { id: 'd_none', name: 'គ្មាន (0%)', type: 'percent', value: 0 },
+      { id: 'd_cadt', name: 'និស្សិត CADT (10%)', type: 'percent', value: 10 },
+      { id: 'd_cup', name: 'យកកែវមកខ្លួនឯង (-$0.25)', type: 'fixed', value: 0.25 },
+      { id: 'd_happy', name: 'Happy Hour (15%)', type: 'percent', value: 15 }
+    ];
+
+    const DEFAULT_SETTINGS = {
+      shopName: 'ស័ក្តិ កាហ្វេ (Sak Coffee)',
+      exchangeRate: 4100,
+      wifiName: 'SakCoffee_CADT',
+      wifiPass: 'codeandcoffee',
+      receiptFooter: 'សូមអរគុណ! សូមអញ្ជើញមកម្តងទៀត ☕',
+      khqrImage: '',
+      gasUrl: ''
+    };
+
+    const KHMER_MONTHS = ['មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា', 'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'];
+
+    // =========================================================================
+    // 2. APPLICATION STATE
+    // =========================================================================
+    let state = {
+      activeTab: 'pos',
+      selectedCategory: 'ទាំងអស់',
+      menu: [],
+      orders: [],
+      discounts: [],
+      settings: { ...DEFAULT_SETTINGS },
+      cart: [],
+      expandedCartKey: null,
+      orderType: 'ញ៉ាំក្នុងហាង',
+      selectedDiscountId: 'd_none',
+      // Checkout state
+      coPaymentMethod: 'សាច់ប្រាក់ Cash',
+      coCashStr: '',
+      activeReceiptOrder: null,
+      // Menu form photo staging
+      stagingProductPhoto: '',
+      // Reports state
+      reportMode: 'daily'
+    };
+
+    // =========================================================================
+    // 3. INITIALIZATION & STORAGE
+    // =========================================================================
+    function initApp() {
+      loadAllStorage();
+      updateShopHeader();
+      startClock();
+      initReportPickers();
+      renderCategoryTabs();
+      renderDiscountDropdown();
+      renderProductGrid();
+      renderCart();
+      switchTab('pos');
+      updateSyncBadge(navigator.onLine ? 'ready' : 'offline');
+      window.addEventListener('online', () => updateSyncBadge('ready'));
+      window.addEventListener('offline', () => updateSyncBadge('offline'));
+    }
+
+    function loadAllStorage() {
+      try {
+        const m = localStorage.getItem(STORAGE_KEYS.MENU);
+        const o = localStorage.getItem(STORAGE_KEYS.ORDERS);
+        const s = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+        const d = localStorage.getItem(STORAGE_KEYS.DISCOUNTS);
+
+        state.menu = m ? JSON.parse(m) : JSON.parse(JSON.stringify(DEFAULT_MENU));
+        state.orders = o ? JSON.parse(o) : [];
+        state.settings = s ? { ...DEFAULT_SETTINGS, ...JSON.parse(s) } : { ...DEFAULT_SETTINGS };
+        state.discounts = d ? JSON.parse(d) : JSON.parse(JSON.stringify(DEFAULT_DISCOUNTS));
+      } catch (err) {
+        console.error('Storage error:', err);
+        state.menu = JSON.parse(JSON.stringify(DEFAULT_MENU));
+        state.orders = [];
+        state.settings = { ...DEFAULT_SETTINGS };
+        state.discounts = JSON.parse(JSON.stringify(DEFAULT_DISCOUNTS));
+      }
+    }
+
+    function saveStorage(key, value) {
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+      } catch (err) {
+        showToast('អង្គចងចាំពេញ! សូមលុបរូបភាពធំៗ ឬ Backup ទិន្នន័យចាស់', 'error');
+      }
+    }
+
+    // =========================================================================
+    // 4. UTILITIES (Formatting, Clock, Image Canvas Resizer, Toasts, Modals)
+    // =========================================================================
+    function fmtUSD(v) {
+      return '$' + Number(v || 0).toFixed(2);
+    }
+
+    function fmtKHR(usd, rate = state.settings.exchangeRate) {
+      const riel = Math.round((Number(usd || 0) * rate) / 100) * 100;
+      return riel.toLocaleString('en-US') + ' ៛';
+    }
+
+    function getLocalDateISO(d = new Date()) {
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    }
+
+    function startClock() {
+      const tick = () => {
+        const now = new Date();
+        document.getElementById('clock-time').textContent = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        document.getElementById('clock-date').textContent = now.toLocaleDateString('en-GB');
+      };
+      tick();
+      setInterval(tick, 1000);
+    }
+
+    function updateShopHeader() {
+      document.getElementById('header-shop-name').textContent = state.settings.shopName || 'ស័ក្តិ កាហ្វេ (Sak Coffee)';
+    }
+
+    function updateSyncBadge(status) {
+      const el = document.getElementById('sync-status-text');
+      if (status === 'syncing') {
+        el.textContent = 'កំពុង Sync...';
+      } else if (status === 'synced') {
+        el.textContent = 'Sheet Synced ✓';
+      } else if (status === 'offline') {
+        el.textContent = 'Offline Mode';
+      } else {
+        el.textContent = state.settings.gasUrl ? 'Sheet Ready' : 'Offline Ready';
+      }
+    }
+
+    function showToast(msg, type = 'success') {
+      const box = document.getElementById('toast-box');
+      const div = document.createElement('div');
+      const bg = type === 'error' ? 'bg-smartRed' : (type === 'info' ? 'bg-smartBlue' : 'bg-smartDark');
+      div.className = `${bg} text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl shadow-lg flex items-center gap-2 transition-all duration-300`;
+      div.innerHTML = `<span>${type === 'error' ? '⚠️' : (type === 'info' ? 'ℹ️' : '✅')}</span><span>${msg}</span>`;
+      box.appendChild(div);
+      setTimeout(() => {
+        div.classList.add('opacity-0', 'translate-y-2');
+        setTimeout(() => div.remove(), 300);
+      }, 2600);
+    }
+
+    function openModal(id) {
+      const m = document.getElementById(id);
+      m.classList.remove('hidden');
+      m.classList.add('flex');
+    }
+
+    function closeModal(id) {
+      const m = document.getElementById(id);
+      m.classList.add('hidden');
+      m.classList.remove('flex');
+    }
+
+    function openConfirm(title, msg, onYes) {
+      document.getElementById('confirm-title').textContent = title;
+      document.getElementById('confirm-msg').textContent = msg;
+      document.getElementById('confirm-yes-btn').onclick = () => {
+        closeModal('modal-confirm');
+        onYes();
+      };
+      openModal('modal-confirm');
+    }
+
+    // Resize & compress uploaded images via HTML5 Canvas to keep localStorage lightweight
+    function resizeImageFile(file, maxSize, quality, callback) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          let w = img.width;
+          let h = img.height;
+          if (w > h) {
+            if (w > maxSize) { h = Math.round(h * (maxSize / w)); w = maxSize; }
+          } else {
+            if (h > maxSize) { w = Math.round(w * (maxSize / h)); h = maxSize; }
+          }
+          const canvas = document.createElement('canvas');
+          canvas.width = w;
+          canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#ffffff';
+          ctx.fillRect(0, 0, w, h);
+          ctx.drawImage(img, 0, 0, w, h);
+          callback(canvas.toDataURL('image/jpeg', quality));
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // =========================================================================
+    // 5. NAVIGATION TABS
+    // =========================================================================
+    function switchTab(tab) {
+      state.activeTab = tab;
+      document.querySelectorAll('.tab-view').forEach(v => v.classList.add('hidden'));
+      document.getElementById(`view-${tab}`).classList.remove('hidden');
+
+      document.querySelectorAll('.top-tab').forEach(b => {
+        b.classList.remove('border-smartOrange', 'bg-white/10', 'text-white');
+        b.classList.add('border-transparent', 'text-slate-300', 'hover:text-white');
+      });
+      const actTop = document.getElementById(`tab-${tab}`);
+      if (actTop) {
+        actTop.classList.add('border-smartOrange', 'bg-white/10', 'text-white');
+        actTop.classList.remove('border-transparent', 'text-slate-300');
+      }
+
+      document.querySelectorAll('.m-tab').forEach(b => {
+        b.classList.remove('text-smartOrange', 'bg-white/5');
+        b.classList.add('text-slate-300');
+      });
+      const actMob = document.getElementById(`mtab-${tab}`);
+      if (actMob) {
+        actMob.classList.add('text-smartOrange', 'bg-white/5');
+        actMob.classList.remove('text-slate-300');
+      }
+
+      if (tab === 'pos') { renderDiscountDropdown(); renderProductGrid(); renderCart(); }
+      if (tab === 'orders') renderOrdersTab();
+      if (tab === 'menu') renderMenuTab();
+      if (tab === 'reports') renderReportsTab();
+      if (tab === 'settings') renderSettingsTab();
+    }
+
+    // =========================================================================
+    // 6. POS SCREEN LOGIC (Cart, Modifiers, Discounts, Product Grid)
+    // =========================================================================
+    function renderCategoryTabs() {
+      const el = document.getElementById('category-tabs');
+      el.innerHTML = CATEGORY_TABS.map(c => {
+        const active = state.selectedCategory === c.id;
+        const cls = active
+          ? `${c.color} text-white shadow-sm ring-2 ring-offset-1 ring-slate-300`
+          : 'bg-slate-100 text-slate-700 hover:bg-slate-200';
+        return `<button onclick="selectCategory('${c.id}')" class="shrink-0 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all ${cls}">${c.label}</button>`;
+      }).join('');
+    }
+
+    function selectCategory(catId) {
+      state.selectedCategory = catId;
+      renderCategoryTabs();
+      renderProductGrid();
+    }
+
+    function clearPosSearch() {
+      document.getElementById('pos-search').value = '';
+      renderProductGrid();
+    }
+
+    function getCartQtyForProduct(productId) {
+      return state.cart.filter(c => c.id === productId).reduce((sum, c) => sum + c.qty, 0);
+    }
+
+    function renderProductGrid() {
+      const grid = document.getElementById('product-grid');
+      const q = (document.getElementById('pos-search').value || '').toLowerCase().trim();
+      const clr = document.getElementById('btn-clear-search');
+      clr.classList.toggle('hidden', !q);
+      clr.classList.toggle('flex', !!q);
+
+      const list = state.menu.filter(item => {
+        const matchCat = state.selectedCategory === 'ទាំងអស់' || item.category === state.selectedCategory;
+        const matchQ = item.name.toLowerCase().includes(q) || item.category.toLowerCase().includes(q);
+        return matchCat && matchQ;
+      });
+
+      if (list.length === 0) {
+        grid.innerHTML = `<div class="col-span-full py-12 text-center text-slate-400 bg-white rounded-2xl border border-dashed border-slate-300">មិនមានមុខទំនិញទេ</div>`;
+        return;
+      }
+
+      grid.innerHTML = list.map(item => {
+        const inCart = getCartQtyForProduct(item.id);
+        const disabled = !item.available;
+        const visualHTML = item.photo
+          ? `<img src="${item.photo}" alt="${item.name}" class="w-full h-24 sm:h-28 object-cover rounded-xl mb-2 bg-slate-100">`
+          : `<div class="w-full h-24 sm:h-28 rounded-xl bg-slate-100 flex items-center justify-center text-4xl sm:text-5xl mb-2">${item.emoji || '☕'}</div>`;
+
+        return `
+          <button type="button" onclick="${disabled ? '' : `addToCart('${item.id}')`}"
+            class="relative text-left bg-white rounded-2xl border-2 p-2.5 flex flex-col justify-between transition-all shadow-xs ${disabled ? 'opacity-50 grayscale cursor-not-allowed border-slate-200' : (inCart > 0 ? 'border-smartBlue ring-1 ring-smartBlue/25 active:scale-95' : 'border-slate-200 hover:border-smartBlue active:scale-95')}">
+            
+            ${inCart > 0 ? `<span class="absolute -top-2 -right-2 min-w-[26px] h-[26px] px-1.5 rounded-full bg-smartRed text-white text-xs font-extrabold flex items-center justify-center shadow-md border-2 border-white">${inCart}</span>` : ''}
+            ${disabled ? `<span class="absolute top-2 right-2 bg-slate-800 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">អស់ស្តុក</span>` : ''}
+
+            ${visualHTML}
+            <div>
+              <div class="font-bold text-slate-800 text-xs sm:text-sm leading-snug line-clamp-2 min-h-[2.2rem]">${item.name}</div>
+              <div class="mt-1 flex items-baseline justify-between">
+                <span class="font-extrabold text-smartBlue text-sm sm:text-base">${fmtUSD(item.price)}</span>
+                <span class="text-[10px] font-semibold text-slate-400">${fmtKHR(item.price)}</span>
+              </div>
+            </div>
+          </button>
+        `;
+      }).join('');
+    }
+
+    function addToCart(productId) {
+      const prod = state.menu.find(m => m.id === productId);
+      if (!prod || !prod.available) return;
+
+      const isBakery = prod.category === 'នំ & អាហារសម្រន់';
+      const defSize = isBakery ? '' : 'M';
+      const defSugar = isBakery ? '' : '50%';
+      const defIce = isBakery ? '' : 'ធម្មតា';
+
+      const existing = state.cart.find(c =>
+        c.id === prod.id && c.size === defSize && c.sugar === defSugar && c.ice === defIce && !c.note
+      );
+      if (existing) {
+        existing.qty += 1;
+      } else {
+        state.cart.push({
+          cartKey: 'ck_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+          id: prod.id,
+          name: prod.name,
+          category: prod.category,
+          basePrice: prod.price,
+          cost_usd: prod.cost_usd || 0,
+          qty: 1,
+          size: defSize,
+          sugar: defSugar,
+          ice: defIce,
+          note: ''
+        });
+      }
+      renderCart();
+      renderProductGrid();
+    }
+
+    function getCartItemUnitPrice(item) {
+      return item.basePrice + (item.size === 'L' ? 0.50 : 0);
+    }
+
+    function toggleExpandCartRow(cartKey) {
+      state.expandedCartKey = state.expandedCartKey === cartKey ? null : cartKey;
+      renderCart();
+    }
+
+    function updateCartQty(cartKey, delta, e) {
+      if (e) e.stopPropagation();
+      const idx = state.cart.findIndex(c => c.cartKey === cartKey);
+      if (idx === -1) return;
+      state.cart[idx].qty += delta;
+      if (state.cart[idx].qty <= 0) {
+        if (state.expandedCartKey === cartKey) state.expandedCartKey = null;
+        state.cart.splice(idx, 1);
+      }
+      renderCart();
+      renderProductGrid();
+    }
+
+    function updateCartField(cartKey, field, val, e) {
+      if (e) e.stopPropagation();
+      const item = state.cart.find(c => c.cartKey === cartKey);
+      if (!item) return;
+      item[field] = val;
+      renderCart();
+    }
+
+    function deleteCartItem(cartKey, e) {
+      if (e) e.stopPropagation();
+      state.cart = state.cart.filter(c => c.cartKey !== cartKey);
+      if (state.expandedCartKey === cartKey) state.expandedCartKey = null;
+      renderCart();
+      renderProductGrid();
+    }
+
+    function setOrderType(type) {
+      state.orderType = type;
+      renderCart();
+    }
+
+    function confirmClearCart() {
+      if (state.cart.length === 0) return;
+      openConfirm('លុបបញ្ជីកុម្ម៉ង់ទាំងអស់?', 'តើអ្នកចង់សម្អាតមុខទំនិញទាំងអស់ចេញពីកន្ត្រកមែនទេ?', () => {
+        state.cart = [];
+        state.expandedCartKey = null;
+        state.selectedDiscountId = 'd_none';
+        renderDiscountDropdown();
+        renderCart();
+        renderProductGrid();
+        showToast('បានសម្អាតបញ្ជីកុម្ម៉ង់');
+      });
+    }
+
+    function renderDiscountDropdown() {
+      const sel = document.getElementById('pos-discount-select');
+      const exists = state.discounts.some(d => d.id === state.selectedDiscountId) || state.selectedDiscountId === 'custom';
+      if (!exists) state.selectedDiscountId = state.discounts[0]?.id || 'd_none';
+
+      sel.innerHTML = state.discounts.map(d => {
+        const label = d.value === 0 ? d.name : `${d.name}`;
+        return `<option value="${d.id}">${label}</option>`;
+      }).join('') + `<option value="custom">✏️ បញ្ចុះផ្ទាល់ដៃ (Custom % / $)</option>`;
+
+      sel.value = state.selectedDiscountId;
+      document.getElementById('custom-discount-box').classList.toggle('hidden', state.selectedDiscountId !== 'custom');
+    }
+
+    function onDiscountSelectChange() {
+      state.selectedDiscountId = document.getElementById('pos-discount-select').value;
+      document.getElementById('custom-discount-box').classList.toggle('hidden', state.selectedDiscountId !== 'custom');
+      renderCart();
+    }
+
+    function calculateCartSummary() {
+      const subtotal = state.cart.reduce((s, item) => s + (getCartItemUnitPrice(item) * item.qty), 0);
+      const totalCost = state.cart.reduce((s, item) => s + ((item.cost_usd || 0) * item.qty), 0);
+
+      let discountAmount = 0;
+      let discountName = 'គ្មាន';
+
+      if (state.selectedDiscountId === 'custom') {
+        const cType = document.getElementById('custom-disc-type')?.value || 'percent';
+        const cVal = parseFloat(document.getElementById('custom-disc-val')?.value) || 0;
+        if (cVal > 0) {
+          discountAmount = cType === 'percent' ? (subtotal * (cVal / 100)) : cVal;
+          discountName = cType === 'percent' ? `បញ្ចុះផ្ទាល់ដៃ (${cVal}%)` : `បញ្ចុះផ្ទាល់ដៃ (-$${cVal.toFixed(2)})`;
+        }
+      } else {
+        const disc = state.discounts.find(d => d.id === state.selectedDiscountId);
+        if (disc && disc.value > 0) {
+          discountAmount = disc.type === 'percent' ? (subtotal * (disc.value / 100)) : disc.value;
+          discountName = disc.name;
+        }
+      }
+
+      discountAmount = Math.min(subtotal, Math.max(0, discountAmount));
+      const total = Math.max(0, subtotal - discountAmount);
+      return { subtotal, discountAmount, discountName, total, totalCost };
+    }
+
+    function renderCart() {
+      // Order Type buttons
+      const dine = document.getElementById('btn-dinein');
+      const take = document.getElementById('btn-takeaway');
+      if (state.orderType === 'ញ៉ាំក្នុងហាង') {
+        dine.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-smartBlue shadow-xs';
+        take.className = 'px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600';
+      } else {
+        take.className = 'px-3 py-1.5 rounded-lg text-xs font-bold bg-white text-smartBlue shadow-xs';
+        dine.className = 'px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600';
+      }
+
+      const listEl = document.getElementById('cart-list');
+      if (state.cart.length === 0) {
+        listEl.innerHTML = `
+          <div class="h-full flex flex-col items-center justify-center text-slate-400 py-10 px-4 text-center">
+            <div class="text-4xl mb-2 opacity-60">☕</div>
+            <div class="text-sm font-bold text-slate-500">មិនទាន់មានទំនិញក្នុងកន្ត្រក</div>
+            <div class="text-xs mt-1">ចុចលើមុខទំនិញខាងស្តាំដើម្បីបន្ថែម</div>
+          </div>
+        `;
+      } else {
+        listEl.innerHTML = state.cart.map(item => {
+          const isExp = state.expandedCartKey === item.cartKey;
+          const isBakery = item.category === 'នំ & អាហារសម្រន់';
+          const unitPrice = getCartItemUnitPrice(item);
+          const mods = [];
+          if (!isBakery) mods.push(`ទំហំ ${item.size}`, `ផ្អែម ${item.sugar}`, `ទឹកកក ${item.ice}`);
+          if (item.note) mods.push(`📝 ${item.note}`);
+
+          return `
+            <div onclick="toggleExpandCartRow('${item.cartKey}')" class="cursor-pointer transition-colors ${isExp ? 'bg-blue-50/70' : 'hover:bg-slate-50'}">
+              <div class="grid grid-cols-12 items-center px-3 py-2.5 text-xs sm:text-sm">
+                <div class="col-span-6 pr-1">
+                  <div class="font-bold text-slate-800 leading-tight">${item.name}</div>
+                  ${mods.length ? `<div class="text-[10px] text-slate-500 mt-0.5 leading-snug">${mods.join(' • ')}</div>` : ''}
+                </div>
+                <div class="col-span-3 text-center font-extrabold text-smartBlue">${item.qty}</div>
+                <div class="col-span-3 text-right font-bold text-slate-900">${fmtUSD(unitPrice * item.qty)}</div>
+              </div>
+
+              ${isExp ? `
+                <div onclick="event.stopPropagation()" class="px-3 pb-3 pt-2 border-t border-blue-100 space-y-2.5 bg-blue-50/50">
+                  <!-- Qty & Delete -->
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-1.5">
+                      <button type="button" onclick="updateCartQty('${item.cartKey}', -1, event)" class="w-9 h-8 rounded-lg bg-white border border-slate-300 font-extrabold text-base text-slate-700">−</button>
+                      <span class="w-7 text-center font-bold text-sm">${item.qty}</span>
+                      <button type="button" onclick="updateCartQty('${item.cartKey}', 1, event)" class="w-9 h-8 rounded-lg bg-smartBlue text-white font-extrabold text-base">+</button>
+                    </div>
+                    <button type="button" onclick="deleteCartItem('${item.cartKey}', event)" class="px-3 h-8 rounded-lg bg-rose-100 text-rose-600 hover:bg-rose-200 text-xs font-bold">🗑️ លុប</button>
+                  </div>
+
+                  ${!isBakery ? `
+                    <!-- Size -->
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                      <span class="text-[11px] font-bold text-slate-600 w-12">ទំហំ:</span>
+                      <button type="button" onclick="updateCartField('${item.cartKey}', 'size', 'M', event)" class="px-3 py-1 rounded-lg text-[11px] font-bold border ${item.size === 'M' ? 'bg-smartBlue text-white border-smartBlue' : 'bg-white text-slate-600 border-slate-300'}">M (ធម្មតា)</button>
+                      <button type="button" onclick="updateCartField('${item.cartKey}', 'size', 'L', event)" class="px-3 py-1 rounded-lg text-[11px] font-bold border ${item.size === 'L' ? 'bg-smartBlue text-white border-smartBlue' : 'bg-white text-slate-600 border-slate-300'}">L (+$0.50)</button>
+                    </div>
+                    <!-- Sugar -->
+                    <div class="flex items-center gap-1 flex-wrap">
+                      <span class="text-[11px] font-bold text-slate-600 w-12">ផ្អែម:</span>
+                      ${['0%', '25%', '50%', '75%', '100%'].map(s => `
+                        <button type="button" onclick="updateCartField('${item.cartKey}', 'sugar', '${s}', event)" class="px-2 py-1 rounded-lg text-[11px] font-bold border ${item.sugar === s ? 'bg-smartBlue text-white border-smartBlue' : 'bg-white text-slate-600 border-slate-300'}">${s}</button>
+                      `).join('')}
+                    </div>
+                    <!-- Ice -->
+                    <div class="flex items-center gap-1 flex-wrap">
+                      <span class="text-[11px] font-bold text-slate-600 w-12">ទឹកកក:</span>
+                      ${['ធម្មតា', 'តិច', 'គ្មាន'].map(ic => `
+                        <button type="button" onclick="updateCartField('${item.cartKey}', 'ice', '${ic}', event)" class="px-2.5 py-1 rounded-lg text-[11px] font-bold border ${item.ice === ic ? 'bg-smartBlue text-white border-smartBlue' : 'bg-white text-slate-600 border-slate-300'}">${ic}</button>
+                      `).join('')}
+                    </div>
+                  ` : ''}
+
+                  <!-- Optional Note -->
+                  <div>
+                    <input type="text" value="${item.note || ''}" onchange="updateCartField('${item.cartKey}', 'note', this.value.trim(), event)" placeholder="កំណត់ចំណាំ (ឧ. កុំដាក់ទុយោ...)" class="w-full px-2.5 py-1.5 bg-white border border-slate-300 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-smartBlue">
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+          `;
+        }).join('');
+      }
+
+      const { subtotal, discountAmount, discountName, total } = calculateCartSummary();
+      document.getElementById('cart-subtotal').textContent = fmtUSD(subtotal);
+
+      const discRow = document.getElementById('cart-discount-row');
+      if (discountAmount > 0) {
+        discRow.classList.remove('hidden');
+        document.getElementById('cart-discount-label').textContent = discountName;
+        document.getElementById('cart-discount-amount').textContent = '-' + fmtUSD(discountAmount);
+      } else {
+        discRow.classList.add('hidden');
+      }
+
+      document.getElementById('cart-total-usd').textContent = fmtUSD(total);
+      document.getElementById('cart-total-khr').textContent = fmtKHR(total);
+      document.getElementById('btn-checkout').disabled = state.cart.length === 0;
+    }
+
+    // =========================================================================
+    // 7. 3-COLUMN CHECKOUT MODAL & GOOGLE SHEETS SYNC
+    // =========================================================================
+    function openCheckoutModal() {
+      if (state.cart.length === 0) return;
+      const { total } = calculateCartSummary();
+      state.coPaymentMethod = 'សាច់ប្រាក់ Cash';
+      state.coCashStr = total.toFixed(2);
+      updateCheckoutModalUI();
+      openModal('modal-checkout');
+    }
+
+    function selectPaymentMethod(pm) {
+      state.coPaymentMethod = pm;
+      const { total } = calculateCartSummary();
+      if (pm !== 'សាច់ប្រាក់ Cash') {
+        state.coCashStr = total.toFixed(2);
+      }
+      updateCheckoutModalUI();
+    }
+
+    function quickCashUSD(usd) {
+      state.coCashStr = Number(usd).toFixed(2);
+      updateCheckoutModalUI();
+    }
+
+    function quickCashKHR(khr) {
+      const usdVal = khr / state.settings.exchangeRate;
+      state.coCashStr = usdVal.toFixed(2);
+      updateCheckoutModalUI();
+    }
+
+    function numpadPress(key) {
+      const { total } = calculateCartSummary();
+      if (key === 'C') {
+        state.coCashStr = '';
+      } else if (key === 'EXACT') {
+        state.coCashStr = total.toFixed(2);
+      } else if (key === '.') {
+        if (!state.coCashStr.includes('.')) state.coCashStr = (state.coCashStr || '0') + '.';
+      } else {
+        if (state.coCashStr === '0') state.coCashStr = key;
+        else state.coCashStr += key;
+      }
+      updateCheckoutModalUI();
+    }
+
+    function updateCheckoutModalUI() {
+      const { total } = calculateCartSummary();
+      document.getElementById('co-total-usd').textContent = fmtUSD(total);
+      document.getElementById('co-total-khr').textContent = fmtKHR(total);
+
+      // Payment method buttons
+      document.querySelectorAll('.pm-btn').forEach(b => {
+        const active = b.dataset.pm === state.coPaymentMethod;
+        b.className = active
+          ? 'pm-btn py-2.5 px-2 rounded-xl border-2 border-smartBlue bg-blue-50 text-smartBlue text-xs font-bold transition-all'
+          : 'pm-btn py-2.5 px-2 rounded-xl border-2 border-slate-200 bg-white text-slate-700 hover:bg-slate-50 text-xs font-bold transition-all';
+      });
+
+      // Show KHQR preview when a bank method is selected
+      const khqrBox = document.getElementById('co-khqr-box');
+      if (state.coPaymentMethod !== 'សាច់ប្រាក់ Cash') {
+        khqrBox.classList.remove('hidden');
+        if (state.settings.khqrImage) {
+          khqrBox.innerHTML = `
+            <div class="text-xs font-bold text-slate-700 mb-2">${state.coPaymentMethod} • ${fmtUSD(total)}</div>
+            <img src="${state.settings.khqrImage}" alt="Shop KHQR" class="max-h-56 mx-auto rounded-xl shadow border border-slate-200 object-contain">
+          `;
+        } else {
+          // Clean SVG placeholder QR card
+          khqrBox.innerHTML = `
+            <div class="max-w-[210px] mx-auto rounded-xl overflow-hidden shadow border border-slate-200 bg-white">
+              <div class="bg-[#E1232E] text-white py-1.5 px-3 flex justify-between items-center text-xs font-extrabold">
+                <span>KHQR</span><span>${state.coPaymentMethod}</span>
+              </div>
+              <div class="p-3 flex flex-col items-center">
+                <svg class="w-28 h-28 text-slate-900" viewBox="0 0 100 100" fill="currentColor">
+                  <path d="M5 5h26v26H5V5zm4 4v18h18V9H9zm4 4h10v10H13V13zM69 5h26v26H69V5zm4 4v18h18V9H73zm4 4h10v10H77V13zM5 69h26v26H5V69zm4 4v18h18V73H9zm4 4h10v10H13V77z"/>
+                  <rect x="37" y="7" width="6" height="6"/><rect x="47" y="7" width="12" height="6"/><rect x="37" y="19" width="10" height="6"/>
+                  <rect x="37" y="37" width="24" height="24" rx="4"/><rect x="7" y="42" width="18" height="6"/><rect x="74" y="42" width="18" height="6"/>
+                  <rect x="40" y="72" width="12" height="6"/><rect x="68" y="72" width="18" height="16"/>
+                </svg>
+                <div class="text-[10px] text-slate-500 mt-2">Upload រូប KHQR ពិតនៅផ្ទាំង «កំណត់»</div>
+              </div>
+            </div>
+          `;
+        }
+      } else {
+        khqrBox.classList.add('hidden');
+      }
+
+      const recUSD = parseFloat(state.coCashStr) || 0;
+      const changeUSD = Math.max(0, recUSD - total);
+
+      document.getElementById('co-received-usd').textContent = fmtUSD(recUSD);
+      document.getElementById('co-received-khr').textContent = fmtKHR(recUSD);
+      document.getElementById('co-change-usd').textContent = fmtUSD(changeUSD);
+      document.getElementById('co-change-khr').textContent = fmtKHR(changeUSD);
+    }
+
+    function generateInvoiceCode(dateObj) {
+      const ymd = getLocalDateISO(dateObj).replace(/-/g, '');
+      const todayPrefix = `INV-${ymd}-`;
+      const todayCount = state.orders.filter(o => o.code.startsWith(todayPrefix)).length;
+      return `${todayPrefix}${String(todayCount + 1).padStart(3, '0')}`;
+    }
+
+    function finalizeSale(shouldPrint) {
+      const { subtotal, discountAmount, discountName, total, totalCost } = calculateCartSummary();
+      const received = parseFloat(state.coCashStr) || 0;
+
+      if (state.coPaymentMethod === 'សាច់ប្រាក់ Cash' && received < total - 0.001) {
+        showToast('ប្រាក់ទទួលបានតិចជាងទឹកប្រាក់ត្រូវបង់!', 'error');
+        return;
+      }
+
+      const now = new Date();
+      const invCode = generateInvoiceCode(now);
+      const change = state.coPaymentMethod === 'សាច់ប្រាក់ Cash' ? Math.max(0, received - total) : 0;
+      const netProfit = Math.max(0, total - totalCost);
+
+      const order = {
+        id: 'ord_' + Date.now(),
+        code: invCode,
+        timestamp: now.toISOString(),
+        dateKey: getLocalDateISO(now),
+        orderType: state.orderType,
+        paymentMethod: state.coPaymentMethod,
+        items: JSON.parse(JSON.stringify(state.cart)),
+        subtotal,
+        discountName,
+        discountAmount,
+        total,
+        totalCost,
+        profit: netProfit,
+        exchangeRate: state.settings.exchangeRate,
+        received: state.coPaymentMethod === 'សាច់ប្រាក់ Cash' ? received : total,
+        change
+      };
+
+      // Save locally offline first
+      state.orders.unshift(order);
+      saveStorage(STORAGE_KEYS.ORDERS, state.orders);
+
+      // Clear cart
+      state.cart = [];
+      state.expandedCartKey = null;
+      state.selectedDiscountId = 'd_none';
+      renderDiscountDropdown();
+      renderCart();
+      renderProductGrid();
+      closeModal('modal-checkout');
+
+      showToast(`ទូទាត់ជោគជ័យ (${invCode})`);
+
+      // Non-blocking background sync to Google Sheets Apps Script if configured
+      if (state.settings.gasUrl) {
+        syncOrderToGoogleSheet(order);
+      }
+
+      if (shouldPrint) {
+        state.activeReceiptOrder = order;
+        document.getElementById('thermal-print-area').innerHTML = buildReceiptHTML(order);
+        setTimeout(() => window.print(), 150);
+      }
+    }
+
+    async function syncOrderToGoogleSheet(order) {
+      if (!navigator.onLine) {
+        showToast('កំពុង Offline — រក្សាទុកក្នុងម៉ាស៊ីនរួចរាល់', 'info');
+        return;
+      }
+      updateSyncBadge('syncing');
+      try {
+        const payload = {
+          order_code: order.code,
+          subtotal: order.subtotal,
+          discount: order.discountAmount,
+          discount_name: order.discountName,
+          exchange_rate: order.exchangeRate,
+          payment_method: order.paymentMethod,
+          order_type: order.orderType,
+          items: order.items.map(i => ({
+            product_id: i.id,
+            name: i.name,
+            qty: i.qty,
+            unit_price: getCartItemUnitPrice(i),
+            size: i.size || 'M',
+            sugar_level: i.sugar || '',
+            ice_level: i.ice || '',
+            note: i.note || ''
+          }))
+        };
+        await fetch(state.settings.gasUrl, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        updateSyncBadge('synced');
+        showToast('បានផ្ញើវិក្កយបត្រចូល Google Sheet ✓', 'info');
+      } catch (err) {
+        console.error('GAS Sync error:', err);
+        updateSyncBadge('ready');
+        showToast('Sync Google Sheet បរាជ័យ (ទិន្នន័យរក្សាទុកក្នុងម៉ាស៊ីន)', 'error');
+      }
+    }
+
+    // =========================================================================
+    // 8. 80MM THERMAL RECEIPT BUILDER
+    // =========================================================================
+    function buildReceiptHTML(order) {
+      const rate = order.exchangeRate || state.settings.exchangeRate;
+      const d = new Date(order.timestamp);
+      const dtStr = d.toLocaleDateString('en-GB') + ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+      const itemsHTML = order.items.map(it => {
+        const unitP = (it.basePrice || it.price || 0) + (it.size === 'L' ? 0.50 : 0);
+        const modArr = [];
+        if (it.size) modArr.push(it.size);
+        if (it.sugar) modArr.push(`ផ្អែម ${it.sugar}`);
+        if (it.ice) modArr.push(`ទឹកកក ${it.ice}`);
+        if (it.note) modArr.push(it.note);
+        return `
+          <div style="margin-bottom:5px;">
+            <div style="display:flex; justify-content:space-between; font-weight:700;">
+              <span>${it.qty}x ${it.name}</span>
+              <span>${fmtUSD(unitP * it.qty)}</span>
+            </div>
+            ${modArr.length ? `<div style="font-size:10px; color:#444; padding-left:10px;">${modArr.join(' • ')}</div>` : ''}
+          </div>
+        `;
+      }).join('');
+
+      return `
+        <div style="text-align:center; margin-bottom:8px;">
+          <div style="font-size:16px; font-weight:700;">${state.settings.shopName}</div>
+          <div style="font-size:11px;">ក្បែរវិទ្យាស្ថាន CADT • ភ្នំពេញ</div>
+          <div style="font-size:11px; font-weight:700; margin-top:2px;">វិក្កយបត្រលក់ (RECEIPT)</div>
+        </div>
+        <div style="border-top:1px dashed #000; border-bottom:1px dashed #000; padding:5px 0; margin-bottom:8px; font-size:11px;">
+          <div style="display:flex; justify-content:space-between;">
+            <span>លេខ: <strong>${order.code}</strong></span>
+            <span>${order.orderType}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span>កាលបរិច្ឆេទ:</span>
+            <span>${dtStr}</span>
+          </div>
+        </div>
+        <div style="margin-bottom:8px;">${itemsHTML}</div>
+        <div style="border-top:1px dashed #000; padding-top:6px; font-size:11px;">
+          <div style="display:flex; justify-content:space-between;">
+            <span>សរុបបណ្តោះអាសន្ន:</span><span>${fmtUSD(order.subtotal)}</span>
+          </div>
+          ${order.discountAmount > 0 ? `
+            <div style="display:flex; justify-content:space-between;">
+              <span>${order.discountName || 'បញ្ចុះតម្លៃ'}:</span><span>-${fmtUSD(order.discountAmount)}</span>
+            </div>
+          ` : ''}
+          <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:700; margin-top:4px;">
+            <span>សរុប (USD):</span><span>${fmtUSD(order.total)}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700;">
+            <span>សរុប (KHR):</span><span>${fmtKHR(order.total, rate)}</span>
+          </div>
+        </div>
+        <div style="border-top:1px dashed #000; margin-top:6px; padding-top:6px; font-size:11px;">
+          <div style="display:flex; justify-content:space-between;">
+            <span>ទូទាត់តាម:</span><strong>${order.paymentMethod}</strong>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span>ប្រាក់ទទួល:</span><span>${fmtUSD(order.received)}</span>
+          </div>
+          <div style="display:flex; justify-content:space-between;">
+            <span>ប្រាក់អាប់:</span><span>${fmtUSD(order.change)} (${fmtKHR(order.change, rate)})</span>
+          </div>
+        </div>
+        <div style="border-top:1px dashed #000; margin-top:10px; padding-top:8px; text-align:center; font-size:11px;">
+          <div>Wi-Fi: <strong>${state.settings.wifiName}</strong> | Pass: <strong>${state.settings.wifiPass}</strong></div>
+          <div style="margin-top:4px; font-weight:700;">${state.settings.receiptFooter}</div>
+        </div>
+      `;
+    }
+
+    function openReceiptPreview(orderId) {
+      const order = state.orders.find(o => o.id === orderId);
+      if (!order) return;
+      state.activeReceiptOrder = order;
+      const html = buildReceiptHTML(order);
+      document.getElementById('receipt-preview-body').innerHTML = html;
+      document.getElementById('thermal-print-area').innerHTML = html;
+      openModal('modal-receipt');
+    }
+
+    function triggerThermalPrint() {
+      if (!state.activeReceiptOrder) return;
+      document.getElementById('thermal-print-area').innerHTML = buildReceiptHTML(state.activeReceiptOrder);
+      window.print();
+    }
+
+    // =========================================================================
+    // 9. TAB 2: ORDERS HISTORY
+    // =========================================================================
+    function clearOrdersFilter() {
+      document.getElementById('orders-date-filter').value = '';
+      document.getElementById('orders-search').value = '';
+      renderOrdersTab();
+    }
+
+    function renderOrdersTab() {
+      const tbody = document.getElementById('orders-tbody');
+      const dFilter = document.getElementById('orders-date-filter').value;
+      const q = (document.getElementById('orders-search').value || '').toLowerCase().trim();
+
+      const filtered = state.orders.filter(o => {
+        const matchDate = !dFilter || o.dateKey === dFilter;
+        const matchQ = !q || o.code.toLowerCase().includes(q) || o.paymentMethod.toLowerCase().includes(q);
+        return matchDate && matchQ;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="py-12 text-center text-slate-400">មិនមានប្រវត្តិវិក្កយបត្រទេ</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(o => {
+        const d = new Date(o.timestamp);
+        const dt = d.toLocaleDateString('en-GB') + ' ' + d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+        return `
+          <tr class="hover:bg-slate-50">
+            <td class="py-3 px-4 font-bold text-smartDark whitespace-nowrap">${o.code}</td>
+            <td class="py-3 px-4 text-slate-600 text-xs whitespace-nowrap">${dt}</td>
+            <td class="py-3 px-4 text-xs">
+              <div class="font-bold text-smartBlue">${o.paymentMethod}</div>
+              <div class="text-slate-500">${o.orderType}</div>
+            </td>
+            <td class="py-3 px-4 text-xs">
+              ${o.discountAmount > 0 ? `<span class="text-rose-600 font-bold">-${fmtUSD(o.discountAmount)}</span><div class="text-[10px] text-slate-500">${o.discountName}</div>` : '<span class="text-slate-400">—</span>'}
+            </td>
+            <td class="py-3 px-4 text-right whitespace-nowrap">
+              <div class="font-bold text-slate-900">${fmtUSD(o.total)}</div>
+              <div class="text-[11px] text-slate-500">${fmtKHR(o.total, o.exchangeRate)}</div>
+            </td>
+            <td class="py-3 px-4 text-right whitespace-nowrap space-x-1">
+              <button onclick="openReceiptPreview('${o.id}')" class="px-2.5 py-1.5 bg-smartBlue hover:bg-blue-600 text-white rounded-lg text-xs font-bold">🖨️ ព្រីន</button>
+              <button onclick="confirmDeleteOrder('${o.id}')" class="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-xs font-bold">🗑️ លុប</button>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function confirmDeleteOrder(orderId) {
+      const ord = state.orders.find(o => o.id === orderId);
+      if (!ord) return;
+      openConfirm(`លុប/បោះបង់វិក្កយបត្រ ${ord.code}?`, 'វិក្កយបត្រនេះនឹងត្រូវដកចេញពីប្រវត្តិលក់ និងរបាយការណ៍។', () => {
+        state.orders = state.orders.filter(o => o.id !== orderId);
+        saveStorage(STORAGE_KEYS.ORDERS, state.orders);
+        renderOrdersTab();
+        showToast(`បានលុបវិក្កយបត្រ ${ord.code}`);
+      });
+    }
+
+    // =========================================================================
+    // 10. TAB 3: MENU MANAGEMENT (CRUD + Canvas Photo Upload)
+    // =========================================================================
+    function handleProductPhotoUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      resizeImageFile(file, 200, 0.75, (base64) => {
+        state.stagingProductPhoto = base64;
+        renderProductPhotoPreview();
+        showToast('បានបង្រួម និងផ្ទុករូបភាពរួចរាល់');
+      });
+    }
+
+    function clearProductPhoto() {
+      state.stagingProductPhoto = '';
+      document.getElementById('mf-photo-input').value = '';
+      renderProductPhotoPreview();
+    }
+
+    function setFormEmoji(em) {
+      document.getElementById('mf-emoji').value = em;
+      updatePhotoPreviewEmoji();
+    }
+
+    function updatePhotoPreviewEmoji() {
+      if (!state.stagingProductPhoto) renderProductPhotoPreview();
+    }
+
+    function renderProductPhotoPreview() {
+      const box = document.getElementById('mf-photo-preview');
+      const clrBtn = document.getElementById('mf-clear-photo-btn');
+      if (state.stagingProductPhoto) {
+        box.innerHTML = `<img src="${state.stagingProductPhoto}" class="w-full h-full object-cover">`;
+        clrBtn.classList.remove('hidden');
+      } else {
+        box.innerHTML = document.getElementById('mf-emoji').value || '☕';
+        clrBtn.classList.add('hidden');
+      }
+    }
+
+    function renderMenuTab() {
+      document.getElementById('menu-total-count').textContent = `${state.menu.length} មុខ`;
+      const list = document.getElementById('menu-manage-list');
+      list.innerHTML = state.menu.map(item => {
+        const thumb = item.photo
+          ? `<img src="${item.photo}" class="w-12 h-12 rounded-xl object-cover border border-slate-200 shrink-0">`
+          : `<div class="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center text-2xl shrink-0">${item.emoji || '☕'}</div>`;
+        const profit = (item.price - (item.cost_usd || 0)).toFixed(2);
+        return `
+          <div class="p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 hover:bg-slate-50">
+            <div class="flex items-center gap-3">
+              ${thumb}
+              <div>
+                <div class="font-bold text-sm text-slate-800">${item.name}</div>
+                <div class="text-xs text-slate-500">
+                  ${item.category} • លក់ <strong class="text-smartBlue">${fmtUSD(item.price)}</strong> • ដើម ${fmtUSD(item.cost_usd || 0)} • ចំណេញ <span class="text-emerald-700 font-bold">$${profit}</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 self-end sm:self-auto">
+              <button onclick="toggleMenuAvail('${item.id}')" class="px-2.5 py-1.5 rounded-lg text-xs font-bold border ${item.available ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-slate-100 text-slate-500 border-slate-300'}">
+                ${item.available ? '✅ មាន' : '⛔ អស់'}
+              </button>
+              <button onclick="editMenuItem('${item.id}')" class="px-2.5 py-1.5 rounded-lg bg-blue-50 text-smartBlue hover:bg-blue-100 text-xs font-bold">✏️ កែ</button>
+              <button onclick="confirmDeleteMenu('${item.id}')" class="px-2.5 py-1.5 rounded-lg bg-rose-50 text-rose-600 hover:bg-rose-100 text-xs font-bold">🗑️</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function handleSaveMenuItem(e) {
+      e.preventDefault();
+      const id = document.getElementById('mf-id').value;
+      const name = document.getElementById('mf-name').value.trim();
+      const category = document.getElementById('mf-category').value;
+      const price = parseFloat(document.getElementById('mf-price').value);
+      const cost_usd = parseFloat(document.getElementById('mf-cost').value) || 0;
+      const emoji = document.getElementById('mf-emoji').value.trim() || '☕';
+
+      if (!name || isNaN(price) || price <= 0) return;
+
+      if (id) {
+        const existing = state.menu.find(m => m.id === id);
+        if (existing) {
+          existing.name = name;
+          existing.category = category;
+          existing.price = price;
+          existing.cost_usd = cost_usd;
+          existing.emoji = emoji;
+          existing.photo = state.stagingProductPhoto;
+        }
+        showToast('បានកែប្រែមុខទំនិញជោគជ័យ');
+      } else {
+        state.menu.unshift({
+          id: 'p_' + Date.now(),
+          name, category, price, cost_usd, emoji,
+          photo: state.stagingProductPhoto,
+          available: true
+        });
+        showToast('បានបន្ថែមមុខទំនិញថ្មី');
+      }
+
+      saveStorage(STORAGE_KEYS.MENU, state.menu);
+      resetMenuForm();
+      renderMenuTab();
+    }
+
+    function editMenuItem(id) {
+      const item = state.menu.find(m => m.id === id);
+      if (!item) return;
+      document.getElementById('mf-id').value = item.id;
+      document.getElementById('mf-name').value = item.name;
+      document.getElementById('mf-category').value = item.category;
+      document.getElementById('mf-price').value = item.price.toFixed(2);
+      document.getElementById('mf-cost').value = (item.cost_usd || 0).toFixed(2);
+      document.getElementById('mf-emoji').value = item.emoji || '☕';
+      state.stagingProductPhoto = item.photo || '';
+      renderProductPhotoPreview();
+      document.getElementById('menu-form-title').innerHTML = '<span>✏️</span> កែប្រែមុខទំនិញ';
+      document.getElementById('mf-cancel-btn').classList.remove('hidden');
+    }
+
+    function resetMenuForm() {
+      document.getElementById('menu-form').reset();
+      document.getElementById('mf-id').value = '';
+      document.getElementById('mf-emoji').value = '☕';
+      state.stagingProductPhoto = '';
+      renderProductPhotoPreview();
+      document.getElementById('menu-form-title').innerHTML = '<span>➕</span> បន្ថែមមុខទំនិញថ្មី';
+      document.getElementById('mf-cancel-btn').classList.add('hidden');
+    }
+
+    function toggleMenuAvail(id) {
+      const item = state.menu.find(m => m.id === id);
+      if (!item) return;
+      item.available = !item.available;
+      saveStorage(STORAGE_KEYS.MENU, state.menu);
+      renderMenuTab();
+    }
+
+    function confirmDeleteMenu(id) {
+      const item = state.menu.find(m => m.id === id);
+      if (!item) return;
+      openConfirm('លុបមុខទំនិញ?', `តើអ្នកចង់លុប "${item.name}" ចេញពីម៉ឺនុយមែនទេ?`, () => {
+        state.menu = state.menu.filter(m => m.id !== id);
+        saveStorage(STORAGE_KEYS.MENU, state.menu);
+        renderMenuTab();
+        showToast('បានលុបមុខទំនិញ');
+      });
+    }
+
+    // =========================================================================
+    // 11. TAB 4: UPGRADED REPORTS (Daily, Monthly, Yearly + Profit + CSV)
+    // =========================================================================
+    function initReportPickers() {
+      const now = new Date();
+      document.getElementById('rep-picker-daily').value = getLocalDateISO(now);
+      document.getElementById('rep-picker-monthly').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+      const yearSel = document.getElementById('rep-picker-yearly');
+      const curY = now.getFullYear();
+      yearSel.innerHTML = [curY - 2, curY - 1, curY, curY + 1].map(y =>
+        `<option value="${y}" ${y === curY ? 'selected' : ''}>ឆ្នាំ ${y}</option>`
+      ).join('');
+    }
+
+    function setReportMode(mode) {
+      state.reportMode = mode;
+      ['daily', 'monthly', 'yearly'].forEach(m => {
+        const btn = document.getElementById(`rmode-${m}`);
+        const picker = document.getElementById(`rep-picker-${m}`);
+        if (m === mode) {
+          btn.className = 'rmode-btn px-4 py-2 rounded-lg text-xs sm:text-sm font-bold bg-white text-smartBlue shadow-xs transition-all';
+          picker.classList.remove('hidden');
+        } else {
+          btn.className = 'rmode-btn px-4 py-2 rounded-lg text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition-all';
+          picker.classList.add('hidden');
+        }
+      });
+      renderReportsTab();
+    }
+
+    function getFilteredReportOrders() {
+      if (state.reportMode === 'daily') {
+        const dVal = document.getElementById('rep-picker-daily').value;
+        return { label: dVal, orders: state.orders.filter(o => o.dateKey === dVal) };
+      } else if (state.reportMode === 'monthly') {
+        const mVal = document.getElementById('rep-picker-monthly').value; // YYYY-MM
+        return { label: mVal, orders: state.orders.filter(o => o.dateKey.startsWith(mVal)) };
+      } else {
+        const yVal = document.getElementById('rep-picker-yearly').value; // YYYY
+        return { label: yVal, orders: state.orders.filter(o => o.dateKey.startsWith(yVal)) };
+      }
+    }
+
+    function calcOrderProfit(order) {
+      if (typeof order.profit === 'number') return order.profit;
+      const cost = (order.items || []).reduce((s, i) => s + ((i.cost_usd || 0) * i.qty), 0);
+      return Math.max(0, order.total - cost);
+    }
+
+    function renderReportsTab() {
+      // Ensure mode button styles are synced
+      ['daily', 'monthly', 'yearly'].forEach(m => {
+        const btn = document.getElementById(`rmode-${m}`);
+        const picker = document.getElementById(`rep-picker-${m}`);
+        const active = m === state.reportMode;
+        btn.className = active
+          ? 'rmode-btn px-4 py-2 rounded-lg text-xs sm:text-sm font-bold bg-white text-smartBlue shadow-xs transition-all'
+          : 'rmode-btn px-4 py-2 rounded-lg text-xs sm:text-sm font-bold text-slate-600 hover:text-slate-900 transition-all';
+        picker.classList.toggle('hidden', !active);
+      });
+
+      const { orders } = getFilteredReportOrders();
+
+      const totalUSD = orders.reduce((s, o) => s + o.total, 0);
+      const totalKHR = orders.reduce((s, o) => s + (o.total * (o.exchangeRate || state.settings.exchangeRate)), 0);
+      const totalDiscount = orders.reduce((s, o) => s + (o.discountAmount || 0), 0);
+      const totalProfit = orders.reduce((s, o) => s + calcOrderProfit(o), 0);
+
+      document.getElementById('kpi-usd').textContent = fmtUSD(totalUSD);
+      document.getElementById('kpi-khr').textContent = (Math.round(totalKHR / 100) * 100).toLocaleString('en-US') + ' ៛';
+      document.getElementById('kpi-orders').textContent = orders.length;
+      document.getElementById('kpi-discount').textContent = fmtUSD(totalDiscount);
+      document.getElementById('kpi-profit').textContent = fmtUSD(totalProfit);
+
+      // Show/hide mode-specific sections
+      document.getElementById('rep-monthly-section').classList.toggle('hidden', state.reportMode !== 'monthly');
+      document.getElementById('rep-yearly-section').classList.toggle('hidden', state.reportMode !== 'yearly');
+
+      // Monthly: Daily breakdown table
+      if (state.reportMode === 'monthly') {
+        const byDay = {};
+        orders.forEach(o => {
+          if (!byDay[o.dateKey]) byDay[o.dateKey] = { count: 0, usd: 0, khr: 0, profit: 0 };
+          byDay[o.dateKey].count += 1;
+          byDay[o.dateKey].usd += o.total;
+          byDay[o.dateKey].khr += o.total * (o.exchangeRate || state.settings.exchangeRate);
+          byDay[o.dateKey].profit += calcOrderProfit(o);
+        });
+        const days = Object.keys(byDay).sort().reverse();
+        const tbody = document.getElementById('rep-monthly-table-body');
+        if (days.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400">មិនមានទិន្នន័យលក់ក្នុងខែនេះទេ</td></tr>`;
+        } else {
+          tbody.innerHTML = days.map(dk => {
+            const d = byDay[dk];
+            return `
+              <tr class="hover:bg-slate-50">
+                <td class="py-2.5 px-4 font-bold text-slate-800">${dk}</td>
+                <td class="py-2.5 px-4 text-center font-bold">${d.count}</td>
+                <td class="py-2.5 px-4 text-right font-bold text-smartBlue">${fmtUSD(d.usd)}</td>
+                <td class="py-2.5 px-4 text-right text-slate-600">${(Math.round(d.khr / 100) * 100).toLocaleString('en-US')} ៛</td>
+                <td class="py-2.5 px-4 text-right font-bold text-emerald-700">${fmtUSD(d.profit)}</td>
+              </tr>
+            `;
+          }).join('');
+        }
+      }
+
+      // Yearly: 12-Month Bar Chart + Summary Table
+      if (state.reportMode === 'yearly') {
+        const monthsData = Array.from({ length: 12 }, (_, idx) => ({
+          monthIdx: idx,
+          name: KHMER_MONTHS[idx],
+          count: 0, usd: 0, khr: 0, discount: 0, profit: 0
+        }));
+
+        orders.forEach(o => {
+          const mIdx = parseInt(o.dateKey.slice(5, 7), 10) - 1;
+          if (mIdx >= 0 && mIdx < 12) {
+            monthsData[mIdx].count += 1;
+            monthsData[mIdx].usd += o.total;
+            monthsData[mIdx].khr += o.total * (o.exchangeRate || state.settings.exchangeRate);
+            monthsData[mIdx].discount += (o.discountAmount || 0);
+            monthsData[mIdx].profit += calcOrderProfit(o);
+          }
+        });
+
+        const maxUSD = Math.max(1, ...monthsData.map(m => m.usd));
+        document.getElementById('rep-yearly-chart').innerHTML = monthsData.map(m => {
+          const hPct = Math.round((m.usd / maxUSD) * 100);
+          return `
+            <div class="flex-1 flex flex-col items-center h-full justify-end group">
+              <div class="text-[9px] sm:text-[10px] font-bold text-smartBlue mb-1 ${m.usd > 0 ? '' : 'opacity-0'}">${fmtUSD(m.usd)}</div>
+              <div class="w-full max-w-[36px] bg-smartBlue/85 group-hover:bg-smartBlue rounded-t-lg transition-all duration-300" style="height: ${Math.max(m.usd > 0 ? 6 : 2, hPct)}%"></div>
+              <div class="text-[9px] sm:text-[11px] font-bold text-slate-600 mt-1.5 truncate w-full text-center">${m.name}</div>
+            </div>
+          `;
+        }).join('');
+
+        document.getElementById('rep-yearly-table-body').innerHTML = monthsData.map(m => `
+          <tr class="hover:bg-slate-50 ${m.count === 0 ? 'opacity-50' : ''}">
+            <td class="py-2.5 px-4 font-bold text-slate-800">${m.name}</td>
+            <td class="py-2.5 px-4 text-center font-bold">${m.count}</td>
+            <td class="py-2.5 px-4 text-right font-bold text-smartBlue">${fmtUSD(m.usd)}</td>
+            <td class="py-2.5 px-4 text-right text-slate-600">${(Math.round(m.khr / 100) * 100).toLocaleString('en-US')} ៛</td>
+            <td class="py-2.5 px-4 text-right text-rose-600">${fmtUSD(m.discount)}</td>
+            <td class="py-2.5 px-4 text-right font-bold text-emerald-700">${fmtUSD(m.profit)}</td>
+          </tr>
+        `).join('');
+      }
+
+      // Payment Breakdown
+      const methods = ['សាច់ប្រាក់ Cash', 'ABA KHQR', 'ACLEDA', 'Wing'];
+      const colors = ['bg-amber-500', 'bg-smartBlue', 'bg-indigo-600', 'bg-emerald-500'];
+      document.getElementById('rep-payment-bars').innerHTML = methods.map((m, i) => {
+        const amt = orders.filter(o => o.paymentMethod === m).reduce((s, o) => s + o.total, 0);
+        const cnt = orders.filter(o => o.paymentMethod === m).length;
+        const pct = totalUSD > 0 ? Math.round((amt / totalUSD) * 100) : 0;
+        return `
+          <div>
+            <div class="flex justify-between text-xs font-bold mb-1">
+              <span class="text-slate-700">${m} <span class="text-slate-400">(${cnt})</span></span>
+              <span class="text-slate-900">${fmtUSD(amt)} (${pct}%)</span>
+            </div>
+            <div class="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+              <div class="${colors[i]} h-full rounded-full transition-all" style="width:${pct}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      // Top Selling Items
+      const itemMap = {};
+      orders.forEach(o => {
+        (o.items || []).forEach(it => {
+          if (!itemMap[it.name]) itemMap[it.name] = { name: it.name, qty: 0, rev: 0 };
+          const up = (it.basePrice || it.price || 0) + (it.size === 'L' ? 0.50 : 0);
+          itemMap[it.name].qty += it.qty;
+          itemMap[it.name].rev += up * it.qty;
+        });
+      });
+      const top = Object.values(itemMap).sort((a, b) => b.qty - a.qty).slice(0, 7);
+      const topEl = document.getElementById('rep-top-items');
+      if (top.length === 0) {
+        topEl.innerHTML = `<div class="py-8 text-center text-slate-400 text-sm">មិនទាន់មានទិន្នន័យលក់ក្នុងរយៈពេលនេះទេ</div>`;
+      } else {
+        const maxQ = top[0].qty || 1;
+        topEl.innerHTML = top.map(it => `
+          <div>
+            <div class="flex justify-between text-xs font-bold mb-1">
+              <span class="text-slate-800 truncate pr-2">${it.name}</span>
+              <span class="text-smartBlue shrink-0">${it.qty} កែវ/មុខ • ${fmtUSD(it.rev)}</span>
+            </div>
+            <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+              <div class="bg-smartDark h-full rounded-full" style="width:${Math.round((it.qty / maxQ) * 100)}%"></div>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    function exportReportCSV() {
+      const { label, orders } = getFilteredReportOrders();
+      if (orders.length === 0) {
+        showToast('មិនមានទិន្នន័យសម្រាប់ទាញយកទេ!', 'error');
+        return;
+      }
+      const headers = ['Invoice', 'Date', 'OrderType', 'PaymentMethod', 'DiscountName', 'SubtotalUSD', 'DiscountUSD', 'TotalUSD', 'TotalKHR', 'ProfitUSD'];
+      const rows = orders.map(o => [
+        o.code,
+        o.dateKey,
+        o.orderType,
+        o.paymentMethod,
+        `"${(o.discountName || '').replace(/"/g, '""')}"`,
+        o.subtotal.toFixed(2),
+        (o.discountAmount || 0).toFixed(2),
+        o.total.toFixed(2),
+        Math.round((o.total * (o.exchangeRate || state.settings.exchangeRate)) / 100) * 100,
+        calcOrderProfit(o).toFixed(2)
+      ]);
+
+      const csv = '\uFEFF' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `SakCoffee_Report_${state.reportMode}_${label}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('បានទាញយករបាយការណ៍ CSV ជោគជ័យ');
+    }
+
+    // =========================================================================
+    // 12. TAB 5: SETTINGS (Shop, KHQR, Discounts, Google Sheets, Backup, Sample)
+    // =========================================================================
+    function renderSettingsTab() {
+      document.getElementById('set-shop-name').value = state.settings.shopName;
+      document.getElementById('set-rate').value = state.settings.exchangeRate;
+      document.getElementById('set-wifi-name').value = state.settings.wifiName;
+      document.getElementById('set-wifi-pass').value = state.settings.wifiPass;
+      document.getElementById('set-footer').value = state.settings.receiptFooter;
+      document.getElementById('set-gas-url').value = state.settings.gasUrl || '';
+
+      renderKhqrSettingsPreview();
+      renderSettingsDiscounts();
+    }
+
+    function handleSaveShopSettings(e) {
+      e.preventDefault();
+      state.settings.shopName = document.getElementById('set-shop-name').value.trim() || DEFAULT_SETTINGS.shopName;
+      state.settings.exchangeRate = parseInt(document.getElementById('set-rate').value, 10) || 4100;
+      state.settings.wifiName = document.getElementById('set-wifi-name').value.trim();
+      state.settings.wifiPass = document.getElementById('set-wifi-pass').value.trim();
+      state.settings.receiptFooter = document.getElementById('set-footer').value.trim();
+      saveStorage(STORAGE_KEYS.SETTINGS, state.settings);
+      updateShopHeader();
+      showToast('បានរក្សាទុកព័ត៌មានហាង');
+    }
+
+    function handleKhqrUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      resizeImageFile(file, 400, 0.8, (base64) => {
+        state.settings.khqrImage = base64;
+        saveStorage(STORAGE_KEYS.SETTINGS, state.settings);
+        renderKhqrSettingsPreview();
+        showToast('បានរក្សាទុករូបភាព KHQR របស់ហាង');
+      });
+    }
+
+    function removeKhqrImage() {
+      state.settings.khqrImage = '';
+      document.getElementById('set-khqr-input').value = '';
+      saveStorage(STORAGE_KEYS.SETTINGS, state.settings);
+      renderKhqrSettingsPreview();
+      showToast('បានលុបរូបភាព KHQR');
+    }
+
+    function renderKhqrSettingsPreview() {
+      const box = document.getElementById('set-khqr-preview');
+      const btn = document.getElementById('set-khqr-remove-btn');
+      if (state.settings.khqrImage) {
+        box.innerHTML = `<img src="${state.settings.khqrImage}" class="w-full h-full object-contain">`;
+        btn.classList.remove('hidden');
+      } else {
+        box.innerHTML = `មិនទាន់មានរូប KHQR`;
+        btn.classList.add('hidden');
+      }
+    }
+
+    function renderSettingsDiscounts() {
+      const list = document.getElementById('settings-discount-list');
+      list.innerHTML = state.discounts.map(d => `
+        <div class="px-3 py-2.5 flex items-center justify-between bg-white text-xs">
+          <div>
+            <span class="font-bold text-slate-800">${d.name}</span>
+            <span class="ml-1.5 px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-bold">
+              ${d.type === 'percent' ? `${d.value}%` : `-$${Number(d.value).toFixed(2)}`}
+            </span>
+          </div>
+          ${d.id !== 'd_none' ? `<button onclick="deleteDiscount('${d.id}')" class="text-rose-600 hover:bg-rose-50 px-2 py-1 rounded-lg font-bold">លុប</button>` : '<span class="text-slate-400 text-[10px]">ដើម</span>'}
+        </div>
+      `).join('');
+    }
+
+    function handleAddDiscount(e) {
+      e.preventDefault();
+      const name = document.getElementById('new-disc-name').value.trim();
+      const type = document.getElementById('new-disc-type').value;
+      const value = parseFloat(document.getElementById('new-disc-val').value);
+      if (!name || isNaN(value) || value <= 0) return;
+
+      const suffix = type === 'percent' ? `(${value}%)` : `(-$${value.toFixed(2)})`;
+      state.discounts.push({
+        id: 'd_' + Date.now(),
+        name: name.includes('(') ? name : `${name} ${suffix}`,
+        type,
+        value
+      });
+      saveStorage(STORAGE_KEYS.DISCOUNTS, state.discounts);
+      document.getElementById('new-disc-name').value = '';
+      document.getElementById('new-disc-val').value = '';
+      renderSettingsDiscounts();
+      renderDiscountDropdown();
+      showToast('បានបន្ថែមប្រភេទបញ្ចុះតម្លៃថ្មី');
+    }
+
+    function deleteDiscount(id) {
+      state.discounts = state.discounts.filter(d => d.id !== id);
+      saveStorage(STORAGE_KEYS.DISCOUNTS, state.discounts);
+      renderSettingsDiscounts();
+      renderDiscountDropdown();
+      showToast('បានលុបប្រភេទបញ្ចុះតម្លៃ');
+    }
+
+    function saveGasUrl() {
+      state.settings.gasUrl = document.getElementById('set-gas-url').value.trim();
+      saveStorage(STORAGE_KEYS.SETTINGS, state.settings);
+      updateSyncBadge('ready');
+      showToast('បានរក្សាទុក Google Apps Script URL');
+    }
+
+    async function syncMenuFromGoogleSheet() {
+      const url = document.getElementById('set-gas-url').value.trim();
+      if (!url) {
+        showToast('សូមបញ្ចូល Web App URL ជាមុនសិន!', 'error');
+        return;
+      }
+      state.settings.gasUrl = url;
+      saveStorage(STORAGE_KEYS.SETTINGS, state.settings);
+      updateSyncBadge('syncing');
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        if (Array.isArray(data.products) && data.products.length > 0) {
+          state.menu = data.products.map((p, i) => ({
+            id: String(p.id || 'gs_' + i),
+            name: p.name || 'Unnamed',
+            category: p.category_name || 'កាហ្វេ',
+            price: parseFloat(p.price_usd) || 1.5,
+            cost_usd: parseFloat(p.cost_usd) || 0.5,
+            emoji: '☕',
+            photo: p.image_url && p.image_url.startsWith('http') ? p.image_url : '',
+            available: p.is_available !== false && p.is_available !== 'FALSE'
+          }));
+          saveStorage(STORAGE_KEYS.MENU, state.menu);
+          showToast(`បានទាញម៉ឺនុយ ${state.menu.length} មុខពី Google Sheet ជោគជ័យ!`);
+        } else {
+          showToast('ភ្ជាប់ជោគជ័យ! ប៉ុន្តែមិនមានទិន្នន័យម៉ឺនុយក្នុង Sheet ទេ', 'info');
+        }
+        updateSyncBadge('synced');
+      } catch (err) {
+        console.error(err);
+        updateSyncBadge('ready');
+        showToast('មិនអាចភ្ជាប់ទៅ Google Sheet បានទេ (ពិនិត្យ URL ឬសិទ្ធិ Anyone)', 'error');
+      }
+    }
+
+    function exportBackupJSON() {
+      const payload = {
+        exportedAt: new Date().toISOString(),
+        settings: state.settings,
+        discounts: state.discounts,
+        menu: state.menu,
+        orders: state.orders
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `SakCoffee_POS_Backup_${getLocalDateISO()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('បានទាញយកឯកសារ Backup (.json)');
+    }
+
+    function importBackupJSON(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        try {
+          const data = JSON.parse(ev.target.result);
+          if (data.menu) state.menu = data.menu;
+          if (data.orders) state.orders = data.orders;
+          if (data.settings) state.settings = { ...DEFAULT_SETTINGS, ...data.settings };
+          if (data.discounts) state.discounts = data.discounts;
+          saveStorage(STORAGE_KEYS.MENU, state.menu);
+          saveStorage(STORAGE_KEYS.ORDERS, state.orders);
+          saveStorage(STORAGE_KEYS.SETTINGS, state.settings);
+          saveStorage(STORAGE_KEYS.DISCOUNTS, state.discounts);
+          updateShopHeader();
+          renderSettingsTab();
+          showToast('បានស្ដារទិន្នន័យពី Backup ជោគជ័យ!');
+        } catch (err) {
+          showToast('ឯកសារ JSON មិនត្រឹមត្រូវទេ!', 'error');
+        }
+      };
+      reader.readAsText(file);
+      e.target.value = '';
+    }
+
+    function generateSampleOrders() {
+      const now = new Date();
+      const year = now.getFullYear();
+      const methods = ['សាច់ប្រាក់ Cash', 'ABA KHQR', 'ACLEDA', 'Wing'];
+      const types = ['ញ៉ាំក្នុងហាង', 'ខ្ចប់'];
+      let added = 0;
+
+      // Generate sample orders across past months of current year
+      for (let m = 0; m <= now.getMonth(); m++) {
+        const ordersInMonth = 4 + Math.floor(Math.random() * 4);
+        for (let k = 0; k < ordersInMonth; k++) {
+          const day = Math.min(28, 1 + Math.floor(Math.random() * (m === now.getMonth() ? now.getDate() : 27)));
+          const d = new Date(year, m, day, 8 + Math.floor(Math.random() * 10), Math.floor(Math.random() * 59));
+          const p1 = state.menu[Math.floor(Math.random() * state.menu.length)];
+          const p2 = state.menu[Math.floor(Math.random() * state.menu.length)];
+          const qty1 = 1 + Math.floor(Math.random() * 2);
+          const items = [
+            { id: p1.id, name: p1.name, category: p1.category, basePrice: p1.price, cost_usd: p1.cost_usd || 0.5, qty: qty1, size: 'M', sugar: '50%', ice: 'ធម្មតា', note: '' }
+          ];
+          if (Math.random() > 0.4) {
+            items.push({ id: p2.id, name: p2.name, category: p2.category, basePrice: p2.price, cost_usd: p2.cost_usd || 0.5, qty: 1, size: 'L', sugar: '75%', ice: 'តិច', note: '' });
+          }
+          const subtotal = items.reduce((s, it) => s + ((it.basePrice + (it.size === 'L' ? 0.5 : 0)) * it.qty), 0);
+          const totalCost = items.reduce((s, it) => s + (it.cost_usd * it.qty), 0);
+          const hasDisc = Math.random() > 0.6;
+          const discAmt = hasDisc ? subtotal * 0.10 : 0;
+          const total = Math.max(0, subtotal - discAmt);
+          const dk = getLocalDateISO(d);
+
+          state.orders.push({
+            id: 'sim_' + d.getTime() + '_' + k,
+            code: `INV-${dk.replace(/-/g, '')}-${String(100 + k)}`,
+            timestamp: d.toISOString(),
+            dateKey: dk,
+            orderType: types[Math.floor(Math.random() * types.length)],
+            paymentMethod: methods[Math.floor(Math.random() * methods.length)],
+            items,
+            subtotal,
+            discountName: hasDisc ? 'និស្សិត CADT (10%)' : 'គ្មាន',
+            discountAmount: discAmt,
+            total,
+            totalCost,
+            profit: Math.max(0, total - totalCost),
+            exchangeRate: state.settings.exchangeRate,
+            received: total,
+            change: 0
+          });
+          added++;
+        }
+      }
+
+      state.orders.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+      saveStorage(STORAGE_KEYS.ORDERS, state.orders);
+      showToast(`បានបង្កើតវិក្កយបត្រសាកល្បង ${added} សម្រាប់តេស្តរបាយការណ៍!`);
+    }
+
+    function confirmFactoryReset() {
+      openConfirm('កំណត់ប្រព័ន្ធឡើងវិញទាំងអស់?', 'ទិន្នន័យលក់ ម៉ឺនុយ រូបភាព និងការកំណត់ទាំងអស់នឹងត្រូវលុបត្រឡប់ទៅសភាពដើម។', () => {
+        Object.values(STORAGE_KEYS).forEach(k => localStorage.removeItem(k));
+        loadAllStorage();
+        state.cart = [];
+        updateShopHeader();
+        renderSettingsTab();
+        showToast('បានកំណត់ប្រព័ន្ធឡើងវិញជោគជ័យ');
+      });
+    }
+
+    // Boot Application
+    window.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>
