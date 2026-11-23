@@ -928,25 +928,27 @@ function handleProdImage(e) {
 }
 
 function saveProduct() {
-  const id = document.getElementById('editProdId').value;
+  const idVal = document.getElementById('editProdId').value;
+  const existing = idVal ? state.products.find(p => String(p.id) === String(idVal)) : null;
   const obj = {
-    id: id ? Number(id) : Date.now(),
+    id: existing ? existing.id : Date.now(),
     name: document.getElementById('pName').value.trim(),
     category_id: Number(document.getElementById('pCat').value),
     price_usd: Number(document.getElementById('pPrice').value || 0),
     cost_usd: Number(document.getElementById('pCost').value || 0),
     icon: document.getElementById('pIcon').value || '☕',
     image_url: document.getElementById('pImgData').value,
-    is_available: true
+    is_available: existing ? (existing.is_available !== false) : true
   };
   if (!obj.name || obj.price_usd <= 0) return alert('សូមបញ្ចូលឈ្មោះ និងតម្លៃលក់!');
-  const idx = state.products.findIndex(p => p.id === obj.id);
+  const idx = existing ? state.products.findIndex(p => String(p.id) === String(existing.id)) : -1;
   if (idx > -1) state.products[idx] = obj; else state.products.push(obj);
   saveState(); resetProductForm(); renderMenuTable(); renderProducts();
+  alert(idx > -1 ? 'បានកែប្រែទំនិញរួចរាល់!' : 'បានបន្ថែមទំនិញថ្មីរួចរាល់!');
 }
 
 function editProduct(id) {
-  const p = state.products.find(x => x.id === id); if (!p) return;
+  const p = state.products.find(x => String(x.id) === String(id)); if (!p) return;
   document.getElementById('editProdId').value = p.id;
   document.getElementById('pName').value = p.name;
   document.getElementById('pCat').value = p.category_id;
@@ -954,7 +956,9 @@ function editProduct(id) {
   document.getElementById('pCost').value = p.cost_usd || 0;
   document.getElementById('pIcon').value = p.icon || '☕';
   document.getElementById('pImgData').value = p.image_url || '';
-  document.getElementById('menuFormTitle').textContent = '✏️ កែប្រែទំនិញ';
+  document.getElementById('imgPreviewStatus').textContent = p.image_url ? '🖼️ កំពុងប្រើរូបភាពដែលមានស្រាប់' : '';
+  document.getElementById('menuFormTitle').textContent = '✏️ កែប្រែទំនិញ (' + p.name + ')';
+  document.querySelector('#view-menu .page-wrap').scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function resetProductForm() {
