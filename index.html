@@ -514,7 +514,7 @@ const DEFAULT_DATA = {
     shopName: 'ស័ក្តិ កាហ្វេ (Sak Coffee)',
     shopAddress: 'ក្បែរ CADT ព្រែកលៀប | Tel: 011 244 259',
     exchangeRate: 4100,
-    apiUrl: '',
+    apiUrl: 'https://script.google.com/macros/s/AKfycbx6jDONYyyMR_koQr_mx1MTE4IKeawztc6Ugrh0Q2_GDKCPuf4dSwsRdduJRWyY5RcF/exec',
     khqrImage: ''
   },
   categories: [
@@ -542,6 +542,10 @@ const DEFAULT_DATA = {
 };
 
 let state = JSON.parse(localStorage.getItem('sak_coffee_pos_v3') || 'null') || structuredClone(DEFAULT_DATA);
+if (!state.settings.apiUrl) {
+  state.settings.apiUrl = DEFAULT_DATA.settings.apiUrl;
+  localStorage.setItem('sak_coffee_pos_v3', JSON.stringify(state));
+}
 let cart = [];
 let activeCat = 'all';
 let expandedCartIdx = -1;
@@ -770,7 +774,10 @@ async function completeOrder(doPrint) {
   closeCheckout();
   clearCart();
   if (doPrint) printReceipt(order);
-  if (state.settings.apiUrl) await pushOrderToBackend(order);
+  if (state.settings.apiUrl && navigator.onLine) {
+    await pushOrderToBackend(order, 'create');
+    renderOrders();
+  }
 }
 
 function printReceipt(o) {
@@ -816,13 +823,37 @@ async function pushOrderToBackend(order, action = 'create') {
   return false;
 }
 
-async function syncPendingOrders() {
-  if (!state.settings.apiUrl) return alert('សូមបញ្ចូល Google Apps Script URL ក្នុងផ្ទាំង «កំណត់» ជាមុនសិន!');
+let isSyncing = false;
+async function syncPendingOrders(silent = false) {
+  if (isSyncing) return;
+  if (!state.settings.apiUrl) {
+    if (!silent) alert('សូមបញ្ចូល Google Apps Script URL ក្នុងផ្ទាំង «កំណត់» ជាមុនសិន!');
+    return;
+  }
+  if (!navigator.onLine) {
+    if (!silent) alert('មិនមានអ៊ីនធឺណិតទេ! ប្រព័ន្ធនឹង Sync ស្វ័យប្រវត្តិពេលភ្ជាប់អ៊ីនធឺណិតវិញ។');
+    return;
+  }
   const pending = state.orders.filter(o => !o.synced);
-  let ok = 0;
-  for (const o of pending) { if (await pushOrderToBackend(o)) ok++; }
-  renderOrders();
-  alert(`Sync ជោគជ័យ ${ok} / ${pending.length} វិក្កយបត្រ!`);
+  if (!pending.length) {
+    if (!silent) alert('ទិន្នន័យទាំងអស់ត្រូវបាន Sync រួចរាល់ហើយ!');
+    return;
+  }
+  isSyncing = true;
+  try {
+    let ok = 0;
+    for (const o of pending) {
+      if (await pushOrderToBackend(o, o._syncAction || 'create')) {
+        delete o._syncAction;
+        ok++;
+      }
+    }
+    saveState();
+    renderOrders();
+    if (!silent) alert(`Sync ជោគជ័យ ${ok} / ${pending.length} វិក្កយបត្រ!`);
+  } finally {
+    isSyncing = false;
+  }
 }
 
 async function pullFromBackend() {
@@ -1175,8 +1206,13 @@ async function saveEditedOrder(doPrint) {
   renderOrders();
   renderReports();
   if (doPrint) printReceipt(updated);
-  if (state.settings.apiUrl) {
-    await pushOrderToBackend(updated, wasSynced ? 'update' : 'create');
+  updated._syncAction = wasSynced ? 'update' : 'create';
+  saveState();
+  if (state.settings.apiUrl && navigator.onLine) {
+    if (await pushOrderToBackend(updated, updated._syncAction)) {
+      delete updated._syncAction;
+      saveState();
+    }
     renderOrders();
   }
 }
@@ -1193,14 +1229,22 @@ async function deleteOrder(id) {
   }
 }
 
-function resetSalesHistory() {
-  if (!state.orders.length) return alert('មិនមានប្រវត្តិវិក្កយបត្រលក់សម្រាប់លុបទេ!');
+async function resetSalesHistory() {
   if (!confirm('តើអ្នកពិតជាចង់ Reset លុបប្រវត្តិវិក្កយបត្រលក់ និងរបាយការណ៍ទាំងអស់មែនទេ?\n(ម៉ឺនុយ និងការកំណត់ហាងនឹងមិនបាត់បង់ទេ)')) return;
-  if (!confirm('បញ្ជាក់ម្តងទៀត៖ ទិន្នន័យលក់ក្នុងម៉ាស៊ីននេះនឹងត្រូវលុបចោលទាំងស្រុង! តើអ្នកយល់ព្រមទេ?')) return;
+  if (!confirm('បញ្ជាក់ម្តងទៀត៖ ទិន្នន័យលក់ទាំងក្នុងម៉ាស៊ីននេះ និងក្នុង Google Sheets នឹងត្រូវលុបចោលទាំងស្រុង! តើអ្នកយល់ព្រមទេ?')) return;
   state.orders = [];
   saveState();
   renderOrders();
   renderReports();
+  if (state.settings.apiUrl && navigator.onLine) {
+    try {
+      await fetch(state.settings.apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify({ action: 'reset' })
+      });
+    } catch (e) { console.warn('Reset sync error:', e); }
+  }
   alert('បាន Reset ប្រវត្តិវិក្កយបត្រលក់ និងរបាយការណ៍រួចរាល់!');
 }
 
@@ -1224,6 +1268,17 @@ renderDiscountOptions();
 renderCart();
 initReportFilters();
 updateSyncIndicator();
+
+// Auto-Sync ស្វ័យប្រវត្តិ (ពេលបើកទំព័រ, ពេលភ្ជាប់អ៊ីនធឺណិតវិញ, និងរៀងរាល់ ៣០ វិនាទី)
+window.addEventListener('online', () => syncPendingOrders(true));
+window.addEventListener('load', () => {
+  if (navigator.onLine) syncPendingOrders(true);
+});
+setInterval(() => {
+  if (navigator.onLine && state.orders.some(o => !o.synced)) {
+    syncPendingOrders(true);
+  }
+}, 30000);
 </script>
 </body>
 </html>
