@@ -857,19 +857,89 @@ async function syncPendingOrders(silent = false) {
   }
 }
 
-async function pullFromBackend() {
-  const url = document.getElementById('setApiUrl').value.trim();
-  if (!url) return alert('សូមបញ្ចូល Google Apps Script URL សិន!');
+async function syncCatalogToBackend(silent = true) {
+  if (!state.settings.apiUrl || !navigator.onLine) return false;
+  try {
+    const res = await fetch(state.settings.apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'sync_catalog',
+        categories: state.categories,
+        products: state.products,
+        discounts: state.discounts,
+        settings: state.settings
+      })
+    });
+    const data = await res.json();
+    if (data.status === 'success') {
+      if (!silent) alert('បាន Sync ម៉ឺនុយ និងការកំណត់ទៅ Google Sheets រួចរាល់!');
+      return true;
+    }
+  } catch (e) { console.warn('Catalog sync error:', e); }
+  return false;
+}
+
+async function pullFromBackend(silent = false) {
+  const url = (document.getElementById('setApiUrl')?.value || state.settings.apiUrl || '').trim();
+  if (!url) {
+    if (!silent) alert('សូមបញ្ចូល Google Apps Script URL សិន!');
+    return;
+  }
   try {
     const res = await fetch(url);
     const data = await res.json();
-    if (data.categories?.length) state.categories = data.categories;
-    if (data.products?.length) state.products = data.products.map(p => ({ ...p, price_usd: Number(p.price_usd), cost_usd: Number(p.cost_usd || 0), is_available: p.is_available !== false && p.is_available !== 'FALSE' }));
-    if (data.discounts?.length) state.discounts = data.discounts.filter(d => d.is_active !== false && d.is_active !== 'FALSE').map(d => ({ ...d, value: Number(d.value) }));
+    if (data.status !== 'success') {
+      if (!silent) alert('មិនអាចទាញទិន្នន័យពី Google Sheets បានទេ!');
+      return;
+    }
+    if (Array.isArray(data.categories) && data.categories.length) state.categories = data.categories;
+    if (Array.isArray(data.products) && data.products.length) {
+      state.products = data.products.map(p => ({
+        ...p,
+        id: Number(p.id),
+        category_id: Number(p.category_id),
+        price_usd: Number(p.price_usd || 0),
+        cost_usd: Number(p.cost_usd || 0),
+        is_available: p.is_available !== false && p.is_available !== 'FALSE'
+      }));
+    }
+    if (Array.isArray(data.discounts) && data.discounts.length) {
+      state.discounts = data.discounts
+        .filter(d => d.is_active !== false && d.is_active !== 'FALSE')
+        .map(d => ({ ...d, id: Number(d.id), value: Number(d.value || 0) }));
+    }
+    if (data.settings && Object.keys(data.settings).length) {
+      const keepApi = state.settings.apiUrl || url;
+      const keepKhqr = state.settings.khqrImage || '';
+      state.settings = {
+        ...state.settings,
+        ...data.settings,
+        exchangeRate: Number(data.settings.exchangeRate || state.settings.exchangeRate || 4100),
+        apiUrl: keepApi,
+        khqrImage: data.settings.khqrImage || keepKhqr
+      };
+    }
+    if (Array.isArray(data.orders)) {
+      const localUnsynced = state.orders.filter(o => !o.synced);
+      const mergedMap = new Map();
+      data.orders.forEach(o => mergedMap.set(String(o.order_code), { ...o, synced: true }));
+      localUnsynced.forEach(o => mergedMap.set(String(o.order_code), o));
+      state.orders = Array.from(mergedMap.values()).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+    }
     saveState();
-    renderCategories(); renderProducts(); renderDiscountOptions();
-    alert('ទាញម៉ឺនុយពី Google Sheets បានជោគជ័យ!');
-  } catch (e) { alert('មិនអាចភ្ជាប់ Backend បានទេ៖ ' + e.message); }
+    renderCategories();
+    renderProducts();
+    renderDiscountOptions();
+    renderCart();
+    renderOrders();
+    renderMenuTable();
+    renderReports();
+    if (document.getElementById('view-settings')?.classList.contains('active')) renderSettings();
+    if (!silent) alert('បានទាញទិន្នន័យទាំងអស់ពី Google Sheets រួចរាល់!');
+  } catch (e) {
+    if (!silent) alert('មិនអាចភ្ជាប់ Backend បានទេ៖ ' + e.message);
+  }
 }
 
 function updateSyncIndicator() {
@@ -943,7 +1013,7 @@ function saveProduct() {
   if (!obj.name || obj.price_usd <= 0) return alert('សូមបញ្ចូលឈ្មោះ និងតម្លៃលក់!');
   const idx = existing ? state.products.findIndex(p => String(p.id) === String(existing.id)) : -1;
   if (idx > -1) state.products[idx] = obj; else state.products.push(obj);
-  saveState(); resetProductForm(); renderMenuTable(); renderProducts();
+  saveState(); resetProductForm(); renderMenuTable(); renderProducts(); syncCatalogToBackend(true);
   alert(idx > -1 ? 'បានកែប្រែទំនិញរួចរាល់!' : 'បានបន្ថែមទំនិញថ្មីរួចរាល់!');
 }
 
@@ -970,13 +1040,13 @@ function resetProductForm() {
 
 function toggleStock(id) {
   const p = state.products.find(x => x.id === id);
-  if (p) { p.is_available = p.is_available === false ? true : false; saveState(); renderMenuTable(); renderProducts(); }
+  if (p) { p.is_available = p.is_available === false ? true : false; saveState(); renderMenuTable(); renderProducts(); syncCatalogToBackend(true); }
 }
 
 function deleteProduct(id) {
   if (!confirm('លុបទំនិញនេះ?')) return;
   state.products = state.products.filter(x => x.id !== id);
-  saveState(); renderMenuTable(); renderProducts();
+  saveState(); renderMenuTable(); renderProducts(); syncCatalogToBackend(true);
 }
 
 function renderMenuTable() {
@@ -1085,6 +1155,7 @@ function saveSettings() {
   state.settings.exchangeRate = Number(document.getElementById('setRate').value || 4100);
   state.settings.apiUrl = document.getElementById('setApiUrl').value.trim();
   saveState();
+  syncCatalogToBackend(true);
   alert('រក្សាទុកការកំណត់រួចរាល់!');
 }
 
@@ -1094,10 +1165,14 @@ function addDiscount() {
   const value = Number(document.getElementById('dVal').value || 0);
   if (!name || value <= 0) return alert('សូមបញ្ចូលឈ្មោះ និងចំនួនបញ្ចុះតម្លៃ!');
   state.discounts.push({ id: Date.now(), name, type, value });
-  saveState(); renderSettings(); renderDiscountOptions();
+  saveState(); renderSettings(); renderDiscountOptions(); syncCatalogToBackend(true);
   document.getElementById('dName').value = ''; document.getElementById('dVal').value = '';
 }
-function delDiscount(id) { state.discounts = state.discounts.filter(d => d.id !== id); saveState(); renderSettings(); renderDiscountOptions(); }
+function delDiscount(id) {
+  if (!confirm('តើអ្នកចង់លុបប្រភេទបញ្ចុះតម្លៃនេះមែនទេ?')) return;
+  state.discounts = state.discounts.filter(d => String(d.id) !== String(id));
+  saveState(); renderSettings(); renderDiscountOptions(); syncCatalogToBackend(true);
+}
 
 function exportOrdersCSV() {
   const rows = [['Order Code','Date','Subtotal','Discount Name','Discount','Total USD','Total KHR','Payment','Type']];
@@ -1275,14 +1350,20 @@ initReportFilters();
 updateSyncIndicator();
 
 // Auto-Sync ស្វ័យប្រវត្តិ (ពេលបើកទំព័រ, ពេលភ្ជាប់អ៊ីនធឺណិតវិញ, និងរៀងរាល់ ៣០ វិនាទី)
-window.addEventListener('online', () => syncPendingOrders(true));
-window.addEventListener('load', () => {
-  if (navigator.onLine) syncPendingOrders(true);
+window.addEventListener('online', async () => {
+  await syncPendingOrders(true);
+  await pullFromBackend(true);
 });
-setInterval(() => {
-  if (navigator.onLine && state.orders.some(o => !o.synced)) {
-    syncPendingOrders(true);
+window.addEventListener('load', async () => {
+  if (navigator.onLine) {
+    await syncPendingOrders(true);
+    await pullFromBackend(true);
   }
+});
+setInterval(async () => {
+  if (!navigator.onLine) return;
+  if (state.orders.some(o => !o.synced)) await syncPendingOrders(true);
+  else await pullFromBackend(true);
 }, 30000);
 </script>
 </body>
