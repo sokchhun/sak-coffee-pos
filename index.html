@@ -514,7 +514,7 @@ const DEFAULT_DATA = {
     shopName: 'ស័ក្តិ កាហ្វេ (Sak Coffee)',
     shopAddress: 'ក្បែរ CADT ព្រែកលៀប | Tel: 011 244 259',
     exchangeRate: 4100,
-    apiUrl: 'https://script.google.com/macros/s/AKfycbx6jDONYyyMR_koQr_mx1MTE4IKeawztc6Ugrh0Q2_GDKCPuf4dSwsRdduJRWyY5RcF/exec',
+    apiUrl: 'https://script.google.com/macros/s/AKfycbxB-ff0HWBJHQ02u1oT8tc8OtxsRo8GXGv7tZaY42WGlBB_3iwv_L2Ztzcx19lKzo85/exec',
     khqrImage: ''
   },
   categories: [
@@ -542,10 +542,11 @@ const DEFAULT_DATA = {
 };
 
 let state = JSON.parse(localStorage.getItem('sak_coffee_pos_v3') || 'null') || structuredClone(DEFAULT_DATA);
-if (!state.settings.apiUrl) {
+state.settings = { ...DEFAULT_DATA.settings, ...(state.settings || {}) };
+if (!state.settings.apiUrl || !state.settings.apiUrl.trim()) {
   state.settings.apiUrl = DEFAULT_DATA.settings.apiUrl;
-  localStorage.setItem('sak_coffee_pos_v3', JSON.stringify(state));
 }
+localStorage.setItem('sak_coffee_pos_v3', JSON.stringify(state));
 let cart = [];
 let activeCat = 'all';
 let expandedCartIdx = -1;
