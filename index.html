@@ -399,6 +399,7 @@
         <div class="field"><label>អត្រាប្តូរប្រាក់ (1$ = ? ៛)</label><input id="setRate" type="number"></div>
         <div class="field"><label>Google Apps Script Web App URL (Backend API)</label><input id="setApiUrl" placeholder="https://script.google.com/macros/s/.../exec"></div>
         <div class="field"><label>Upload រូបភាព KHQR ហាង (ABA / ACLEDA)</label><input type="file" accept="image/*" onchange="handleKhqrImage(event)"></div>
+        <div class="field"><label>លេខកូដសម្ងាត់អ្នកគ្រប់គ្រង (Admin PIN - ទុកទទេបើមិនប្រើ)</label><input id="setAdminPin" type="password" placeholder="ឧ. 1234"></div>
       </div>
       <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
         <button class="btn btn-primary" onclick="saveSettings()">💾 រក្សាទុកការកំណត់</button>
@@ -558,7 +559,8 @@ const DEFAULT_DATA = {
     shopAddress: 'ក្បែរ CADT ព្រែកលៀប | Tel: 011 244 259',
     exchangeRate: 4100,
     apiUrl: 'https://script.google.com/macros/s/AKfycbxB-ff0HWBJHQ02u1oT8tc8OtxsRo8GXGv7tZaY42WGlBB_3iwv_L2Ztzcx19lKzo85/exec',
-    khqrImage: ''
+    khqrImage: '',
+    adminPin: ''
   },
   categories: [
     { id: 1, name: 'កាហ្វេ (Coffee)', icon: '☕' },
@@ -628,7 +630,24 @@ renderHeldOrders();
 function fmtUsd(n) { return '$' + Number(n || 0).toFixed(2); }
 function fmtKhr(usd) { return Math.round((usd || 0) * state.settings.exchangeRate).toLocaleString('en-US') + ' ៛'; }
 
+let adminUnlocked = false;
+function verifyAdminPin(actionLabel = 'ចូលប្រើមុខងារនេះ') {
+  const pin = String(state.settings?.adminPin || '').trim();
+  if (!pin) return true;
+  if (adminUnlocked) return true;
+  const entered = prompt(`🔐 សូមបញ្ចូលលេខកូដសម្ងាត់អ្នកគ្រប់គ្រង (Admin PIN) ដើម្បី${actionLabel}៖`);
+  if (entered === null) return false;
+  if (String(entered).trim() === pin) {
+    adminUnlocked = true;
+    return true;
+  }
+  alert('❌ លេខកូដសម្ងាត់មិនត្រឹមត្រូវទេ!');
+  return false;
+}
 function switchView(name, btn) {
+  if (name === 'reports' || name === 'settings') {
+    if (!verifyAdminPin(name === 'reports' ? 'មើលរបាយការណ៍' : 'ចូលកំណត់ប្រព័ន្ធ')) return;
+  }
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById('view-' + name).classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -1174,9 +1193,15 @@ async function _pullFromBackendInner(silent = false, forcePull = false) {
       };
     }
     if (Array.isArray(data.orders)) {
-      const localUnsynced = state.orders.filter(o => !o.synced);
+      const deletedCodes = new Set((state.deletedOrderCodes || []).map(String));
+      const localUnsynced = state.orders.filter(o => !o.synced && !deletedCodes.has(String(o.order_code)));
       const mergedMap = new Map();
-      data.orders.forEach(o => mergedMap.set(String(o.order_code), { ...o, synced: true }));
+      data.orders.forEach(o => {
+        const code = String(o.order_code || '');
+        if (code && !deletedCodes.has(code)) {
+          mergedMap.set(code, { ...o, synced: true });
+        }
+      });
       localUnsynced.forEach(o => mergedMap.set(String(o.order_code), o));
       state.orders = Array.from(mergedMap.values()).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     }
@@ -1416,6 +1441,8 @@ function renderSettings() {
   document.getElementById('setShopAddress').value = state.settings.shopAddress;
   document.getElementById('setRate').value = state.settings.exchangeRate;
   document.getElementById('setApiUrl').value = state.settings.apiUrl || '';
+  const pinEl = document.getElementById('setAdminPin');
+  if (pinEl) pinEl.value = state.settings.adminPin || '';
   const catTbl = document.getElementById('categoriesTable');
   if (catTbl) {
     catTbl.innerHTML = state.categories.map(c => `
@@ -1441,6 +1468,8 @@ async function saveSettings() {
   state.settings.shopAddress = document.getElementById('setShopAddress').value;
   state.settings.exchangeRate = Number(document.getElementById('setRate').value || 4100);
   state.settings.apiUrl = document.getElementById('setApiUrl').value.trim();
+  const pinEl = document.getElementById('setAdminPin');
+  if (pinEl) state.settings.adminPin = pinEl.value.trim();
   saveState();
   await syncCatalogToBackend(false);
 }
@@ -1594,18 +1623,26 @@ async function saveEditedOrder(doPrint) {
 }
 
 async function deleteOrder(id) {
+  if (!verifyAdminPin('លុបវិក្កយបត្រ')) return;
   if (!confirm('តើអ្នកពិតជាចង់លុបវិក្កយបត្រនេះមែនទេ?')) return;
   const target = state.orders.find(o => o.id === id);
+  if (target && target.order_code) {
+    if (!Array.isArray(state.deletedOrderCodes)) state.deletedOrderCodes = [];
+    if (!state.deletedOrderCodes.includes(String(target.order_code))) {
+      state.deletedOrderCodes.push(String(target.order_code));
+    }
+  }
   state.orders = state.orders.filter(o => o.id !== id);
   saveState();
   renderOrders();
   renderReports();
-  if (target && target.synced && state.settings.apiUrl) {
+  if (target && state.settings.apiUrl) {
     await pushOrderToBackend(target, 'delete');
   }
 }
 
 async function resetSalesHistory() {
+  if (!verifyAdminPin('Reset លុបប្រវត្តិលក់')) return;
   if (!confirm('តើអ្នកពិតជាចង់ Reset លុបប្រវត្តិវិក្កយបត្រលក់ និងរបាយការណ៍ទាំងអស់មែនទេ?\n(ម៉ឺនុយ និងការកំណត់ហាងនឹងមិនបាត់បង់ទេ)')) return;
   if (!confirm('បញ្ជាក់ម្តងទៀត៖ ទិន្នន័យលក់ទាំងក្នុងម៉ាស៊ីននេះ និងក្នុង Google Sheets នឹងត្រូវលុបចោលទាំងស្រុង! តើអ្នកយល់ព្រមទេ?')) return;
   state.orders = [];
