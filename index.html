@@ -461,7 +461,7 @@
 
       <div>
         <div style="font-size:12px; color:var(--muted);">ប្រាក់ទទួល ($)</div>
-        <input id="coReceived" type="text" readonly value="0" style="width:100%; font-size:24px; font-weight:700; padding:10px; text-align:right; border:2px solid var(--primary); border-radius:10px; margin:4px 0 8px;">
+        <input id="coReceived" type="text" inputmode="decimal" value="0" oninput="onCoReceivedInput(this.value)" style="width:100%; font-size:24px; font-weight:700; padding:10px; text-align:right; border:2px solid var(--primary); border-radius:10px; margin:4px 0 8px;">
         <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:700; margin-bottom:10px;">
           <span>ប្រាក់អាប់ (Change):</span>
           <span id="coChange" style="color:var(--success);">$0.00 (0 ៛)</span>
@@ -767,7 +767,7 @@ function openCheckout() {
   document.getElementById('coTotalKhr').textContent = fmtKhr(t.total);
   receivedStr = t.total.toFixed(2);
   updateCheckoutCalc();
-  document.getElementById('checkoutModal').classList.add('open');
+  document.getElementById('checkoutModal').classList.add('open'); setTimeout(() => { const el = document.getElementById('coReceived'); if (el) { el.focus(); el.select(); } }, 50);
 }
 function closeCheckout() { document.getElementById('checkoutModal').classList.remove('open'); }
 function selectPay(method, btn) {
@@ -792,13 +792,45 @@ function numKey(k) {
 function setExactCash() { receivedStr = calcTotals().total.toFixed(2); updateCheckoutCalc(); }
 function addCash(amt) { receivedStr = (Number(receivedStr || 0) + amt).toFixed(2); updateCheckoutCalc(); }
 function addCashKhr(khr) { receivedStr = (Number(receivedStr || 0) + (khr / state.settings.exchangeRate)).toFixed(2); updateCheckoutCalc(); }
-function updateCheckoutCalc() {
+function onCoReceivedInput(val) {
+  let cleaned = String(val || '').replace(/[^0-9.]/g, '');
+  const parts = cleaned.split('.');
+  if (parts.length > 2) cleaned = parts[0] + '.' + parts.slice(1).join('');
+  if (cleaned.length > 1 && cleaned.startsWith('0') && !cleaned.startsWith('0.')) {
+    cleaned = cleaned.replace(/^0+/, '') || '0';
+  }
+  receivedStr = cleaned || '0';
+  updateCheckoutCalc(false);
+}
+
+function updateCheckoutCalc(syncInput = true) {
   const t = calcTotals();
   const rec = Number(receivedStr || 0);
   const chg = Math.max(0, rec - t.total);
-  document.getElementById('coReceived').value = receivedStr;
+  const inp = document.getElementById('coReceived');
+  if (inp && syncInput) inp.value = receivedStr;
   document.getElementById('coChange').textContent = `${fmtUsd(chg)} (${fmtKhr(chg)})`;
 }
+
+document.addEventListener('keydown', (e) => {
+  const modal = document.getElementById('checkoutModal');
+  if (!modal || !modal.classList.contains('open')) return;
+  if (document.activeElement && document.activeElement.id === 'coReceived') return;
+  if (/^[0-9.]$/.test(e.key)) {
+    e.preventDefault();
+    numKey(e.key);
+  } else if (e.key === 'Backspace') {
+    e.preventDefault();
+    receivedStr = receivedStr.length > 1 ? receivedStr.slice(0, -1) : '0';
+    updateCheckoutCalc(true);
+  } else if (e.key === 'Escape') {
+    e.preventDefault();
+    closeCheckout();
+  } else if (e.key === 'Enter') {
+    e.preventDefault();
+    completeOrder(false);
+  }
+});
 
 async function completeOrder(doPrint) {
   const t = calcTotals();
