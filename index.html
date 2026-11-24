@@ -975,15 +975,6 @@ async function _pullFromBackendInner(silent = false, forcePull = false) {
           seenCats.add(k);
           return true;
         });
-      // Merge any custom local products (id > 1000000 or not in DEFAULT_DATA) if missing from sheet
-      const pulledNames = new Set(pulledProducts.map(x => x.name.toLowerCase()));
-      const pulledIds = new Set(pulledProducts.map(x => Number(x.id)));
-      const localCustom = (state.products || []).filter(lp => {
-        const lid = Number(lp.id);
-        const lname = String(lp.name || '').trim().toLowerCase();
-        return lname && !pulledNames.has(lname) && !pulledIds.has(lid) && lid > 1000000;
-      });
-      state.products = pulledProducts.concat(localCustom);
     }
     if (Array.isArray(data.products) && data.products.length) {
       const defMap = new Map(DEFAULT_DATA.products.map(dp => [Number(dp.id), dp.image_url]));
