@@ -237,9 +237,12 @@
     <button class="nav-btn" onclick="switchView('reports', this)">📊 របាយការណ៍</button>
     <button class="nav-btn" onclick="switchView('settings', this)">⚙️ កំណត់</button>
   </nav>
-  <div class="sync-pill" onclick="syncPendingOrders()" title="ចុចដើម្បី Sync ទៅ Google Sheets">
-    <span class="dot" id="syncDot"></span>
-    <span id="syncText">Offline</span>
+  <div style="display:flex;align-items:center;gap:8px;">
+    <button type="button" class="nav-btn" style="padding:5px 10px;font-size:12px;background:rgba(255,255,255,0.12);color:#fff;" onclick="lockPosSession()" title="ចាក់សោ Login ភ្លាមៗ">🔒 ចាក់សោ</button>
+    <div class="sync-pill" onclick="syncPendingOrders()" title="ចុចដើម្បី Sync ទៅ Google Sheets">
+      <span class="dot" id="syncDot"></span>
+      <span id="syncText">Offline</span>
+    </div>
   </div>
 </header>
 
@@ -399,6 +402,7 @@
         <div class="field"><label>អត្រាប្តូរប្រាក់ (1$ = ? ៛)</label><input id="setRate" type="number"></div>
         <div class="field"><label>Google Apps Script Web App URL (Backend API)</label><input id="setApiUrl" placeholder="https://script.google.com/macros/s/.../exec"></div>
         <div class="field"><label>Upload រូបភាព KHQR ហាង (ABA / ACLEDA)</label><input type="file" accept="image/*" onchange="handleKhqrImage(event)"></div>
+        <div class="field"><label>លេខកូដសម្ងាត់ចូលប្រើដំបូង (Login PIN - ទុកទទេបើមិនប្រើ)</label><input id="setLoginPin" type="password" placeholder="ឧ. 0000"></div>
         <div class="field"><label>លេខកូដសម្ងាត់អ្នកគ្រប់គ្រង (Admin PIN - ទុកទទេបើមិនប្រើ)</label><input id="setAdminPin" type="password" placeholder="ឧ. 1234"></div>
         <div class="field"><label>លេខសម្ងាត់ភ្ជាប់ API ពីចម្ងាយ (Remote API Key - ជម្រើស)</label><input id="setApiKey" type="password" placeholder="ឧ. SAK-SECRET-2026"></div>
       </div>
@@ -561,6 +565,7 @@ const DEFAULT_DATA = {
     exchangeRate: 4100,
     apiUrl: 'https://script.google.com/macros/s/AKfycbxB-ff0HWBJHQ02u1oT8tc8OtxsRo8GXGv7tZaY42WGlBB_3iwv_L2Ztzcx19lKzo85/exec',
     khqrImage: '',
+    loginPin: '',
     adminPin: '',
     apiKey: ''
   },
@@ -647,8 +652,13 @@ function verifyAdminPin(actionLabel = 'ចូលប្រើមុខងារ�
   return false;
 }
 function switchView(name, btn) {
-  if (name === 'reports' || name === 'settings') {
-    if (!verifyAdminPin(name === 'reports' ? 'មើលរបាយការណ៍' : 'ចូលកំណត់ប្រព័ន្ធ')) return;
+  if (name === 'menu' || name === 'reports' || name === 'settings') {
+    const labelMap = {
+      menu: 'គ្រប់គ្រងម៉ឺនុយ',
+      reports: 'មើលរបាយការណ៍',
+      settings: 'ចូលកំណត់ប្រព័ន្ធ'
+    };
+    if (!verifyAdminPin(labelMap[name] || 'ចូលប្រើមុខងារនេះ')) return;
   }
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById('view-' + name).classList.add('active');
@@ -1056,6 +1066,7 @@ async function syncPendingOrders(silent = false) {
 }
 
 async function syncCatalogToBackend(silent = true) {
+  if (!silent && !verifyAdminPin('Sync ម៉ឺនុយទៅ Google Sheets')) return false;
   const url = (state.settings.apiUrl || '').trim();
   if (!url) {
     if (!silent) alert('សូមបញ្ចូល Google Apps Script URL ក្នុងផ្ទាំង «កំណត់» ជាមុនសិន!');
@@ -1449,6 +1460,8 @@ function renderSettings() {
   document.getElementById('setShopAddress').value = state.settings.shopAddress;
   document.getElementById('setRate').value = state.settings.exchangeRate;
   document.getElementById('setApiUrl').value = state.settings.apiUrl || '';
+  const lpinEl = document.getElementById('setLoginPin');
+  if (lpinEl) lpinEl.value = state.settings.loginPin || '';
   const pinEl = document.getElementById('setAdminPin');
   if (pinEl) pinEl.value = state.settings.adminPin || '';
   const keyEl = document.getElementById('setApiKey');
@@ -1478,6 +1491,8 @@ async function saveSettings() {
   state.settings.shopAddress = document.getElementById('setShopAddress').value;
   state.settings.exchangeRate = Number(document.getElementById('setRate').value || 4100);
   state.settings.apiUrl = document.getElementById('setApiUrl').value.trim();
+  const lpinEl = document.getElementById('setLoginPin');
+  if (lpinEl) state.settings.loginPin = lpinEl.value.trim();
   const pinEl = document.getElementById('setAdminPin');
   if (pinEl) state.settings.adminPin = pinEl.value.trim();
   const keyEl = document.getElementById('setApiKey');
@@ -1763,7 +1778,90 @@ function delCategory(id) {
 }
 
 // Init
+
+let sessionLoggedIn = false;
+function showLoginModal(onSuccess) {
+  const lpin = String(state.settings?.loginPin || '').trim();
+  if (!lpin) {
+    sessionLoggedIn = true;
+    if (typeof onSuccess === 'function') onSuccess();
+    return;
+  }
+  if (sessionLoggedIn) {
+    if (typeof onSuccess === 'function') onSuccess();
+    return;
+  }
+
+  const existing = document.getElementById('loginPinOverlay');
+  if (existing) existing.remove();
+
+  const overlay = document.createElement('div');
+  overlay.id = 'loginPinOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.88);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;';
+
+  overlay.innerHTML = `
+    <div style="background:#ffffff;color:#1f2937;width:100%;max-width:380px;border-radius:16px;padding:24px;box-shadow:0 20px 45px rgba(0,0,0,0.35);text-align:center;">
+      <div style="font-size:38px;margin-bottom:6px;">🔐</div>
+      <h2 style="font-size:20px;font-weight:700;color:#1e293b;">ចូលប្រើប្រព័ន្ធ POS</h2>
+      <p style="font-size:13px;color:#64748b;margin-top:4px;margin-bottom:16px;">ស័ក្តិ កាហ្វេ (Sak Coffee) — សូមបញ្ចូល Login PIN</p>
+      <input id="loginPinInput" type="password" inputmode="numeric" autocomplete="off" placeholder="បញ្ចូលលេខកូដ PIN..."
+        style="width:100%;padding:12px 14px;font-size:20px;font-weight:700;text-align:center;letter-spacing:6px;border:2px solid #cbd5e1;border-radius:10px;outline:none;margin-bottom:10px;">
+      <div id="loginPinError" style="color:#dc2626;font-size:12px;font-weight:600;min-height:18px;margin-bottom:10px;"></div>
+      <button id="loginPinSubmit" type="button"
+        style="width:100%;padding:12px;font-size:15px;font-weight:700;border:none;border-radius:10px;background:#2563eb;color:#ffffff;cursor:pointer;">
+        🔓 ចូលប្រើ (Login)
+      </button>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  const inp = document.getElementById('loginPinInput');
+  const err = document.getElementById('loginPinError');
+  const btn = document.getElementById('loginPinSubmit');
+
+  function attemptLogin() {
+    const val = String(inp.value || '').trim();
+    if (!val) {
+      err.textContent = 'សូមបញ្ចូលលេខកូដ PIN ជាមុនសិន!';
+      inp.focus();
+      return;
+    }
+    if (val === lpin) {
+      sessionLoggedIn = true;
+      overlay.remove();
+      if (typeof onSuccess === 'function') onSuccess();
+    } else {
+      err.textContent = '❌ លេខកូដ PIN មិនត្រឹមត្រូវទេ! សូមព្យាយាមម្តងទៀត។';
+      inp.value = '';
+      inp.focus();
+    }
+  }
+
+  btn.addEventListener('click', attemptLogin);
+  inp.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      attemptLogin();
+    }
+  });
+  setTimeout(() => inp.focus(), 40);
+}
+
+function lockPosSession() {
+  sessionLoggedIn = false;
+  adminUnlocked = false;
+  if (!String(state.settings?.loginPin || '').trim()) {
+    alert('សូមកំណត់ Login PIN ក្នុងផ្ទាំង «⚙️ កំណត់» ជាមុនសិន!');
+    return;
+  }
+  showLoginModal();
+}
+
 try {
+  const lpinAtBoot = String(state.settings?.loginPin || '').trim();
+  if (lpinAtBoot && !sessionLoggedIn) {
+    setTimeout(() => showLoginModal(), 50);
+  }
   if (Array.isArray(state.discounts)) {
     const delIds = new Set((state.deletedDiscountIds || []).map(String));
     const delNames = new Set((state.deletedDiscountNames || []).map(s => String(s).toLowerCase()));
