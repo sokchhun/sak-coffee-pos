@@ -1259,7 +1259,7 @@ function handleKhqrImage(e) {
   resizeImage(f, 450, dataUrl => { state.settings.khqrImage = dataUrl; saveState(); alert('រក្សាទុករូប KHQR រួចរាល់!'); });
 }
 
-function saveSettings() {
+async function saveSettings() {
   state.settings.shopName = document.getElementById('setShopName').value;
   state.settings.shopAddress = document.getElementById('setShopAddress').value;
   state.settings.exchangeRate = Number(document.getElementById('setRate').value || 4100);
@@ -1521,13 +1521,22 @@ function delCategory(id) {
 }
 
 // Init
-renderCategories();
-renderProducts();
-renderDiscountOptions();
-renderCart();
-initReportFilters();
-updateSyncIndicator();
-renderHeldOrders();
+try {
+  renderCategories();
+  renderProducts();
+  renderDiscountOptions();
+  renderCart();
+  initReportFilters();
+  updateSyncIndicator();
+  renderHeldOrders();
+} catch (err) {
+  console.error('Init error:', err);
+  state = structuredClone(DEFAULT_DATA);
+  renderCategories();
+  renderProducts();
+  renderDiscountOptions();
+  renderCart();
+}
 
 // Auto-Sync ស្វ័យប្រវត្តិ (ពេលបើកទំព័រ, ពេលភ្ជាប់អ៊ីនធឺណិតវិញ, និងរៀងរាល់ ៣០ វិនាទី)
 window.addEventListener('online', async () => {
