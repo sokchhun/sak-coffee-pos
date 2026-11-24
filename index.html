@@ -434,67 +434,92 @@
 
 <!-- CHECKOUT MODAL -->
 <div class="modal-bg" id="checkoutModal">
-  <div class="modal">
+  <div class="modal" style="max-width:960px;">
     <div class="card-title">
       <span>💳 ទូទាត់ប្រាក់ (Checkout)</span>
       <button class="btn btn-light btn-sm" onclick="closeCheckout()">✖ បិទ</button>
     </div>
-    <div class="checkout-grid">
+    <div class="checkout-grid" style="grid-template-columns: 1.1fr 1.15fr 0.85fr; gap:18px; align-items:start;">
+      <!-- Col 1: Total, Payment Type, Cash ($) & Cash (៛), Change -->
       <div>
-        <div style="background:#f8fafc; padding:12px; border-radius:10px; margin-bottom:10px;">
-          <div style="font-size:12px; color:var(--muted);">ត្រូវបង់សរុប</div>
-          <div style="font-size:26px; font-weight:700; color:var(--nav-bg);" id="coTotalUsd">$0.00</div>
-          <div style="font-size:14px; font-weight:600; color:var(--primary-dark);" id="coTotalKhr">0 ៛</div>
+        <div style="background:#f8fafc; padding:12px; border-radius:10px; margin-bottom:10px; border:1px solid var(--border);">
+          <div style="font-size:12px; color:var(--muted);">ត្រូវបង់សរុប (Total)</div>
+          <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:4px;">
+            <span style="font-size:24px; font-weight:700; color:var(--nav-bg);" id="coTotalUsd">$0.00</span>
+            <span style="font-size:16px; font-weight:700; color:var(--primary-dark);" id="coTotalKhr">0 ៛</span>
+          </div>
         </div>
-        <div style="font-size:13px; font-weight:600;">ជ្រើសរើសវិធីទូទាត់៖</div>
-        <div class="pay-methods">
-          <button class="pay-btn active" onclick="selectPay('Cash', this)">💵 សាច់ប្រាក់ (Cash)</button>
-          <button class="pay-btn" onclick="selectPay('ABA KHQR', this)">📱 ABA KHQR</button>
-          <button class="pay-btn" onclick="selectPay('ACLEDA', this)">🏦 ACLEDA</button>
-          <button class="pay-btn" onclick="selectPay('Wing', this)">📲 Wing</button>
+
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">
+          <button type="button" class="pay-btn active" style="padding:7px 10px; font-size:12px;" onclick="selectPay('Cash', this)">Cash</button>
+          <button type="button" class="pay-btn" style="padding:7px 10px; font-size:12px;" onclick="selectPay('ABA USD', this)">ABA USD</button>
+          <button type="button" class="pay-btn" style="padding:7px 10px; font-size:12px;" onclick="selectPay('ABA KHR', this)">ABA KHR</button>
+          <button type="button" class="pay-btn" style="padding:7px 10px; font-size:12px;" onclick="selectPay('ACLEDA', this)">ACLEDA</button>
         </div>
-        <div id="khqrBox" style="display:none; text-align:center; margin-top:12px; padding:10px; border:1px dashed var(--border); border-radius:10px;">
-          <img id="khqrPreview" style="max-width:180px; border-radius:8px; display:none; margin:0 auto;">
+
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:6px;">
+          <span style="font-size:12px; font-weight:700; color:var(--muted);">ប្រអប់បញ្ចូលសកម្ម៖</span>
+          <div style="display:inline-flex; gap:4px; background:#f1f5f9; padding:3px; border-radius:8px; border:1px solid var(--border);">
+            <button type="button" id="btnCurrUsd" class="chip active" style="padding:3px 10px; font-weight:700;" onclick="setCoCurrency('USD')">💵 ដុល្លា ($)</button>
+            <button type="button" id="btnCurrKhr" class="chip" style="padding:3px 10px; font-weight:700;" onclick="setCoCurrency('KHR')">🇰🇭 រៀល (៛)</button>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
+          <div>
+            <div style="font-size:12px; font-weight:600; color:var(--muted); margin-bottom:3px;">Cash ($)</div>
+            <input id="coReceived" type="text" inputmode="decimal" autocomplete="off" value="0" onfocus="setCoCurrency('USD'); this.select();" oninput="onCoReceivedInput(this.value)" style="width:100%; font-size:18px; font-weight:700; padding:8px 10px; text-align:right; border:2px solid var(--primary); border-radius:8px; background:#fff; color:#111;">
+          </div>
+          <div>
+            <div style="font-size:12px; font-weight:600; color:var(--muted); margin-bottom:3px;">Cash (៛)</div>
+            <input id="coReceivedKhr" type="text" inputmode="numeric" autocomplete="off" value="0" onfocus="setCoCurrency('KHR'); this.select();" oninput="onCoReceivedKhrInput(this.value)" style="width:100%; font-size:18px; font-weight:700; padding:8px 10px; text-align:right; border:2px solid var(--border); border-radius:8px; background:#fff; color:#111;">
+          </div>
+        </div>
+
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center; font-size:14px; font-weight:700;">
+          <span style="color:#166534;">ប្រាក់អាប់ (Change):</span>
+          <span id="coChange" style="color:var(--success);">$0.00 (0 ៛)</span>
+        </div>
+
+        <div id="khqrBox" style="display:none; text-align:center; margin-top:10px; padding:8px; border:1px dashed var(--border); border-radius:10px;">
+          <img id="khqrPreview" style="max-width:160px; border-radius:8px; display:none; margin:0 auto;">
           <div id="khqrPlaceholder" style="font-size:12px; color:var(--muted);">សូម Upload រូប KHQR ក្នុងផ្ទាំង «កំណត់»</div>
         </div>
       </div>
 
+      <!-- Col 2: POS-Style Numpad (C on top-left, 7-8-9, 4-5-6, 1-2-3, 0, 00, .) -->
       <div>
-        <div style="font-size:12px; color:var(--muted);">ប្រាក់ទទួល ($)</div>
-        <input id="coReceived" type="text" inputmode="decimal" autocomplete="off" value="0" oninput="onCoReceivedInput(this.value)" onclick="this.select()" style="width:100%; font-size:24px; font-weight:700; padding:10px; text-align:right; border:2px solid var(--primary); border-radius:10px; margin:4px 0 8px; background:#fff; color:#111;">
-        <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:700; margin-bottom:10px;">
-          <span>ប្រាក់អាប់ (Change):</span>
-          <span id="coChange" style="color:var(--success);">$0.00 (0 ៛)</span>
-        </div>
-        <div class="quick-cash">
-          <button class="btn btn-light btn-sm" onclick="setExactCash()">គ្រប់ចំនួន (Exact)</button>
-          <button class="btn btn-light btn-sm" onclick="addCash(1)">+$1</button>
-          <button class="btn btn-light btn-sm" onclick="addCash(5)">+$5</button>
-          <button class="btn btn-light btn-sm" onclick="addCash(10)">+$10</button>
-          <button class="btn btn-light btn-sm" onclick="addCash(20)">+$20</button>
-          <button class="btn btn-light btn-sm" onclick="addCashKhr(10000)">+10,000៛</button>
+        <div class="numpad" style="grid-template-columns: repeat(3, 1fr); gap:6px;">
+          <button type="button" class="num-btn" onclick="numKey('C')" style="background:#475569; color:#fff; border-color:#475569;">C</button>
+          <button type="button" class="num-btn" onclick="numKey('7')" style="background:#334155; color:#fff; border-color:#334155;">7</button>
+          <button type="button" class="num-btn" onclick="numKey('8')" style="background:#334155; color:#fff; border-color:#334155;">8</button>
+          <button type="button" class="num-btn" onclick="numKey('9')" style="background:#334155; color:#fff; border-color:#334155;">9</button>
+          <button type="button" class="num-btn" onclick="numKey('4')" style="background:#334155; color:#fff; border-color:#334155;">4</button>
+          <button type="button" class="num-btn" onclick="numKey('5')" style="background:#334155; color:#fff; border-color:#334155;">5</button>
+          <button type="button" class="num-btn" onclick="numKey('6')" style="background:#334155; color:#fff; border-color:#334155;">6</button>
+          <button type="button" class="num-btn" onclick="numKey('1')" style="background:#334155; color:#fff; border-color:#334155;">1</button>
+          <button type="button" class="num-btn" onclick="numKey('2')" style="background:#334155; color:#fff; border-color:#334155;">2</button>
+          <button type="button" class="num-btn" onclick="numKey('3')" style="background:#334155; color:#fff; border-color:#334155;">3</button>
+          <button type="button" class="num-btn" onclick="numKey('0')" style="background:#334155; color:#fff; border-color:#334155;">0</button>
+          <button type="button" class="num-btn" onclick="numKey('00')" style="background:#334155; color:#fff; border-color:#334155;">00</button>
+          <button type="button" class="num-btn" onclick="numKey('.')" style="background:#334155; color:#fff; border-color:#334155;">.</button>
+          <button type="button" class="num-btn" onclick="numKey('BKSP')" style="background:#64748b; color:#fff; border-color:#64748b; grid-column: span 2;">⌫ លុប</button>
         </div>
       </div>
 
-      <div>
-        <div class="numpad">
-          <button class="num-btn" onclick="numKey('7')">7</button>
-          <button class="num-btn" onclick="numKey('8')">8</button>
-          <button class="num-btn" onclick="numKey('9')">9</button>
-          <button class="num-btn" onclick="numKey('4')">4</button>
-          <button class="num-btn" onclick="numKey('5')">5</button>
-          <button class="num-btn" onclick="numKey('6')">6</button>
-          <button class="num-btn" onclick="numKey('1')">1</button>
-          <button class="num-btn" onclick="numKey('2')">2</button>
-          <button class="num-btn" onclick="numKey('3')">3</button>
-          <button class="num-btn" onclick="numKey('.')">.</button>
-          <button class="num-btn" onclick="numKey('0')">0</button>
-          <button class="num-btn" onclick="numKey('C')" style="color:var(--danger);">C</button>
+      <!-- Col 3: Quick Cash & Checkout Actions -->
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <div class="quick-cash" style="margin-top:0;">
+          <button type="button" class="btn btn-light btn-sm" onclick="setExactCash()">គ្រប់ចំនួន</button>
+          <button type="button" class="btn btn-light btn-sm" onclick="addCash(1)">+$1</button>
+          <button type="button" class="btn btn-light btn-sm" onclick="addCash(5)">+$5</button>
+          <button type="button" class="btn btn-light btn-sm" onclick="addCash(10)">+$10</button>
+          <button type="button" class="btn btn-light btn-sm" onclick="addCashKhr(5000)">+5,000៛</button>
+          <button type="button" class="btn btn-light btn-sm" onclick="addCashKhr(10000)">+10,000៛</button>
         </div>
-        <div style="display:flex; flex-direction:column; gap:8px; margin-top:12px;">
-          <button class="btn btn-success" onclick="completeOrder(true)">🖨️ បង់ប្រាក់ & ព្រីន 80mm</button>
-          <button class="btn btn-primary" onclick="completeOrder(false)">✅ បង់ប្រាក់ (មិនព្រីន)</button>
-        </div>
+        <button type="button" class="btn btn-success" style="padding:13px;" onclick="completeOrder(true)">🖨️ បង់ប្រាក់ & ព្រីន 80mm</button>
+        <button type="button" class="btn btn-primary" style="padding:13px;" onclick="completeOrder(false)">✅ បង់ប្រាក់ (មិនព្រីន)</button>
+        <button type="button" class="btn btn-danger" style="padding:10px;" onclick="closeCheckout()">✖ បោះបង់</button>
       </div>
     </div>
   </div>
@@ -760,14 +785,37 @@ function setMod(idx, key, val) {
 function clearCart() { cart = []; expandedCartIdx = -1; document.getElementById('discountSelect').value = 'none'; renderCart(); renderProducts(); }
 
 // Checkout
+let coCurrency = 'USD';
+let receivedKhrStr = '0';
+
+function setCoCurrency(curr) {
+  coCurrency = curr;
+  const btnUsd = document.getElementById('btnCurrUsd');
+  const btnKhr = document.getElementById('btnCurrKhr');
+  const inpUsd = document.getElementById('coReceived');
+  const inpKhr = document.getElementById('coReceivedKhr');
+  if (btnUsd && btnKhr) {
+    btnUsd.classList.toggle('active', curr === 'USD');
+    btnKhr.classList.toggle('active', curr === 'KHR');
+  }
+  if (inpUsd && inpKhr) {
+    inpUsd.style.borderColor = curr === 'USD' ? 'var(--primary)' : 'var(--border)';
+    inpKhr.style.borderColor = curr === 'KHR' ? 'var(--primary)' : 'var(--border)';
+  }
+}
+
 function openCheckout() {
   if (!cart.length) return alert('សូមជ្រើសរើសភេសជ្ជៈជាមុនសិន!');
   const t = calcTotals();
   document.getElementById('coTotalUsd').textContent = fmtUsd(t.total);
   document.getElementById('coTotalKhr').textContent = fmtKhr(t.total);
+  coCurrency = 'USD';
   receivedStr = t.total.toFixed(2);
-  updateCheckoutCalc();
-  document.getElementById('checkoutModal').classList.add('open'); setTimeout(() => { const el = document.getElementById('coReceived'); if (el) { el.focus(); el.select(); } }, 50);
+  receivedKhrStr = '0';
+  setCoCurrency('USD');
+  updateCheckoutCalc(true);
+  document.getElementById('checkoutModal').classList.add('open');
+  setTimeout(() => { const el = document.getElementById('coReceived'); if (el) { el.focus(); el.select(); } }, 50);
 }
 function closeCheckout() { document.getElementById('checkoutModal').classList.remove('open'); }
 function selectPay(method, btn) {
@@ -784,38 +832,71 @@ function selectPay(method, btn) {
   } else box.style.display = 'none';
 }
 function numKey(k) {
+  if (coCurrency === 'KHR') {
+    if (k === 'C') receivedKhrStr = '0';
+    else if (k === 'BKSP') receivedKhrStr = receivedKhrStr.length > 1 ? receivedKhrStr.slice(0, -1) : '0';
+    else if (k === '.') return;
+    else receivedKhrStr = receivedKhrStr === '0' ? k : receivedKhrStr + k;
+    updateCheckoutCalc(true);
+    return;
+  }
   if (k === 'C') receivedStr = '0';
+  else if (k === 'BKSP') receivedStr = receivedStr.length > 1 ? receivedStr.slice(0, -1) : '0';
   else if (k === '.' && receivedStr.includes('.')) return;
   else receivedStr = receivedStr === '0' && k !== '.' ? k : receivedStr + k;
-  updateCheckoutCalc();
+  updateCheckoutCalc(true);
 }
-function setExactCash() { receivedStr = calcTotals().total.toFixed(2); updateCheckoutCalc(); }
-function addCash(amt) { receivedStr = (Number(receivedStr || 0) + amt).toFixed(2); updateCheckoutCalc(); }
-function addCashKhr(khr) { receivedStr = (Number(receivedStr || 0) + (khr / state.settings.exchangeRate)).toFixed(2); updateCheckoutCalc(); }
+function setExactCash() {
+  const totalUsd = calcTotals().total;
+  const rate = Number(state.settings.exchangeRate || 4100);
+  if (coCurrency === 'KHR') {
+    receivedKhrStr = String(Math.ceil((totalUsd * rate) / 100) * 100);
+  } else {
+    receivedStr = totalUsd.toFixed(2);
+  }
+  updateCheckoutCalc(true);
+}
+function addCash(amt) {
+  setCoCurrency('USD');
+  receivedStr = (Number(receivedStr || 0) + amt).toFixed(2);
+  updateCheckoutCalc(true);
+}
+function addCashKhr(khr) {
+  setCoCurrency('KHR');
+  receivedKhrStr = String(Number(receivedKhrStr || 0) + khr);
+  updateCheckoutCalc(true);
+}
 function onCoReceivedInput(val) {
   const inp = document.getElementById('coReceived');
   let raw = String(val || '').replace(/[^0-9.]/g, '');
   const dotIdx = raw.indexOf('.');
-  if (dotIdx !== -1) {
-    raw = raw.slice(0, dotIdx + 1) + raw.slice(dotIdx + 1).replace(/\./g, '');
-  }
-  if (raw.length > 1 && raw[0] === '0' && raw[1] !== '.') {
-    raw = raw.replace(/^0+/, '');
-  }
-  if (inp && inp.value !== raw) {
-    inp.value = raw;
-  }
+  if (dotIdx !== -1) raw = raw.slice(0, dotIdx + 1) + raw.slice(dotIdx + 1).replace(/\./g, '');
+  if (raw.length > 1 && raw[0] === '0' && raw[1] !== '.') raw = raw.replace(/^0+/, '');
+  if (inp && inp.value !== raw) inp.value = raw;
   receivedStr = raw === '' ? '0' : raw;
+  updateCheckoutCalc(false);
+}
+function onCoReceivedKhrInput(val) {
+  const inp = document.getElementById('coReceivedKhr');
+  let raw = String(val || '').replace(/[^0-9]/g, '');
+  if (raw.length > 1 && raw[0] === '0') raw = raw.replace(/^0+/, '');
+  if (inp && inp.value !== raw) inp.value = raw;
+  receivedKhrStr = raw === '' ? '0' : raw;
   updateCheckoutCalc(false);
 }
 
 function updateCheckoutCalc(syncInput = true) {
   const t = calcTotals();
-  const rec = Number(receivedStr || 0);
-  const chg = Math.max(0, rec - t.total);
-  const inp = document.getElementById('coReceived');
-  if (inp && syncInput) inp.value = receivedStr;
-  document.getElementById('coChange').textContent = `${fmtUsd(chg)} (${fmtKhr(chg)})`;
+  const rate = Number(state.settings.exchangeRate || 4100);
+  const usdNum = Number(receivedStr || 0);
+  const khrNum = Number(receivedKhrStr || 0);
+  const recUsd = usdNum + (khrNum / rate);
+  const chgUsd = Math.max(0, recUsd - t.total);
+  const inpUsd = document.getElementById('coReceived');
+  const inpKhr = document.getElementById('coReceivedKhr');
+  if (inpUsd && syncInput) inpUsd.value = receivedStr;
+  if (inpKhr && syncInput) inpKhr.value = receivedKhrStr;
+  document.getElementById('coChange').textContent = `${fmtUsd(chgUsd)} (${fmtKhr(chgUsd)})`;
 }
 
 document.addEventListener('keydown', (e) => {
