@@ -266,9 +266,11 @@
       <div class="totals-line"><span>បញ្ចុះតម្លៃ (Discount)</span><span id="sumDiscount" style="color:var(--danger);">-$0.00</span></div>
       <div class="totals-grand"><span>ត្រូវបង់ (Total)</span><span id="sumTotal">$0.00</span></div>
       <div class="totals-khr" id="sumKhr">0 ៛</div>
-      <div class="cart-actions">
+      <div id="heldOrdersBar" style="display:none; gap:6px; flex-wrap:wrap; padding-top:2px;"></div>
+      <div class="cart-actions" style="grid-template-columns: 1fr 1fr 1.6fr;">
         <button class="btn btn-light" onclick="clearCart()">🗑️ សម្អាត</button>
-        <button class="btn btn-success" onclick="openCheckout()">💳 គិតលុយ (Pay)</button>
+        <button class="btn" style="background:#f59e0b; color:#111;" onclick="holdCurrentOrder()">⏸️ ផ្អាកទុក</button>
+        <button class="btn btn-success" onclick="openCheckout()">💳 គិតលុយ</button>
       </div>
     </div>
   </div>
@@ -366,9 +368,15 @@
       <div class="bar-chart" id="yearlyChart"></div>
     </div>
 
-    <div class="card">
-      <div class="card-title"><span>💳 ចំណូលតាមវិធីទូទាត់</span></div>
-      <table class="tbl"><thead><tr><th>វិធីទូទាត់</th><th>ចំនួនវិក្កយបត្រ</th><th>សរុប ($)</th></tr></thead><tbody id="repPayTable"></tbody></table>
+    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-title"><span>🏆 ភេសជ្ជៈលក់ដាច់បំផុត (Top Items)</span></div>
+        <table class="tbl"><thead><tr><th>មុខទំនិញ</th><th style="text-align:center;">ចំនួនកែវ</th><th style="text-align:right;">សរុប ($)</th></tr></thead><tbody id="repTopItemsTable"></tbody></table>
+      </div>
+      <div class="card" style="margin-bottom:0;">
+        <div class="card-title"><span>💳 ចំណូលតាមវិធីទូទាត់</span></div>
+        <table class="tbl"><thead><tr><th>វិធីទូទាត់</th><th style="text-align:center;">វិក្កយបត្រ</th><th style="text-align:right;">សរុប ($)</th></tr></thead><tbody id="repPayTable"></tbody></table>
+      </div>
     </div>
   </div>
 </section>
@@ -392,6 +400,16 @@
         <label class="btn btn-light" style="cursor:pointer;">⬆️ Restore JSON<input type="file" accept=".json" style="display:none;" onchange="restoreJSON(event)"></label>
         <button class="btn btn-danger" onclick="resetSalesHistory()">🗑️ Reset ប្រវត្តិលក់ & របាយការណ៍</button>
       </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span>📂 គ្រប់គ្រងប្រភេទម៉ឺនុយ (Categories)</span></div>
+      <div class="form-grid" style="margin-bottom:12px;">
+        <div class="field"><label>ឈ្មោះប្រភេទថ្មី</label><input id="cName" placeholder="ឧ. ភេសជ្ជៈក្រឡុក (Frappe)"></div>
+        <div class="field"><label>Icon / Emoji</label><input id="cIcon" placeholder="🥤" value="🥤"></div>
+        <div class="field" style="justify-content:flex-end;"><button class="btn btn-primary" onclick="addCategory()">➕ បន្ថែមប្រភេទ</button></div>
+      </div>
+      <table class="tbl"><thead><tr><th>Icon</th><th>ឈ្មោះប្រភេទ</th><th>សកម្មភាព</th></tr></thead><tbody id="categoriesTable"></tbody></table>
     </div>
 
     <div class="card">
@@ -524,14 +542,22 @@ const DEFAULT_DATA = {
     { id: 4, name: 'នំ & អាហារសម្រន់', icon: '🥐' }
   ],
   products: [
-    { id: 1, category_id: 1, name: 'Iced Americano', price_usd: 1.50, cost_usd: 0.45, icon: '☕', image_url: '', is_available: true },
-    { id: 2, category_id: 1, name: 'Iced Latte', price_usd: 2.00, cost_usd: 0.70, icon: '🥛', image_url: '', is_available: true },
-    { id: 3, category_id: 1, name: 'កាហ្វេទឹកដោះគោខាប់', price_usd: 1.75, cost_usd: 0.60, icon: '🧋', image_url: '', is_available: true },
-    { id: 4, category_id: 1, name: 'កាហ្វេពងមាន់ (Egg Coffee)', price_usd: 2.50, cost_usd: 0.90, icon: '🥚', image_url: '', is_available: true },
-    { id: 5, category_id: 2, name: 'Matcha Latte', price_usd: 2.25, cost_usd: 0.85, icon: '🍵', image_url: '', is_available: true },
-    { id: 6, category_id: 2, name: 'តែក្រូចឆ្មារ (Lemon Tea)', price_usd: 1.50, cost_usd: 0.40, icon: '🍋', image_url: '', is_available: true },
-    { id: 7, category_id: 3, name: 'Passion Soda', price_usd: 1.75, cost_usd: 0.50, icon: '🥤', image_url: '', is_available: true },
-    { id: 8, category_id: 4, name: 'Croissant ប័រ', price_usd: 1.75, cost_usd: 0.80, icon: '🥐', image_url: '', is_available: true }
+    { id: 1, category_id: 1, name: 'Iced Americano', price_usd: 1.50, cost_usd: 0.45, icon: '☕', image_url: 'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20220%20220%22%3E%20%3Cdefs%3E%20%3ClinearGradient%20id%3D%22bg1%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23f7efe6%22/%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23e6d5c3%22/%3E%20%3C/linearGradient%3E%20%3ClinearGradient%20id%3D%22cof1%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%234a2511%22/%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23230f05%22/%3E%20%3C/linearGradient%3E%20%3C/defs%3E%20%3Crect%20width%3D%22220%22%20height%3D%22220%22%20rx%3D%2224%22%20fill%3D%22url%28%23bg1%29%22/%3E%20%3Cellipse%20cx%3D%22110%22%20cy%3D%22184%22%20rx%3D%2256%22%20ry%3D%229%22%20fill%3D%22rgba%280%2C0%2C0%2C0.12%29%22/%3E%20%3Cpath%20d%3D%22M62%2062%20L158%2062%20L144%20176%20Q142%20184%20132%20184%20L88%20184%20Q78%20184%2076%20176%20Z%22%20fill%3D%22url%28%23cof1%29%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%223%22%20opacity%3D%220.95%22/%3E%20%3Cellipse%20cx%3D%22110%22%20cy%3D%2264%22%20rx%3D%2248%22%20ry%3D%229%22%20fill%3D%22%236f3b1e%22/%3E%20%3C%21--%20Ice%20cubes%20--%3E%20%3Crect%20x%3D%2278%22%20y%3D%2256%22%20width%3D%2224%22%20height%3D%2222%22%20rx%3D%225%22%20transform%3D%22rotate%28-12%2090%2067%29%22%20fill%3D%22%23e8f6ff%22%20fill-opacity%3D%220.72%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%221.5%22/%3E%20%3Crect%20x%3D%22108%22%20y%3D%2254%22%20width%3D%2225%22%20height%3D%2223%22%20rx%3D%225%22%20transform%3D%22rotate%2810%20120%2065%29%22%20fill%3D%22%23dcf2ff%22%20fill-opacity%3D%220.68%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%221.5%22/%3E%20%3Crect%20x%3D%2294%22%20y%3D%2272%22%20width%3D%2224%22%20height%3D%2222%22%20rx%3D%225%22%20transform%3D%22rotate%286%20106%2083%29%22%20fill%3D%22%23cfeaff%22%20fill-opacity%3D%220.6%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%221.5%22/%3E%20%3C%21--%20Glass%20shine%20--%3E%20%3Cpath%20d%3D%22M75%2076%20L83%20170%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%20opacity%3D%220.35%22/%3E%20%3C/svg%3E', is_available: true },
+    { id: 2, category_id: 1, name: 'Iced Latte', price_usd: 2.00, cost_usd: 0.70, icon: '🥛', image_url: 'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20220%20220%22%3E%20%3Cdefs%3E%20%3ClinearGradient%20id%3D%22bg2%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23fdf6ee%22/%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23ead7c0%22/%3E%20%3C/linearGradient%3E%20%3ClinearGradient%20id%3D%22lat2%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%238b5a2b%22/%3E%3Cstop%20offset%3D%2248%25%22%20stop-color%3D%22%23c69c6d%22/%3E%3Cstop%20offset%3D%2252%25%22%20stop-color%3D%22%23f5e6d3%22/%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23fffaf2%22/%3E%20%3C/linearGradient%3E%20%3C/defs%3E%20%3Crect%20width%3D%22220%22%20height%3D%22220%22%20rx%3D%2224%22%20fill%3D%22url%28%23bg2%29%22/%3E%20%3Cellipse%20cx%3D%22110%22%20cy%3D%22185%22%20rx%3D%2254%22%20ry%3D%229%22%20fill%3D%22rgba%280%2C0%2C0%2C0.12%29%22/%3E%20%3Cpath%20d%3D%22M64%2058%20L156%2058%20L142%20177%20Q140%20185%20130%20185%20L90%20185%20Q80%20185%2078%20177%20Z%22%20fill%3D%22url%28%23lat2%29%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%223%22/%3E%20%3Cellipse%20cx%3D%22110%22%20cy%3D%2260%22%20rx%3D%2246%22%20ry%3D%228%22%20fill%3D%22%236f4219%22/%3E%20%3Crect%20x%3D%2284%22%20y%3D%2254%22%20width%3D%2222%22%20height%3D%2220%22%20rx%3D%224%22%20transform%3D%22rotate%28-8%2095%2064%29%22%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.65%22/%3E%20%3Crect%20x%3D%22112%22%20y%3D%2253%22%20width%3D%2222%22%20height%3D%2220%22%20rx%3D%224%22%20transform%3D%22rotate%289%20123%2063%29%22%20fill%3D%22%23ffffff%22%20fill-opacity%3D%220.6%22/%3E%20%3Cpath%20d%3D%22M77%2074%20L85%20172%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%20opacity%3D%220.4%22/%3E%20%3C/svg%3E', is_available: true },
+    { id: 3, category_id: 1, name: 'កាហ្វេទឹកដោះគោខាប់', price_usd: 1.75, cost_usd: 0.60, icon: '🧋', image_url: 'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20220%20220%22%3E%20%3Cdefs%3E%20%3ClinearGradient%20id%3D%22bg3%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23fbf0e4%22/%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23e4cbb0%22/%3E%20%3C/linearGradient%3E%20%3ClinearGradient%20id%3D%22cm3%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%235c2c16%22/%3E%3Cstop%20offset%3D%2270%25%22%20stop-color%3D%22%238d5524%22/%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23f3e5ab%22/%3E%20%3C/linearGradient%3E%20%3C/defs%3E%20%3Crect%20width%3D%22220%22%20height%3D%22220%22%20rx%3D%2224%22%20fill%3D%22url%28%23bg3%29%22/%3E%20%3Cellipse%20cx%3D%22110%22%20cy%3D%22186%22%20rx%3D%2254%22%20ry%3D%229%22%20fill%3D%22rgba%280%2C0%2C0%2C0.12%29%22/%3E%20%3Cpath%20d%3D%22M65%2062%20L155%2062%20L141%20178%20Q139%20186%20129%20186%20L91%20186%20Q81%20186%2079%20178%20Z%22%20fill%3D%22url%28%23cm3%29%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%223%22/%3E%20%3C%21--%20Condensed%20milk%20swirl%20--%3E%20%3Cpath%20d%3D%22M74%20150%20Q110%20140%20146%20152%22%20stroke%3D%22%23fffdf7%22%20stroke-width%3D%227%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22%20opacity%3D%220.85%22/%3E%20%3Cellipse%20cx%3D%22110%22%20cy%3D%2264%22%20rx%3D%2245%22%20ry%3D%228%22%20fill%3D%22%23431d0c%22/%3E%20%3Cpath%20d%3D%22M78%2078%20L85%20173%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%20opacity%3D%220.35%22/%3E%20%3C/svg%3E', is_available: true },
+    { id: 4, category_id: 1, name: 'កាហ្វេពងមាន់ (Egg Coffee)', price_usd: 2.50, cost_usd: 0.90, icon: '🥚', image_url: 'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20220%20220%22%3E%20%3Cdefs%3E%20%3ClinearGradient%20id%3D%22bg4%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23fff8eb%22/%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23ecd5b0%22/%3E%20%3C/linearGradient%3E%20%3ClinearGradient%20id%3D%22foam4%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23fff3c4%22/%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23f7d060%22/%3E%20%3C/linearGradient%3E%20%3C/defs%3E%20%3Crect%20width%3D%22220%22%20height%3D%22220%22%20rx%3D%2224%22%20fill%3D%22url%28%23bg4%29%22/%3E%20%3Cellipse%20cx%3D%22110%22%20cy%3D%22184%22%20rx%3D%2254%22%20ry%3D%229%22%20fill%3D%22rgba%280%2C0%2C0%2C0.12%29%22/%3E%20%3C%21--%20Dark%20coffee%20base%20--%3E%20%3Cpath%20d%3D%22M66%2096%20L154%2096%20L142%20176%20Q140%20184%20130%20184%20L90%20184%20Q80%20184%2078%20176%20Z%22%20fill%3D%22%232b1408%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%223%22/%3E%20%3C%21--%20Thick%20golden%20egg%20cream%20cap%20--%3E%20%3Cpath%20d%3D%22M64%2096%20L64%2068%20Q64%2052%20110%2052%20Q156%2052%20156%2068%20L156%2096%20Z%22%20fill%3D%22url%28%23foam4%29%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%222.5%22/%3E%20%3Cellipse%20cx%3D%22110%22%20cy%3D%2264%22%20rx%3D%2234%22%20ry%3D%227%22%20fill%3D%22%23fffbe6%22%20opacity%3D%220.75%22/%3E%20%3C/svg%3E', is_available: true },
+    { id: 5, category_id: 2, name: 'Matcha Latte', price_usd: 2.25, cost_usd: 0.85, icon: '🍵', image_url: 'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20220%20220%22%3E%20%3Cdefs%3E%20%3ClinearGradient%20id%3D%22bg5%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23f1f8ee%22/%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23d2e7c8%22/%3E%20%3C/linearGradient%3E%20%3ClinearGradient%20id%3D%22mat5%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%236da34d%22/%3E%3Cstop%20offset%3D%2255%25%22%20stop-color%3D%22%238ec468%22/%3E%3Cstop%20offset%3D%2260%25%22%20stop-color%3D%22%23f7f4eb%22/%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23ffffff%22/%3E%20%3C/linearGradient%3E%20%3C/defs%3E%20%3Crect%20width%3D%22220%22%20height%3D%22220%22%20rx%3D%2224%22%20fill%3D%22url%28%23bg5%29%22/%3E%20%3Cellipse%20cx%3D%22110%22%20cy%3D%22185%22%20rx%3D%2254%22%20ry%3D%229%22%20fill%3D%22rgba%280%2C0%2C0%2C0.12%29%22/%3E%20%3Cpath%20d%3D%22M64%2058%20L156%2058%20L142%20177%20Q140%20185%20130%20185%20L90%20185%20Q80%20185%2078%20177%20Z%22%20fill%3D%22url%28%23mat5%29%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%223%22/%3E%20%3Cellipse%20cx%3D%22110%22%20cy%3D%2260%22%20rx%3D%2246%22%20ry%3D%228%22%20fill%3D%22%23558638%22/%3E%20%3Cpath%20d%3D%22M77%2075%20L85%20172%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%224%22%20stroke-linecap%3D%22round%22%20opacity%3D%220.4%22/%3E%20%3C/svg%3E', is_available: true },
+    { id: 6, category_id: 2, name: 'តែក្រូចឆ្មារ (Lemon Tea)', price_usd: 1.50, cost_usd: 0.40, icon: '🍋', image_url: 'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20220%20220%22%3E%20%3Cdefs%3E%20%3ClinearGradient%20id%3D%22bg6%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23fffce6%22/%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23f3e29e%22/%3E%20%3C/linearGradient%3E%20%3ClinearGradient%20id%3D%22tea6%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23d97706%22/%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23f59e0b%22/%3E%20%3C/linearGradient%3E%20%3C/defs%3E%20%3Crect%20width%3D%22220%22%20height%3D%22220%22%20rx%3D%2224%22%20fill%3D%22url%28%23bg6%29%22/%3E%20%3Cellipse%20cx%3D%22110%22%20cy%3D%22185%22%20rx%3D%2254%22%20ry%3D%229%22%20fill%3D%22rgba%280%2C0%2C0%2C0.12%29%22/%3E%20%3Cpath%20d%3D%22M64%2062%20L156%2062%20L142%20177%20Q140%20185%20130%20185%20L90%20185%20Q80%20185%2078%20177%20Z%22%20fill%3D%22url%28%23tea6%29%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%223%22/%3E%20%3C%21--%20Lemon%20slice%20on%20rim%20--%3E%20%3Ccircle%20cx%3D%22152%22%20cy%3D%2262%22%20r%3D%2224%22%20fill%3D%22%23fde047%22%20stroke%3D%22%23eab308%22%20stroke-width%3D%223%22/%3E%20%3Ccircle%20cx%3D%22152%22%20cy%3D%2262%22%20r%3D%2219%22%20fill%3D%22%23fef9c3%22/%3E%20%3Cline%20x1%3D%22152%22%20y1%3D%2243%22%20x2%3D%22152%22%20y2%3D%2281%22%20stroke%3D%22%23eab308%22%20stroke-width%3D%221.5%22/%3E%20%3Cline%20x1%3D%22133%22%20y1%3D%2262%22%20x2%3D%22171%22%20y2%3D%2262%22%20stroke%3D%22%23eab308%22%20stroke-width%3D%221.5%22/%3E%20%3Cline%20x1%3D%22138%22%20y1%3D%2248%22%20x2%3D%22166%22%20y2%3D%2276%22%20stroke%3D%22%23eab308%22%20stroke-width%3D%221.5%22/%3E%20%3Cline%20x1%3D%22166%22%20y1%3D%2248%22%20x2%3D%22138%22%20y2%3D%2276%22%20stroke%3D%22%23eab308%22%20stroke-width%3D%221.5%22/%3E%20%3C/svg%3E', is_available: true },
+    { id: 7, category_id: 3, name: 'Passion Soda', price_usd: 1.75, cost_usd: 0.50, icon: '🥤', image_url: 'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20220%20220%22%3E%20%3Cdefs%3E%20%3ClinearGradient%20id%3D%22bg7%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23fff5e6%22/%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23ffd7a8%22/%3E%20%3C/linearGradient%3E%20%3ClinearGradient%20id%3D%22pas7%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%20%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23fb923c%22/%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23f97316%22/%3E%20%3C/linearGradient%3E%20%3C/defs%3E%20%3Crect%20width%3D%22220%22%20height%3D%22220%22%20rx%3D%2224%22%20fill%3D%22url%28%23bg7%29%22/%3E%20%3Cellipse%20cx%3D%22110%22%20cy%3D%22185%22%20rx%3D%2254%22%20ry%3D%229%22%20fill%3D%22rgba%280%2C0%2C0%2C0.12%29%22/%3E%20%3Cpath%20d%3D%22M64%2062%20L156%2062%20L142%20177%20Q140%20185%20130%20185%20L90%20185%20Q80%20185%2078%20177%20Z%22%20fill%3D%22url%28%23pas7%29%22%20stroke%3D%22%23ffffff%22%20stroke-width%3D%223%22/%3E%20%3C%21--%20Passion%20fruit%20seeds%20--%3E%20%3Ccircle%20cx%3D%2295%22%20cy%3D%2295%22%20r%3D%223%22%20fill%3D%22%231f2937%22/%3E%3Ccircle%20cx%3D%22106%22%20cy%3D%2290%22%20r%3D%223%22%20fill%3D%22%231f2937%22/%3E%20%3Ccircle%20cx%3D%22118%22%20cy%3D%2296%22%20r%3D%223%22%20fill%3D%22%231f2937%22/%3E%3Ccircle%20cx%3D%22102%22%20cy%3D%22105%22%20r%3D%223%22%20fill%3D%22%231f2937%22/%3E%20%3Ccircle%20cx%3D%22114%22%20cy%3D%22104%22%20r%3D%223%22%20fill%3D%22%231f2937%22/%3E%20%3C%21--%20Straw%20--%3E%20%3Cline%20x1%3D%22126%22%20y1%3D%22120%22%20x2%3D%22146%22%20y2%3D%2228%22%20stroke%3D%22%23ef4444%22%20stroke-width%3D%227%22%20stroke-linecap%3D%22round%22/%3E%20%3C/svg%3E', is_available: true },
+    { id: 8, category_id: 4, name: 'Croissant ប័រ', price_usd: 1.75, cost_usd: 0.80, icon: '🥐', image_url: 'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20220%20220%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22bg8%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%220%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23fff9ef%22/%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23f0dcc0%22/%3E%3C/linearGradient%3E%3ClinearGradient%20id%3D%22cro8%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%25%22%20stop-color%3D%22%23f59e0b%22/%3E%3Cstop%20offset%3D%2260%25%22%20stop-color%3D%22%23d97706%22/%3E%3Cstop%20offset%3D%22100%25%22%20stop-color%3D%22%23b45309%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width%3D%22220%22%20height%3D%22220%22%20rx%3D%2224%22%20fill%3D%22url%28%23bg8%29%22/%3E%3Cellipse%20cx%3D%22110%22%20cy%3D%22168%22%20rx%3D%2264%22%20ry%3D%2211%22%20fill%3D%22rgba%280%2C0%2C0%2C0.12%29%22/%3E%3Cpath%20d%3D%22M44%20132%20Q42%2098%2074%2092%20Q86%2090%2092%20104%20Q98%2086%20110%2086%20Q122%2086%20128%20104%20Q134%2090%20146%2092%20Q178%2098%20176%20132%20Q174%20156%20144%20156%20Q128%20156%20120%20144%20Q115%20150%20110%20150%20Q105%20150%20100%20144%20Q92%20156%2076%20156%20Q46%20156%2044%20132%20Z%22%20fill%3D%22url%28%23cro8%29%22%20stroke%3D%22%2378350f%22%20stroke-width%3D%222.5%22/%3E%3Cpath%20d%3D%22M76%2096%20Q70%20124%2078%20152%22%20stroke%3D%22%23fde68a%22%20stroke-width%3D%222.5%22%20fill%3D%22none%22%20opacity%3D%220.6%22/%3E%3Cpath%20d%3D%22M144%2096%20Q150%20124%20142%20152%22%20stroke%3D%22%23fde68a%22%20stroke-width%3D%222.5%22%20fill%3D%22none%22%20opacity%3D%220.6%22/%3E%3C/svg%3E', is_available: true },
+    { id: 9, category_id: 1, name: 'Iced Mocha', price_usd: 2.25, cost_usd: 0.80, icon: '🍫', image_url: 'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20220%20220%22%3E%3Crect%20width%3D%22220%22%20height%3D%22220%22%20rx%3D%2224%22%20fill%3D%22%23f5ebe0%22/%3E%3Cellipse%20cx%3D%22110%22%20cy%3D%22185%22%20rx%3D%2254%22%20ry%3D%229%22%20fill%3D%22rgba%280%2C0%2C0%2C0.12%29%22/%3E%3Cpath%20d%3D%22M64%2058%20L156%2058%20L142%20177%20Q140%20185%20130%20185%20L90%20185%20Q80%20185%2078%20177%20Z%22%20fill%3D%22%236f4e37%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22/%3E%3Cpath%20d%3D%22M74%20148%20Q110%20135%20146%20148%20L142%20177%20Q140%20185%20130%20185%20L90%20185%20Q80%20185%2078%20177%20Z%22%20fill%3D%22%233e2723%22/%3E%3Cpath%20d%3D%22M68%2068%20Q110%2082%20152%2068%22%20stroke%3D%22%23d4a373%22%20stroke-width%3D%226%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22/%3E%3Ccircle%20cx%3D%22110%22%20cy%3D%2260%22%20r%3D%2216%22%20fill%3D%22%23fff8f0%22%20opacity%3D%220.85%22/%3E%3C/svg%3E', is_available: true },
+    { id: 10, category_id: 1, name: 'Caramel Macchiato', price_usd: 2.25, cost_usd: 0.85, icon: '🍮', image_url: 'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20220%20220%22%3E%3Crect%20width%3D%22220%22%20height%3D%22220%22%20rx%3D%2224%22%20fill%3D%22%23faedcd%22/%3E%3Cellipse%20cx%3D%22110%22%20cy%3D%22185%22%20rx%3D%2254%22%20ry%3D%229%22%20fill%3D%22rgba%280%2C0%2C0%2C0.12%29%22/%3E%3Cpath%20d%3D%22M64%2058%20L156%2058%20L142%20177%20Q140%20185%20130%20185%20L90%20185%20Q80%20185%2078%20177%20Z%22%20fill%3D%22%23b08968%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22/%3E%3Cpath%20d%3D%22M70%2072%20Q110%2092%20150%2072%22%20stroke%3D%22%239c6644%22%20stroke-width%3D%225%22%20fill%3D%22none%22/%3E%3Cellipse%20cx%3D%22110%22%20cy%3D%2260%22%20rx%3D%2244%22%20ry%3D%229%22%20fill%3D%22%23fff%22%20opacity%3D%220.9%22/%3E%3Cpath%20d%3D%22M84%2058%20Q110%2066%20136%2058%22%20stroke%3D%22%23c68b59%22%20stroke-width%3D%224%22%20fill%3D%22none%22%20stroke-linecap%3D%22round%22/%3E%3C/svg%3E', is_available: true },
+    { id: 11, category_id: 2, name: 'តែបៃតងក្រូចឆ្មារ (Green Lemon Tea)', price_usd: 1.50, cost_usd: 0.45, icon: '🍃', image_url: 'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20220%20220%22%3E%3Crect%20width%3D%22220%22%20height%3D%22220%22%20rx%3D%2224%22%20fill%3D%22%23e9edc9%22/%3E%3Cellipse%20cx%3D%22110%22%20cy%3D%22185%22%20rx%3D%2254%22%20ry%3D%229%22%20fill%3D%22rgba%280%2C0%2C0%2C0.12%29%22/%3E%3Cpath%20d%3D%22M64%2062%20L156%2062%20L142%20177%20Q140%20185%20130%20185%20L90%20185%20Q80%20185%2078%20177%20Z%22%20fill%3D%22%23a3b18a%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22/%3E%3Ccircle%20cx%3D%22102%22%20cy%3D%22145%22%20r%3D%2210%22%20fill%3D%22%23588157%22/%3E%3Ccircle%20cx%3D%22122%22%20cy%3D%22152%22%20r%3D%2210%22%20fill%3D%22%23588157%22/%3E%3Ccircle%20cx%3D%2296%22%20cy%3D%22166%22%20r%3D%2210%22%20fill%3D%22%233a5a40%22/%3E%3Ccircle%20cx%3D%22116%22%20cy%3D%22168%22%20r%3D%2210%22%20fill%3D%22%233a5a40%22/%3E%3C/svg%3E', is_available: true },
+    { id: 12, category_id: 2, name: 'តែថៃទឹកដោះគោ (Thai Milk Tea)', price_usd: 1.75, cost_usd: 0.55, icon: '🧡', image_url: 'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20220%20220%22%3E%3Crect%20width%3D%22220%22%20height%3D%22220%22%20rx%3D%2224%22%20fill%3D%22%23ffedd8%22/%3E%3Cellipse%20cx%3D%22110%22%20cy%3D%22185%22%20rx%3D%2254%22%20ry%3D%229%22%20fill%3D%22rgba%280%2C0%2C0%2C0.12%29%22/%3E%3Cpath%20d%3D%22M64%2062%20L156%2062%20L142%20177%20Q140%20185%20130%20185%20L90%20185%20Q80%20185%2078%20177%20Z%22%20fill%3D%22%23e85d04%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22/%3E%3Cellipse%20cx%3D%22110%22%20cy%3D%2264%22%20rx%3D%2246%22%20ry%3D%228%22%20fill%3D%22%23f48c06%22/%3E%3Cpath%20d%3D%22M74%20148%20Q110%20138%20146%20148%20L142%20177%20Q140%20185%20130%20185%20L90%20185%20Q80%20185%2078%20177%20Z%22%20fill%3D%22%23fff3b0%22%20opacity%3D%220.8%22/%3E%3C/svg%3E', is_available: true },
+    { id: 13, category_id: 3, name: 'Strawberry Soda', price_usd: 1.75, cost_usd: 0.50, icon: '🍓', image_url: 'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20220%20220%22%3E%3Crect%20width%3D%22220%22%20height%3D%22220%22%20rx%3D%2224%22%20fill%3D%22%23ffe5ec%22/%3E%3Cellipse%20cx%3D%22110%22%20cy%3D%22185%22%20rx%3D%2254%22%20ry%3D%229%22%20fill%3D%22rgba%280%2C0%2C0%2C0.12%29%22/%3E%3Cpath%20d%3D%22M64%2062%20L156%2062%20L142%20177%20Q140%20185%20130%20185%20L90%20185%20Q80%20185%2078%20177%20Z%22%20fill%3D%22%23ff758f%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22/%3E%3Ccircle%20cx%3D%2298%22%20cy%3D%22110%22%20r%3D%2214%22%20fill%3D%22%23ff4d6d%22/%3E%3Ccircle%20cx%3D%22122%22%20cy%3D%22128%22%20r%3D%2214%22%20fill%3D%22%23ff4d6d%22/%3E%3Cpath%20d%3D%22M98%2096%20Q105%2084%20114%2090%22%20stroke%3D%22%232d6a4f%22%20stroke-width%3D%223%22%20fill%3D%22none%22/%3E%3C/svg%3E', is_available: true },
+    { id: 14, category_id: 3, name: 'Blue Ocean Soda', price_usd: 1.75, cost_usd: 0.50, icon: '🧊', image_url: 'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20220%20220%22%3E%3Crect%20width%3D%22220%22%20height%3D%22220%22%20rx%3D%2224%22%20fill%3D%22%23e0fbfc%22/%3E%3Cellipse%20cx%3D%22110%22%20cy%3D%22185%22%20rx%3D%2254%22%20ry%3D%229%22%20fill%3D%22rgba%280%2C0%2C0%2C0.12%29%22/%3E%3Cpath%20d%3D%22M64%2062%20L156%2062%20L142%20177%20Q140%20185%20130%20185%20L90%20185%20Q80%20185%2078%20177%20Z%22%20fill%3D%22%2300b4d8%22%20stroke%3D%22%23fff%22%20stroke-width%3D%223%22/%3E%3Ccircle%20cx%3D%2295%22%20cy%3D%2290%22%20r%3D%224%22%20fill%3D%22%23fff%22%20opacity%3D%220.7%22/%3E%3Ccircle%20cx%3D%22120%22%20cy%3D%22105%22%20r%3D%225%22%20fill%3D%22%23fff%22%20opacity%3D%220.7%22/%3E%3Ccircle%20cx%3D%22105%22%20cy%3D%22130%22%20r%3D%224%22%20fill%3D%22%23fff%22%20opacity%3D%220.7%22/%3E%3Ccircle%20cx%3D%22126%22%20cy%3D%22145%22%20r%3D%223%22%20fill%3D%22%23fff%22%20opacity%3D%220.7%22/%3E%3C/svg%3E', is_available: true },
+    { id: 15, category_id: 4, name: 'នំខេកសូកូឡា (Chocolate Cake)', price_usd: 2.25, cost_usd: 1.00, icon: '🍰', image_url: 'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20220%20220%22%3E%3Crect%20width%3D%22220%22%20height%3D%22220%22%20rx%3D%2224%22%20fill%3D%22%23fff3e0%22/%3E%3Cellipse%20cx%3D%22110%22%20cy%3D%22175%22%20rx%3D%2264%22%20ry%3D%2210%22%20fill%3D%22rgba%280%2C0%2C0%2C0.12%29%22/%3E%3Cpolygon%20points%3D%2250%2C155%20170%2C155%20110%2C72%22%20fill%3D%22%23f4a261%22%20stroke%3D%22%238d5524%22%20stroke-width%3D%223%22/%3E%3Cpolygon%20points%3D%2250%2C155%20170%2C155%20162%2C140%2058%2C140%22%20fill%3D%22%23e76f51%22/%3E%3Ccircle%20cx%3D%22110%22%20cy%3D%2264%22%20r%3D%2210%22%20fill%3D%22%23e63946%22/%3E%3C/svg%3E', is_available: true },
+    { id: 16, category_id: 4, name: 'នំប៉័ងសាំងវិច (Club Sandwich)', price_usd: 2.00, cost_usd: 0.90, icon: '🥪', image_url: 'data:image/svg+xml;utf8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%20220%20220%22%3E%3Crect%20width%3D%22220%22%20height%3D%22220%22%20rx%3D%2224%22%20fill%3D%22%23f8edeb%22/%3E%3Cellipse%20cx%3D%22110%22%20cy%3D%22175%22%20rx%3D%2266%22%20ry%3D%2210%22%20fill%3D%22rgba%280%2C0%2C0%2C0.12%29%22/%3E%3Cpolygon%20points%3D%2244%2C146%20176%2C146%20110%2C82%22%20fill%3D%22%23f9c74f%22%20stroke%3D%22%23b5651d%22%20stroke-width%3D%223%22/%3E%3Crect%20x%3D%2252%22%20y%3D%22128%22%20width%3D%22116%22%20height%3D%228%22%20rx%3D%224%22%20fill%3D%22%2390be6d%22/%3E%3Crect%20x%3D%2248%22%20y%3D%22136%22%20width%3D%22124%22%20height%3D%228%22%20rx%3D%224%22%20fill%3D%22%23f94144%22/%3E%3C/svg%3E', is_available: true }
   ],
   discounts: [
     { id: 1, name: 'និស្សិត CADT (10%)', type: 'percent', value: 10 },
@@ -542,6 +568,18 @@ const DEFAULT_DATA = {
 };
 
 let state = JSON.parse(localStorage.getItem('sak_coffee_pos_v3') || 'null') || structuredClone(DEFAULT_DATA);
+if (Array.isArray(state.products)) {
+  const defMap = new Map(DEFAULT_DATA.products.map(dp => [Number(dp.id), dp.image_url]));
+  state.products = state.products.map(p => ({
+    ...p,
+    image_url: p.image_url || defMap.get(Number(p.id)) || ''
+  }));
+  const existingIds = new Set(state.products.map(p => Number(p.id)));
+  DEFAULT_DATA.products.forEach(dp => {
+    if (!existingIds.has(Number(dp.id))) state.products.push(structuredClone(dp));
+  });
+}
+if (!Array.isArray(state.heldOrders)) state.heldOrders = [];
 state.settings = { ...DEFAULT_DATA.settings, ...(state.settings || {}) };
 if (!state.settings.apiUrl || !state.settings.apiUrl.trim() || state.settings.apiUrl.includes('AKfycbzLP3_IdnbJ5ih24W5R0eqD3nHpDzlbN5nASJ0CroAmKC9rnR_zvz9Q5hnziHo30TaB')) {
   state.settings.apiUrl = DEFAULT_DATA.settings.apiUrl;
@@ -556,6 +594,7 @@ let receivedStr = '0';
 function saveState() {
   localStorage.setItem('sak_coffee_pos_v3', JSON.stringify(state));
   updateSyncIndicator();
+renderHeldOrders();
 }
 
 function fmtUsd(n) { return '$' + Number(n || 0).toFixed(2); }
@@ -1115,8 +1154,25 @@ function renderReports() {
     byPay[o.payment_method].sum += o.total_usd;
   });
   document.getElementById('repPayTable').innerHTML = Object.entries(byPay).map(([k, v]) =>
-    `<tr><td><strong>${k}</strong></td><td>${v.count}</td><td>${fmtUsd(v.sum)}</td></tr>`
+    `<tr><td><strong>${k}</strong></td><td style="text-align:center;">${v.count}</td><td style="text-align:right;">${fmtUsd(v.sum)}</td></tr>`
   ).join('') || '<tr><td colspan="3" style="text-align:center; color:var(--muted);">គ្មានទិន្នន័យ</td></tr>';
+
+  const byItem = {};
+  filtered.forEach(o => {
+    (o.items || []).forEach(i => {
+      const k = i.name || 'Unknown';
+      byItem[k] = byItem[k] || { qty: 0, rev: 0 };
+      byItem[k].qty += Number(i.qty || 1);
+      byItem[k].rev += Number(i.unit_price || 0) * Number(i.qty || 1);
+    });
+  });
+  const topList = Object.entries(byItem).sort((a, b) => b[1].qty - a[1].qty).slice(0, 10);
+  const topTbl = document.getElementById('repTopItemsTable');
+  if (topTbl) {
+    topTbl.innerHTML = topList.map(([name, v]) =>
+      `<tr><td><strong>${name}</strong></td><td style="text-align:center;">${v.qty}</td><td style="text-align:right;">${fmtUsd(v.rev)}</td></tr>`
+    ).join('') || '<tr><td colspan="3" style="text-align:center; color:var(--muted);">គ្មានទិន្នន័យ</td></tr>';
+  }
 
   if (mode === 'yearly') {
     const months = Array(12).fill(0);
@@ -1137,6 +1193,14 @@ function renderSettings() {
   document.getElementById('setShopAddress').value = state.settings.shopAddress;
   document.getElementById('setRate').value = state.settings.exchangeRate;
   document.getElementById('setApiUrl').value = state.settings.apiUrl || '';
+  const catTbl = document.getElementById('categoriesTable');
+  if (catTbl) {
+    catTbl.innerHTML = state.categories.map(c => `
+      <tr>
+        <td>${c.icon || '☕'}</td><td><strong>${c.name}</strong></td>
+        <td><button class="btn btn-danger btn-sm" onclick="delCategory(${c.id})">លុប</button></td>
+      </tr>`).join('');
+  }
   document.getElementById('discountsTable').innerHTML = state.discounts.map(d => `
     <tr>
       <td>${d.name}</td><td>${d.type === 'percent' ? '%' : '$'}</td><td>${d.value}</td>
@@ -1341,6 +1405,76 @@ function restoreJSON(e) {
   r.readAsText(f);
 }
 
+// Hold / Park Orders
+function holdCurrentOrder() {
+  if (!cart.length) return alert('មិនមានទំនិញក្នុងកន្ត្រកសម្រាប់ផ្អាកទេ!');
+  const label = prompt('ដាក់ឈ្មោះ ឬលេខតុសម្រាប់វិក្កយបត្រផ្អាកនេះ (ឧ. តុទី ២ ឬ និស្សិតអាវខៀវ)៖', 'ភ្ញៀវ #' + (state.heldOrders.length + 1));
+  if (label === null) return;
+  state.heldOrders.push({
+    id: Date.now(),
+    label: label.trim() || ('ភ្ញៀវ #' + (state.heldOrders.length + 1)),
+    orderType: document.getElementById('orderTypeSelect').value,
+    discountVal: document.getElementById('discountSelect').value,
+    items: structuredClone(cart)
+  });
+  saveState();
+  clearCart();
+  renderHeldOrders();
+}
+
+function resumeHeldOrder(id) {
+  const idx = state.heldOrders.findIndex(h => h.id === id);
+  if (idx === -1) return;
+  if (cart.length && !confirm('កន្ត្រកបច្ចុប្បន្នមានទំនិញស្រាប់ តើអ្នកចង់ជំនួសដោយវិក្កយបត្រដែលផ្អាកនេះទេ?')) return;
+  const held = state.heldOrders.splice(idx, 1)[0];
+  cart = held.items || [];
+  document.getElementById('orderTypeSelect').value = held.orderType || 'Takeaway';
+  document.getElementById('discountSelect').value = held.discountVal || 'none';
+  saveState();
+  renderCart();
+  renderProducts();
+  renderHeldOrders();
+}
+
+function renderHeldOrders() {
+  const bar = document.getElementById('heldOrdersBar');
+  if (!bar) return;
+  if (!state.heldOrders || !state.heldOrders.length) {
+    bar.style.display = 'none';
+    bar.innerHTML = '';
+    return;
+  }
+  bar.style.display = 'flex';
+  bar.innerHTML = state.heldOrders.map(h => `
+    <button class="chip" style="background:#fef3c7; border-color:#f59e0b; color:#92400e; font-weight:600;" onclick="resumeHeldOrder(${h.id})" title="ចុចដើម្បីបើកវិក្កយបត្រនេះមកគិតលុយវិញ">
+      ⏸️ ${h.label} (${h.items.reduce((s,i)=>s+i.qty,0)})
+    </button>`).join('');
+}
+
+function addCategory() {
+  const name = document.getElementById('cName').value.trim();
+  const icon = document.getElementById('cIcon').value.trim() || '☕';
+  if (!name) return alert('សូមបញ្ចូលឈ្មោះប្រភេទម៉ឺនុយ!');
+  state.categories.push({ id: Date.now(), name, icon });
+  saveState();
+  renderCategories();
+  renderSettings();
+  syncCatalogToBackend(true);
+  document.getElementById('cName').value = '';
+}
+
+function delCategory(id) {
+  if (state.products.some(p => String(p.category_id) === String(id))) {
+    return alert('មិនអាចលុបប្រភេទនេះបានទេ ព្រោះមានមុខទំនិញកំពុងប្រើប្រាស់វា!');
+  }
+  if (!confirm('តើអ្នកចង់លុបប្រភេទម៉ឺនុយនេះមែនទេ?')) return;
+  state.categories = state.categories.filter(c => String(c.id) !== String(id));
+  saveState();
+  renderCategories();
+  renderSettings();
+  syncCatalogToBackend(true);
+}
+
 // Init
 renderCategories();
 renderProducts();
@@ -1348,6 +1482,7 @@ renderDiscountOptions();
 renderCart();
 initReportFilters();
 updateSyncIndicator();
+renderHeldOrders();
 
 // Auto-Sync ស្វ័យប្រវត្តិ (ពេលបើកទំព័រ, ពេលភ្ជាប់អ៊ីនធឺណិតវិញ, និងរៀងរាល់ ៣០ វិនាទី)
 window.addEventListener('online', async () => {
