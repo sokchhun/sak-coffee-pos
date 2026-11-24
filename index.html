@@ -400,6 +400,7 @@
         <div class="field"><label>Google Apps Script Web App URL (Backend API)</label><input id="setApiUrl" placeholder="https://script.google.com/macros/s/.../exec"></div>
         <div class="field"><label>Upload រូបភាព KHQR ហាង (ABA / ACLEDA)</label><input type="file" accept="image/*" onchange="handleKhqrImage(event)"></div>
         <div class="field"><label>លេខកូដសម្ងាត់អ្នកគ្រប់គ្រង (Admin PIN - ទុកទទេបើមិនប្រើ)</label><input id="setAdminPin" type="password" placeholder="ឧ. 1234"></div>
+        <div class="field"><label>លេខសម្ងាត់ភ្ជាប់ API ពីចម្ងាយ (Remote API Key - ជម្រើស)</label><input id="setApiKey" type="password" placeholder="ឧ. SAK-SECRET-2026"></div>
       </div>
       <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
         <button class="btn btn-primary" onclick="saveSettings()">💾 រក្សាទុកការកំណត់</button>
@@ -560,7 +561,8 @@ const DEFAULT_DATA = {
     exchangeRate: 4100,
     apiUrl: 'https://script.google.com/macros/s/AKfycbxB-ff0HWBJHQ02u1oT8tc8OtxsRo8GXGv7tZaY42WGlBB_3iwv_L2Ztzcx19lKzo85/exec',
     khqrImage: '',
-    adminPin: ''
+    adminPin: '',
+    apiKey: ''
   },
   categories: [
     { id: 1, name: 'កាហ្វេ (Coffee)', icon: '☕' },
@@ -1006,7 +1008,7 @@ async function pushOrderToBackend(order, action = 'create') {
     const res = await fetch(state.settings.apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ ...order, action })
+      body: JSON.stringify({ ...order, action, apiKey: state.settings?.apiKey || '' })
     });
     const data = await res.json();
     if (data.status === 'success') {
@@ -1065,6 +1067,7 @@ async function syncCatalogToBackend(silent = true) {
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
         action: 'sync_catalog',
+        apiKey: state.settings?.apiKey || '',
         categories: state.categories,
         products: state.products,
         discounts: state.discounts,
@@ -1102,7 +1105,9 @@ async function _pullFromBackendInner(silent = false, forcePull = false) {
     return;
   }
   try {
-    const res = await fetch(url);
+    const k = encodeURIComponent((state.settings?.apiKey || '').trim());
+    const fetchUrl = k ? (url + (url.includes('?') ? '&' : '?') + 'apiKey=' + k) : url;
+    const res = await fetch(fetchUrl);
     const data = await res.json();
     if (data.status !== 'success') {
       if (!silent) alert('មិនអាចទាញទិន្នន័យពី Google Sheets បានទេ!');
@@ -1278,6 +1283,7 @@ function handleProdImage(e) {
 }
 
 function saveProduct() {
+  if (!verifyAdminPin('រក្សាទុក/កែប្រែម៉ឺនុយ')) return;
   const idVal = document.getElementById('editProdId').value;
   const existing = idVal ? state.products.find(p => String(p.id) === String(idVal)) : null;
   const obj = {
@@ -1326,11 +1332,13 @@ function resetProductForm() {
 }
 
 function toggleStock(id) {
+  if (!verifyAdminPin('ប្តូរស្ថានភាពស្តុកម៉ឺនុយ')) return;
   const p = state.products.find(x => x.id === id);
   if (p) { p.is_available = p.is_available === false ? true : false; saveState(); renderMenuTable(); renderProducts(); syncCatalogToBackend(true); }
 }
 
 function deleteProduct(id) {
+  if (!verifyAdminPin('លុបម៉ឺនុយ')) return;
   if (!confirm('លុបទំនិញនេះ?')) return;
   state.products = state.products.filter(x => x.id !== id);
   saveState(); renderMenuTable(); renderProducts(); syncCatalogToBackend(true);
@@ -1443,6 +1451,8 @@ function renderSettings() {
   document.getElementById('setApiUrl').value = state.settings.apiUrl || '';
   const pinEl = document.getElementById('setAdminPin');
   if (pinEl) pinEl.value = state.settings.adminPin || '';
+  const keyEl = document.getElementById('setApiKey');
+  if (keyEl) keyEl.value = state.settings.apiKey || '';
   const catTbl = document.getElementById('categoriesTable');
   if (catTbl) {
     catTbl.innerHTML = state.categories.map(c => `
@@ -1470,11 +1480,14 @@ async function saveSettings() {
   state.settings.apiUrl = document.getElementById('setApiUrl').value.trim();
   const pinEl = document.getElementById('setAdminPin');
   if (pinEl) state.settings.adminPin = pinEl.value.trim();
+  const keyEl = document.getElementById('setApiKey');
+  if (keyEl) state.settings.apiKey = keyEl.value.trim();
   saveState();
   await syncCatalogToBackend(false);
 }
 
 function addDiscount() {
+  if (!verifyAdminPin('បន្ថែមបញ្ចុះតម្លៃ')) return;
   const name = document.getElementById('dName').value.trim();
   const type = document.getElementById('dType').value;
   const value = Number(document.getElementById('dVal').value || 0);
@@ -1484,6 +1497,7 @@ function addDiscount() {
   document.getElementById('dName').value = ''; document.getElementById('dVal').value = '';
 }
 function delDiscount(id) {
+  if (!verifyAdminPin('លុបបញ្ចុះតម្លៃ')) return;
   if (!confirm('តើអ្នកចង់លុបប្រភេទបញ្ចុះតម្លៃនេះមែនទេ?')) return;
   const target = state.discounts.find(d => String(d.id) === String(id));
   if (!Array.isArray(state.deletedDiscountIds)) state.deletedDiscountIds = [];
@@ -1512,6 +1526,7 @@ function exportOrdersCSV() {
 let editingOrder = null;
 
 function openEditOrder(id) {
+  if (!verifyAdminPin('កែប្រែ ឬលុបទំនិញក្នុងវិក្កយបត្រ')) return;
   const o = state.orders.find(x => x.id === id);
   if (!o) return;
   editingOrder = structuredClone(o);
@@ -1654,7 +1669,7 @@ async function resetSalesHistory() {
       await fetch(state.settings.apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'reset' })
+        body: JSON.stringify({ action: 'reset', apiKey: state.settings?.apiKey || '' })
       });
     } catch (e) { console.warn('Reset sync error:', e); }
   }
@@ -1668,6 +1683,7 @@ function backupJSON() {
   a.click();
 }
 function restoreJSON(e) {
+  if (!verifyAdminPin('Restore ទិន្នន័យ JSON')) { e.target.value = ''; return; }
   const f = e.target.files[0]; if (!f) return;
   const r = new FileReader();
   r.onload = ev => { state = JSON.parse(ev.target.result); saveState(); location.reload(); };
@@ -1721,6 +1737,7 @@ function renderHeldOrders() {
 }
 
 function addCategory() {
+  if (!verifyAdminPin('បន្ថែមប្រភេទម៉ឺនុយ')) return;
   const name = document.getElementById('cName').value.trim();
   const icon = document.getElementById('cIcon').value.trim() || '☕';
   if (!name) return alert('សូមបញ្ចូលឈ្មោះប្រភេទម៉ឺនុយ!');
@@ -1733,6 +1750,7 @@ function addCategory() {
 }
 
 function delCategory(id) {
+  if (!verifyAdminPin('លុបប្រភេទម៉ឺនុយ')) return;
   if (state.products.some(p => String(p.category_id) === String(id))) {
     return alert('មិនអាចលុបប្រភេទនេះបានទេ ព្រោះមានមុខទំនិញកំពុងប្រើប្រាស់វា!');
   }
