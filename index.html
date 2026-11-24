@@ -962,7 +962,8 @@ document.addEventListener('keydown', (e) => {
 async function completeOrder(doPrint) {
   const t = calcTotals();
   const now = new Date();
-  const code = 'SC-' + now.toISOString().slice(2,10).replace(/-/g,'') + '-' + String(state.orders.length + 1).padStart(3, '0');
+  const randSuffix = String(now.getTime()).slice(-4);
+  const code = 'SC-' + now.toISOString().slice(2,10).replace(/-/g,'') + '-' + String(state.orders.length + 1).padStart(3, '0') + '-' + randSuffix;
   const order = {
     id: Date.now(),
     order_code: code,
@@ -1018,7 +1019,13 @@ async function pushOrderToBackend(order, action = 'create') {
     const res = await fetch(state.settings.apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ ...order, action, apiKey: state.settings?.apiKey || '' })
+      body: JSON.stringify({
+        ...order,
+        subtotal_usd: order.subtotal,
+        discount_usd: order.discount,
+        action,
+        apiKey: state.settings?.apiKey || ''
+      })
     });
     const data = await res.json();
     if (data.status === 'success') {
@@ -1210,15 +1217,40 @@ async function _pullFromBackendInner(silent = false, forcePull = false) {
     }
     if (Array.isArray(data.orders)) {
       const deletedCodes = new Set((state.deletedOrderCodes || []).map(String));
-      const localUnsynced = state.orders.filter(o => !o.synced && !deletedCodes.has(String(o.order_code)));
+      const localUnsynced = (state.orders || []).filter(o => o && !o.synced && !deletedCodes.has(String(o.order_code)));
       const mergedMap = new Map();
-      data.orders.forEach(o => {
-        const code = String(o.order_code || '');
-        if (code && !deletedCodes.has(code)) {
-          mergedMap.set(code, { ...o, synced: true });
+      data.orders.forEach((o, idx) => {
+        const code = String(o.order_code || o.id || ('ROW-' + (idx + 1))).trim();
+        if (!code || deletedCodes.has(code)) return;
+        const normItems = Array.isArray(o.items) ? o.items : [];
+        const normSubtotal = Number(o.subtotal ?? o.subtotal_usd ?? o.total_usd ?? 0);
+        const normDiscount = Number(o.discount ?? o.discount_usd ?? 0);
+        const normTotal = Number(o.total_usd ?? Math.max(0, normSubtotal - normDiscount));
+        const normRate = Number(o.exchange_rate || state.settings.exchangeRate || 4100);
+        const normKhr = Number(o.total_khr || Math.round(normTotal * normRate));
+        mergedMap.set(code, {
+          ...o,
+          id: Number(o.id) || (Date.now() + idx),
+          order_code: code,
+          subtotal: normSubtotal,
+          discount: normDiscount,
+          total_usd: normTotal,
+          exchange_rate: normRate,
+          total_khr: normKhr,
+          payment_method: String(o.payment_method || 'Cash'),
+          order_type: String(o.order_type || 'Takeaway'),
+          created_at: String(o.created_at || new Date().toISOString()),
+          items: normItems,
+          synced: true
+        });
+      });
+      // Always preserve local unsynced/offline orders (and never let sheet pull wipe them out)
+      localUnsynced.forEach(o => {
+        const c = String(o.order_code);
+        if (c && !deletedCodes.has(c)) {
+          mergedMap.set(c, { ...o, synced: false });
         }
       });
-      localUnsynced.forEach(o => mergedMap.set(String(o.order_code), o));
       state.orders = Array.from(mergedMap.values()).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     }
     saveState();
@@ -1403,7 +1435,7 @@ function renderReports() {
 
   const rev = filtered.reduce((s, o) => s + o.total_usd, 0);
   const disc = filtered.reduce((s, o) => s + o.discount, 0);
-  const cost = filtered.reduce((s, o) => s + o.items.reduce((is, i) => is + (i.unit_cost || 0) * i.qty, 0), 0);
+  const cost = filtered.reduce((s, o) => s + (Array.isArray(o.items) ? o.items.reduce((is, i) => is + (i.unit_cost || 0) * i.qty, 0) : 0), 0);
   const profit = rev - cost;
 
   document.getElementById('kpiRev').textContent = fmtUsd(rev);
@@ -1888,7 +1920,9 @@ try {
 // Auto-Sync ស្វ័យប្រវត្តិ (ពេលបើកទំព័រ, ពេលភ្ជាប់អ៊ីនធឺណិតវិញ, និងរៀងរាល់ ៣០ វិនាទី)
 window.addEventListener('online', async () => {
   await syncPendingOrders(true);
-  await pullFromBackend(true);
+  if (!state.orders.some(o => !o.synced)) {
+    await pullFromBackend(true);
+  }
 });
 window.addEventListener('load', async () => {
   if (navigator.onLine) {
@@ -1897,8 +1931,12 @@ window.addEventListener('load', async () => {
   }
 });
 setInterval(async () => {
-  if (state.orders.some(o => !o.synced)) await syncPendingOrders(true);
-  else if (!state.catalogUpdatedAt || (Date.now() - state.catalogUpdatedAt > 20000)) {
+  if (!navigator.onLine) return;
+  if (state.orders.some(o => !o.synced)) {
+    await syncPendingOrders(true);
+    return;
+  }
+  if (!state.catalogUpdatedAt || (Date.now() - state.catalogUpdatedAt > 20000)) {
     await pullFromBackend(true);
   }
 }, 15000);
