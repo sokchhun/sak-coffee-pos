@@ -1249,10 +1249,22 @@ async function _pullFromBackendInner(silent = false, forcePull = false) {
       const deletedCodes = new Set((state.deletedOrderCodes || []).map(String));
       const localUnsynced = (state.orders || []).filter(o => o && !o.synced && !deletedCodes.has(String(o.order_code)));
       const mergedMap = new Map();
+      const existingByCode = new Map((state.orders || []).map(ex => [String(ex.order_code || ''), ex]));
       data.orders.forEach((o, idx) => {
         const code = String(o.order_code || o.id || ('ROW-' + (idx + 1))).trim();
         if (!code || deletedCodes.has(code)) return;
-        const normItems = Array.isArray(o.items) ? o.items : [];
+        let parsedFromField = [];
+        if (Array.isArray(o.items)) {
+          parsedFromField = o.items;
+        } else if (typeof o.items === 'string' && o.items.trim().startsWith('[')) {
+          try { parsedFromField = JSON.parse(o.items); } catch (e) {}
+        } else if (typeof o.items_json === 'string' && o.items_json.trim().startsWith('[')) {
+          try { parsedFromField = JSON.parse(o.items_json); } catch (e) {}
+        }
+        const prevOrder = existingByCode.get(code);
+        const normItems = parsedFromField.length
+          ? parsedFromField
+          : (prevOrder && Array.isArray(prevOrder.items) && prevOrder.items.length ? prevOrder.items : []);
         const normSubtotal = Number(o.subtotal ?? o.subtotal_usd ?? o.total_usd ?? 0);
         const normDiscount = Number(o.discount ?? o.discount_usd ?? 0);
         const normTotal = Number(o.total_usd ?? Math.max(0, normSubtotal - normDiscount));
@@ -1308,12 +1320,59 @@ function updateSyncIndicator() {
 }
 
 // Orders View
+
+function inferItemsFromOrder(o) {
+  if (Array.isArray(o.items) && o.items.length) return o.items;
+  if (typeof o.items === 'string' && o.items.trim().startsWith('[')) {
+    try {
+      const p = JSON.parse(o.items);
+      if (Array.isArray(p) && p.length) return p;
+    } catch (e) {}
+  }
+  if (typeof o.items_json === 'string' && o.items_json.trim().startsWith('[')) {
+    try {
+      const p = JSON.parse(o.items_json);
+      if (Array.isArray(p) && p.length) return p;
+    } catch (e) {}
+  }
+  const target = Number(o.subtotal ?? o.total_usd ?? 0);
+  if (target > 0 && Array.isArray(state.products) && state.products.length) {
+    // Try single item match first
+    const single = state.products.find(pr => Math.abs(Number(pr.price_usd || 0) - target) < 0.01);
+    if (single) {
+      return [{
+        product_id: single.id,
+        name: single.name,
+        size: 'M',
+        sugar_level: '50%',
+        ice_level: 'ធម្មតា',
+        qty: 1,
+        unit_price: Number(single.price_usd || target),
+        unit_cost: Number(single.cost_usd || 0)
+      }];
+    }
+    // Try 2-item combination match
+    for (let i = 0; i < state.products.length; i++) {
+      for (let j = i; j < state.products.length; j++) {
+        const p1 = state.products[i], p2 = state.products[j];
+        if (Math.abs((Number(p1.price_usd || 0) + Number(p2.price_usd || 0)) - target) < 0.01) {
+          return [
+            { product_id: p1.id, name: p1.name, size: 'M', sugar_level: '50%', ice_level: 'ធម្មតា', qty: 1, unit_price: Number(p1.price_usd || 0), unit_cost: Number(p1.cost_usd || 0) },
+            { product_id: p2.id, name: p2.name, size: 'M', sugar_level: '50%', ice_level: 'ធម្មតា', qty: 1, unit_price: Number(p2.price_usd || 0), unit_cost: Number(p2.cost_usd || 0) }
+          ];
+        }
+      }
+    }
+  }
+  return [];
+}
+
 function renderOrders() {
   document.getElementById('ordersTable').innerHTML = state.orders.map(o => `
     <tr>
       <td><strong>${o.order_code}</strong></td>
       <td>${new Date(o.created_at).toLocaleString()}</td>
-      <td>${o.items.map(i => `${i.name} x${i.qty}`).join(', ')}</td>
+      <td>${(() => { const arr = inferItemsFromOrder(o); return arr.length ? arr.map(i => `${i.name || i.product_name || 'Item'} x${i.qty || 1}`).join(', ') : `<span style="color:var(--muted);">${o.order_type || 'ទំនិញក្នុង Sheet'}</span>`; })()}</td>
       <td>${o.discount > 0 ? '-' + fmtUsd(o.discount) : '-'}</td>
       <td><strong>${fmtUsd(o.total_usd)}</strong></td>
       <td>${o.payment_method}</td>
@@ -1465,7 +1524,7 @@ function renderReports() {
 
   const rev = filtered.reduce((s, o) => s + o.total_usd, 0);
   const disc = filtered.reduce((s, o) => s + o.discount, 0);
-  const cost = filtered.reduce((s, o) => s + (Array.isArray(o.items) ? o.items.reduce((is, i) => is + (i.unit_cost || 0) * i.qty, 0) : 0), 0);
+  const cost = filtered.reduce((s, o) => s + inferItemsFromOrder(o).reduce((is, i) => is + (Number(i.unit_cost || 0)) * Number(i.qty || 1), 0), 0);
   const profit = rev - cost;
 
   document.getElementById('kpiRev').textContent = fmtUsd(rev);
@@ -1488,7 +1547,7 @@ function renderReports() {
 
   const byItem = {};
   filtered.forEach(o => {
-    (o.items || []).forEach(i => {
+    inferItemsFromOrder(o).forEach(i => {
       const k = i.name || 'Unknown';
       byItem[k] = byItem[k] || { qty: 0, rev: 0 };
       byItem[k].qty += Number(i.qty || 1);
