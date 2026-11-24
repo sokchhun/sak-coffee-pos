@@ -332,7 +332,13 @@
     </div>
 
     <div class="card">
-      <div class="card-title"><span>📋 បញ្ជីម៉ឺនុយទាំងអស់</span></div>
+      <div class="card-title">
+        <span>📋 បញ្ជីម៉ឺនុយទាំងអស់</span>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-success btn-sm" onclick="pullFromBackend(false)">☁️ ទាញម៉ឺនុយពី Sheets</button>
+          <button class="btn btn-primary btn-sm" onclick="syncCatalogToBackend(false)">☁️ Sync ម៉ឺនុយទៅ Sheets</button>
+        </div>
+      </div>
       <table class="tbl">
         <thead><tr><th>រូប</th><th>ឈ្មោះ</th><th>ប្រភេទ</th><th>តម្លៃលក់</th><th>តម្លៃដើម</th><th>ស្ថានភាព</th><th>សកម្មភាព</th></tr></thead>
         <tbody id="menuTable"></tbody>
@@ -901,9 +907,13 @@ async function syncPendingOrders(silent = false) {
 }
 
 async function syncCatalogToBackend(silent = true) {
-  if (!state.settings.apiUrl || !navigator.onLine) return false;
+  const url = (state.settings.apiUrl || '').trim();
+  if (!url) {
+    if (!silent) alert('សូមបញ្ចូល Google Apps Script URL ក្នុងផ្ទាំង «កំណត់» ជាមុនសិន!');
+    return false;
+  }
   try {
-    const res = await fetch(state.settings.apiUrl, {
+    const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
@@ -916,10 +926,15 @@ async function syncCatalogToBackend(silent = true) {
     });
     const data = await res.json();
     if (data.status === 'success') {
-      if (!silent) alert('បាន Sync ម៉ឺនុយ និងការកំណត់ទៅ Google Sheets រួចរាល់!');
+      if (!silent) alert('បាន Sync ម៉ឺនុយ និងការកំណត់ទៅ Google Sheets រួចរាល់! កុំព្យូទ័រផ្សេងនឹងទាញបានស្វ័យប្រវត្តិក្នុងរយៈពេល ១៥ វិនាទី។');
       return true;
+    } else if (!silent) {
+      alert('Sync ម៉ឺនុយបរាជ័យ៖ ' + (data.message || 'Unknown error'));
     }
-  } catch (e) { console.warn('Catalog sync error:', e); }
+  } catch (e) {
+    console.warn('Catalog sync error:', e);
+    if (!silent) alert('មិនអាច Sync ទៅ Google Sheets បានទេ៖ ' + e.message);
+  }
   return false;
 }
 
@@ -936,16 +951,34 @@ async function pullFromBackend(silent = false) {
       if (!silent) alert('មិនអាចទាញទិន្នន័យពី Google Sheets បានទេ!');
       return;
     }
-    if (Array.isArray(data.categories) && data.categories.length) state.categories = data.categories;
-    if (Array.isArray(data.products) && data.products.length) {
-      state.products = data.products.map(p => ({
-        ...p,
-        id: Number(p.id),
-        category_id: Number(p.category_id),
-        price_usd: Number(p.price_usd || 0),
-        cost_usd: Number(p.cost_usd || 0),
-        is_available: p.is_available !== false && p.is_available !== 'FALSE'
+    if (Array.isArray(data.categories) && data.categories.length) {
+      state.categories = data.categories.map(c => ({
+        id: Number(c.id),
+        name: String(c.name || ''),
+        icon: String(c.icon || '☕')
       }));
+    }
+    if (Array.isArray(data.products) && data.products.length) {
+      const defMap = new Map(DEFAULT_DATA.products.map(dp => [Number(dp.id), dp.image_url]));
+      state.products = data.products
+        .filter(p => p && (p.name || p.product_name))
+        .map(p => {
+          const pid = Number(p.id || Date.now());
+          const rawImg = String(p.image_url || '').trim();
+          const isSvg = rawImg.startsWith('data:image/svg+xml');
+          const finalImg = (!rawImg || isSvg) ? (defMap.get(pid) || '') : rawImg;
+          return {
+            ...p,
+            id: pid,
+            category_id: Number(p.category_id || 1),
+            name: String(p.name || p.product_name || ''),
+            price_usd: Number(p.price_usd || 0),
+            cost_usd: Number(p.cost_usd || 0),
+            icon: String(p.icon || '☕'),
+            image_url: finalImg,
+            is_available: p.is_available !== false && p.is_available !== 'FALSE'
+          };
+        });
     }
     if (Array.isArray(data.discounts) && data.discounts.length) {
       state.discounts = data.discounts
@@ -1232,8 +1265,7 @@ function saveSettings() {
   state.settings.exchangeRate = Number(document.getElementById('setRate').value || 4100);
   state.settings.apiUrl = document.getElementById('setApiUrl').value.trim();
   saveState();
-  syncCatalogToBackend(true);
-  alert('រក្សាទុកការកំណត់រួចរាល់!');
+  await syncCatalogToBackend(false);
 }
 
 function addDiscount() {
@@ -1509,10 +1541,9 @@ window.addEventListener('load', async () => {
   }
 });
 setInterval(async () => {
-  if (!navigator.onLine) return;
   if (state.orders.some(o => !o.synced)) await syncPendingOrders(true);
   else await pullFromBackend(true);
-}, 30000);
+}, 15000);
 </script>
 </body>
 </html>
