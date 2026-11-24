@@ -628,10 +628,38 @@ let expandedCartIdx = -1;
 let selectedPay = 'Cash';
 let receivedStr = '0';
 
+
+function getPersistedOrders() {
+  try {
+    const raw = localStorage.getItem('sak_coffee_pos_v3');
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed.orders) ? parsed.orders : [];
+  } catch (e) {
+    return [];
+  }
+}
+
 function saveState() {
+  try {
+    const diskOrders = getPersistedOrders();
+    const curOrders = Array.isArray(state.orders) ? state.orders : [];
+    const curCodes = new Set(curOrders.map(o => String(o.order_code || o.id)));
+    const deletedCodes = new Set((state.deletedOrderCodes || []).map(String));
+    diskOrders.forEach(doOrder => {
+      if (doOrder && doOrder.synced === false) {
+        const key = String(doOrder.order_code || doOrder.id);
+        if (key && !curCodes.has(key) && !deletedCodes.has(key)) {
+          curOrders.unshift(doOrder);
+          curCodes.add(key);
+        }
+      }
+    });
+    state.orders = curOrders;
+  } catch (e) {}
   localStorage.setItem('sak_coffee_pos_v3', JSON.stringify(state));
   updateSyncIndicator();
-renderHeldOrders();
+  renderHeldOrders();
 }
 
 function fmtUsd(n) { return '$' + Number(n || 0).toFixed(2); }
