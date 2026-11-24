@@ -938,7 +938,17 @@ async function syncCatalogToBackend(silent = true) {
   return false;
 }
 
+let isPulling = false;
 async function pullFromBackend(silent = false) {
+  if (isPulling) return;
+  isPulling = true;
+  try {
+    return await _pullFromBackendInner(silent, !silent);
+  } finally {
+    isPulling = false;
+  }
+}
+async function _pullFromBackendInner(silent = false, forcePull = false) {
   const url = (document.getElementById('setApiUrl')?.value || state.settings.apiUrl || '').trim();
   if (!url) {
     if (!silent) alert('សូមបញ្ចូល Google Apps Script URL សិន!');
@@ -952,18 +962,39 @@ async function pullFromBackend(silent = false) {
       return;
     }
     if (Array.isArray(data.categories) && data.categories.length) {
-      state.categories = data.categories.map(c => ({
-        id: Number(c.id),
-        name: String(c.name || ''),
-        icon: String(c.icon || '☕')
-      }));
+      const seenCats = new Set();
+      state.categories = data.categories
+        .map(c => ({
+          id: Number(c.id),
+          name: String(c.name || '').trim(),
+          icon: String(c.icon || '☕')
+        }))
+        .filter(c => {
+          const k = c.name.toLowerCase();
+          if (!k || seenCats.has(k)) return false;
+          seenCats.add(k);
+          return true;
+        });
+      // Merge any custom local products (id > 1000000 or not in DEFAULT_DATA) if missing from sheet
+      const pulledNames = new Set(pulledProducts.map(x => x.name.toLowerCase()));
+      const pulledIds = new Set(pulledProducts.map(x => Number(x.id)));
+      const localCustom = (state.products || []).filter(lp => {
+        const lid = Number(lp.id);
+        const lname = String(lp.name || '').trim().toLowerCase();
+        return lname && !pulledNames.has(lname) && !pulledIds.has(lid) && lid > 1000000;
+      });
+      state.products = pulledProducts.concat(localCustom);
     }
     if (Array.isArray(data.products) && data.products.length) {
       const defMap = new Map(DEFAULT_DATA.products.map(dp => [Number(dp.id), dp.image_url]));
-      state.products = data.products
+      const seenNames = new Set();
+      const seenIds = new Set();
+      const pulledProducts = data.products
         .filter(p => p && (p.name || p.product_name))
-        .map(p => {
-          const pid = Number(p.id || Date.now());
+        .map((p, idx) => {
+          const rawId = Number(p.id);
+          const pid = (Number.isFinite(rawId) && rawId > 0) ? rawId : (1000 + idx);
+          const pname = String(p.name || p.product_name || '').trim();
           const rawImg = String(p.image_url || '').trim();
           const isSvg = rawImg.startsWith('data:image/svg+xml');
           const finalImg = (!rawImg || isSvg) ? (defMap.get(pid) || '') : rawImg;
@@ -971,14 +1002,30 @@ async function pullFromBackend(silent = false) {
             ...p,
             id: pid,
             category_id: Number(p.category_id || 1),
-            name: String(p.name || p.product_name || ''),
+            name: pname,
             price_usd: Number(p.price_usd || 0),
             cost_usd: Number(p.cost_usd || 0),
             icon: String(p.icon || '☕'),
             image_url: finalImg,
             is_available: p.is_available !== false && p.is_available !== 'FALSE'
           };
+        })
+        .filter(p => {
+          const keyName = p.name.toLowerCase();
+          if (!keyName || seenNames.has(keyName) || seenIds.has(p.id)) return false;
+          seenNames.add(keyName);
+          seenIds.add(p.id);
+          return true;
         });
+      // Merge any custom local products (id > 1000000 or not in DEFAULT_DATA) if missing from sheet
+      const pulledNames = new Set(pulledProducts.map(x => x.name.toLowerCase()));
+      const pulledIds = new Set(pulledProducts.map(x => Number(x.id)));
+      const localCustom = (state.products || []).filter(lp => {
+        const lid = Number(lp.id);
+        const lname = String(lp.name || '').trim().toLowerCase();
+        return lname && !pulledNames.has(lname) && !pulledIds.has(lid) && lid > 1000000;
+      });
+      state.products = pulledProducts.concat(localCustom);
     }
     if (Array.isArray(data.discounts) && data.discounts.length) {
       state.discounts = data.discounts
@@ -1091,7 +1138,7 @@ function saveProduct() {
   if (!obj.name || obj.price_usd <= 0) return alert('សូមបញ្ចូលឈ្មោះ និងតម្លៃលក់!');
   const idx = existing ? state.products.findIndex(p => String(p.id) === String(existing.id)) : -1;
   if (idx > -1) state.products[idx] = obj; else state.products.push(obj);
-  saveState(); resetProductForm(); renderMenuTable(); renderProducts(); syncCatalogToBackend(true);
+  state.catalogUpdatedAt = Date.now(); saveState(); resetProductForm(); renderMenuTable(); renderProducts(); syncCatalogToBackend(false);
   alert(idx > -1 ? 'បានកែប្រែទំនិញរួចរាល់!' : 'បានបន្ថែមទំនិញថ្មីរួចរាល់!');
 }
 
@@ -1551,7 +1598,9 @@ window.addEventListener('load', async () => {
 });
 setInterval(async () => {
   if (state.orders.some(o => !o.synced)) await syncPendingOrders(true);
-  else await pullFromBackend(true);
+  else if (!state.catalogUpdatedAt || (Date.now() - state.catalogUpdatedAt > 20000)) {
+    await pullFromBackend(true);
+  }
 }, 15000);
 </script>
 </body>
