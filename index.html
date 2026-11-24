@@ -24,7 +24,7 @@
 
   /* Top Nav */
   .topbar {
-    background: var(--nav-bg); color: #fff; height: 56px; padding: 0 16px;
+    background: var(--nav-bg); color: #fff; min-height: 56px; padding: 6px 16px; gap: 8px; flex-wrap: wrap;
     display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
     box-shadow: 0 2px 6px rgba(0,0,0,0.15);
   }
@@ -238,7 +238,7 @@
     <button class="nav-btn" onclick="switchView('settings', this)">⚙️ កំណត់</button>
   </nav>
   <div style="display:flex;align-items:center;gap:8px;">
-    <button type="button" class="nav-btn" style="padding:5px 10px;font-size:12px;background:rgba(255,255,255,0.12);color:#fff;" onclick="lockPosSession()" title="ចាក់សោ Login ភ្លាមៗ">🔒 ចាក់សោ</button>
+    <button type="button" class="nav-btn" style="padding:6px 12px;font-size:13px;background:#f59e0b;color:#111;font-weight:700;" onclick="lockPosSession()" title="ចាក់សោ Login ភ្លាមៗ">🔒 ចាក់សោ</button>
     <div class="sync-pill" onclick="syncPendingOrders()" title="ចុចដើម្បី Sync ទៅ Google Sheets">
       <span class="dot" id="syncDot"></span>
       <span id="syncText">Offline</span>
