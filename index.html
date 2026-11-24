@@ -452,8 +452,7 @@
 
         <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">
           <button type="button" class="pay-btn active" style="padding:7px 10px; font-size:12px;" onclick="selectPay('Cash', this)">Cash</button>
-          <button type="button" class="pay-btn" style="padding:7px 10px; font-size:12px;" onclick="selectPay('ABA USD', this)">ABA USD</button>
-          <button type="button" class="pay-btn" style="padding:7px 10px; font-size:12px;" onclick="selectPay('ABA KHR', this)">ABA KHR</button>
+          <button type="button" class="pay-btn" style="padding:7px 10px; font-size:12px;" onclick="selectPay('ABA', this)">ABA</button>
           <button type="button" class="pay-btn" style="padding:7px 10px; font-size:12px;" onclick="selectPay('ACLEDA', this)">ACLEDA</button>
         </div>
 
@@ -465,15 +464,9 @@
           </div>
         </div>
 
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px;">
-          <div>
-            <div style="font-size:12px; font-weight:600; color:var(--muted); margin-bottom:3px;">Cash ($)</div>
-            <input id="coReceived" type="text" inputmode="decimal" autocomplete="off" value="0" onfocus="setCoCurrency('USD'); this.select();" oninput="onCoReceivedInput(this.value)" style="width:100%; font-size:18px; font-weight:700; padding:8px 10px; text-align:right; border:2px solid var(--primary); border-radius:8px; background:#fff; color:#111;">
-          </div>
-          <div>
-            <div style="font-size:12px; font-weight:600; color:var(--muted); margin-bottom:3px;">Cash (៛)</div>
-            <input id="coReceivedKhr" type="text" inputmode="numeric" autocomplete="off" value="0" onfocus="setCoCurrency('KHR'); this.select();" oninput="onCoReceivedKhrInput(this.value)" style="width:100%; font-size:18px; font-weight:700; padding:8px 10px; text-align:right; border:2px solid var(--border); border-radius:8px; background:#fff; color:#111;">
-          </div>
+        <div style="margin-bottom:10px;">
+          <div style="font-size:12px; font-weight:600; color:var(--muted); margin-bottom:4px;" id="coRecLabel">ប្រាក់ទទួល (USD $)</div>
+          <input id="coReceived" type="text" inputmode="decimal" autocomplete="off" value="0" onclick="this.select()" oninput="onCoReceivedInput(this.value)" style="width:100%; font-size:24px; font-weight:700; padding:10px 12px; text-align:right; border:2px solid var(--primary); border-radius:10px; background:#fff; color:#111;">
         </div>
 
         <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center; font-size:14px; font-weight:700;">
@@ -786,22 +779,31 @@ function clearCart() { cart = []; expandedCartIdx = -1; document.getElementById(
 
 // Checkout
 let coCurrency = 'USD';
-let receivedKhrStr = '0';
 
 function setCoCurrency(curr) {
-  coCurrency = curr;
+  const rate = Number(state.settings.exchangeRate || 4100);
+  const currentNum = Number(receivedStr || 0);
+  if (curr !== coCurrency) {
+    if (curr === 'KHR') {
+      const khrVal = Math.round((currentNum * rate) / 100) * 100;
+      receivedStr = String(khrVal || 0);
+    } else {
+      const usdVal = currentNum / rate;
+      receivedStr = usdVal > 0 ? usdVal.toFixed(2) : '0';
+    }
+    coCurrency = curr;
+  }
   const btnUsd = document.getElementById('btnCurrUsd');
   const btnKhr = document.getElementById('btnCurrKhr');
-  const inpUsd = document.getElementById('coReceived');
-  const inpKhr = document.getElementById('coReceivedKhr');
+  const lbl = document.getElementById('coRecLabel');
   if (btnUsd && btnKhr) {
     btnUsd.classList.toggle('active', curr === 'USD');
     btnKhr.classList.toggle('active', curr === 'KHR');
   }
-  if (inpUsd && inpKhr) {
-    inpUsd.style.borderColor = curr === 'USD' ? 'var(--primary)' : 'var(--border)';
-    inpKhr.style.borderColor = curr === 'KHR' ? 'var(--primary)' : 'var(--border)';
-  }
+  if (lbl) lbl.textContent = curr === 'USD' ? 'ប្រាក់ទទួល (USD $)' : 'ប្រាក់ទទួល (KHR ៛)';
+  updateCheckoutCalc(true);
+  const inp = document.getElementById('coReceived');
+  if (inp) { inp.focus(); inp.select(); }
 }
 
 function openCheckout() {
@@ -811,8 +813,14 @@ function openCheckout() {
   document.getElementById('coTotalKhr').textContent = fmtKhr(t.total);
   coCurrency = 'USD';
   receivedStr = t.total.toFixed(2);
-  receivedKhrStr = '0';
-  setCoCurrency('USD');
+  const btnUsd = document.getElementById('btnCurrUsd');
+  const btnKhr = document.getElementById('btnCurrKhr');
+  const lbl = document.getElementById('coRecLabel');
+  if (btnUsd && btnKhr) {
+    btnUsd.classList.add('active');
+    btnKhr.classList.remove('active');
+  }
+  if (lbl) lbl.textContent = 'ប្រាក់ទទួល (USD $)';
   updateCheckoutCalc(true);
   document.getElementById('checkoutModal').classList.add('open');
   setTimeout(() => { const el = document.getElementById('coReceived'); if (el) { el.focus(); el.select(); } }, 50);
@@ -832,17 +840,9 @@ function selectPay(method, btn) {
   } else box.style.display = 'none';
 }
 function numKey(k) {
-  if (coCurrency === 'KHR') {
-    if (k === 'C') receivedKhrStr = '0';
-    else if (k === 'BKSP') receivedKhrStr = receivedKhrStr.length > 1 ? receivedKhrStr.slice(0, -1) : '0';
-    else if (k === '.') return;
-    else receivedKhrStr = receivedKhrStr === '0' ? k : receivedKhrStr + k;
-    updateCheckoutCalc(true);
-    return;
-  }
   if (k === 'C') receivedStr = '0';
   else if (k === 'BKSP') receivedStr = receivedStr.length > 1 ? receivedStr.slice(0, -1) : '0';
-  else if (k === '.' && receivedStr.includes('.')) return;
+  else if (k === '.' && (coCurrency === 'KHR' || receivedStr.includes('.'))) return;
   else receivedStr = receivedStr === '0' && k !== '.' ? k : receivedStr + k;
   updateCheckoutCalc(true);
 }
@@ -850,71 +850,79 @@ function setExactCash() {
   const totalUsd = calcTotals().total;
   const rate = Number(state.settings.exchangeRate || 4100);
   if (coCurrency === 'KHR') {
-    receivedKhrStr = String(Math.ceil((totalUsd * rate) / 100) * 100);
+    receivedStr = String(Math.ceil((totalUsd * rate) / 100) * 100);
   } else {
     receivedStr = totalUsd.toFixed(2);
   }
   updateCheckoutCalc(true);
 }
 function addCash(amt) {
-  setCoCurrency('USD');
-  receivedStr = (Number(receivedStr || 0) + amt).toFixed(2);
+  const rate = Number(state.settings.exchangeRate || 4100);
+  if (coCurrency === 'KHR') {
+    receivedStr = String(Number(receivedStr || 0) + Math.round(amt * rate));
+  } else {
+    receivedStr = (Number(receivedStr || 0) + amt).toFixed(2);
+  }
   updateCheckoutCalc(true);
 }
 function addCashKhr(khr) {
-  setCoCurrency('KHR');
-  receivedKhrStr = String(Number(receivedKhrStr || 0) + khr);
+  const rate = Number(state.settings.exchangeRate || 4100);
+  if (coCurrency === 'KHR') {
+    receivedStr = String(Number(receivedStr || 0) + khr);
+  } else {
+    receivedStr = (Number(receivedStr || 0) + (khr / rate)).toFixed(2);
+  }
   updateCheckoutCalc(true);
 }
 function onCoReceivedInput(val) {
   const inp = document.getElementById('coReceived');
-  let raw = String(val || '').replace(/[^0-9.]/g, '');
-  const dotIdx = raw.indexOf('.');
-  if (dotIdx !== -1) raw = raw.slice(0, dotIdx + 1) + raw.slice(dotIdx + 1).replace(/\./g, '');
+  const pattern = coCurrency === 'KHR' ? /[^0-9]/g : /[^0-9.]/g;
+  let raw = String(val || '').replace(pattern, '');
+  if (coCurrency !== 'KHR') {
+    const dotIdx = raw.indexOf('.');
+    if (dotIdx !== -1) raw = raw.slice(0, dotIdx + 1) + raw.slice(dotIdx + 1).replace(/\./g, '');
+  }
   if (raw.length > 1 && raw[0] === '0' && raw[1] !== '.') raw = raw.replace(/^0+/, '');
   if (inp && inp.value !== raw) inp.value = raw;
   receivedStr = raw === '' ? '0' : raw;
-  updateCheckoutCalc(false);
-}
-function onCoReceivedKhrInput(val) {
-  const inp = document.getElementById('coReceivedKhr');
-  let raw = String(val || '').replace(/[^0-9]/g, '');
-  if (raw.length > 1 && raw[0] === '0') raw = raw.replace(/^0+/, '');
-  if (inp && inp.value !== raw) inp.value = raw;
-  receivedKhrStr = raw === '' ? '0' : raw;
   updateCheckoutCalc(false);
 }
 
 function updateCheckoutCalc(syncInput = true) {
   const t = calcTotals();
   const rate = Number(state.settings.exchangeRate || 4100);
-  const usdNum = Number(receivedStr || 0);
-  const khrNum = Number(receivedKhrStr || 0);
-  const recUsd = usdNum + (khrNum / rate);
+  const rawNum = Number(receivedStr || 0);
+  const recUsd = coCurrency === 'KHR' ? (rawNum / rate) : rawNum;
   const chgUsd = Math.max(0, recUsd - t.total);
   const inpUsd = document.getElementById('coReceived');
-  const inpKhr = document.getElementById('coReceivedKhr');
   if (inpUsd && syncInput) inpUsd.value = receivedStr;
-  if (inpKhr && syncInput) inpKhr.value = receivedKhrStr;
   document.getElementById('coChange').textContent = `${fmtUsd(chgUsd)} (${fmtKhr(chgUsd)})`;
 }
 
 document.addEventListener('keydown', (e) => {
   const modal = document.getElementById('checkoutModal');
   if (!modal || !modal.classList.contains('open')) return;
-  const activeTag = document.activeElement ? document.activeElement.tagName : '';
-  if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') return;
-  if (/^[0-9.]$/.test(e.key)) {
-    e.preventDefault();
-    numKey(e.key);
-  } else if (e.key === 'Backspace') {
-    e.preventDefault();
-    receivedStr = receivedStr.length > 1 ? receivedStr.slice(0, -1) : '0';
-    updateCheckoutCalc(true);
-  } else if (e.key === 'Escape') {
+  if (e.key === 'Escape') {
     e.preventDefault();
     closeCheckout();
-  } else if (e.key === 'Enter') {
+    return;
+  }
+  const activeId = document.activeElement ? document.activeElement.id : '';
+  const isCashInput = (activeId === 'coReceived');
+  // Map Numpad keys even if NumLock is off on another computer
+  const numpadMap = {
+    'Numpad0': '0', 'Numpad1': '1', 'Numpad2': '2', 'Numpad3': '3',
+    'Numpad4': '4', 'Numpad5': '5', 'Numpad6': '6', 'Numpad7': '7',
+    'Numpad8': '8', 'Numpad9': '9', 'NumpadDecimal': '.'
+  };
+  const mappedKey = numpadMap[e.code] || (/^[0-9.]$/.test(e.key) ? e.key : '');
+  if (!isCashInput && mappedKey) {
+    e.preventDefault();
+    numKey(mappedKey);
+  } else if (!isCashInput && (e.key === 'Backspace' || e.code === 'Backspace')) {
+    e.preventDefault();
+    numKey('BKSP');
+  } else if (!isCashInput && (e.key === 'Enter' || e.code === 'NumpadEnter')) {
     e.preventDefault();
     completeOrder(false);
   }
