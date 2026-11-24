@@ -461,7 +461,7 @@
 
       <div>
         <div style="font-size:12px; color:var(--muted);">ប្រាក់ទទួល ($)</div>
-        <input id="coReceived" type="text" inputmode="decimal" value="0" oninput="onCoReceivedInput(this.value)" style="width:100%; font-size:24px; font-weight:700; padding:10px; text-align:right; border:2px solid var(--primary); border-radius:10px; margin:4px 0 8px;">
+        <input id="coReceived" type="text" inputmode="decimal" autocomplete="off" value="0" oninput="onCoReceivedInput(this.value)" onclick="this.select()" style="width:100%; font-size:24px; font-weight:700; padding:10px; text-align:right; border:2px solid var(--primary); border-radius:10px; margin:4px 0 8px; background:#fff; color:#111;">
         <div style="display:flex; justify-content:space-between; font-size:14px; font-weight:700; margin-bottom:10px;">
           <span>ប្រាក់អាប់ (Change):</span>
           <span id="coChange" style="color:var(--success);">$0.00 (0 ៛)</span>
@@ -793,13 +793,19 @@ function setExactCash() { receivedStr = calcTotals().total.toFixed(2); updateChe
 function addCash(amt) { receivedStr = (Number(receivedStr || 0) + amt).toFixed(2); updateCheckoutCalc(); }
 function addCashKhr(khr) { receivedStr = (Number(receivedStr || 0) + (khr / state.settings.exchangeRate)).toFixed(2); updateCheckoutCalc(); }
 function onCoReceivedInput(val) {
-  let cleaned = String(val || '').replace(/[^0-9.]/g, '');
-  const parts = cleaned.split('.');
-  if (parts.length > 2) cleaned = parts[0] + '.' + parts.slice(1).join('');
-  if (cleaned.length > 1 && cleaned.startsWith('0') && !cleaned.startsWith('0.')) {
-    cleaned = cleaned.replace(/^0+/, '') || '0';
+  const inp = document.getElementById('coReceived');
+  let raw = String(val || '').replace(/[^0-9.]/g, '');
+  const dotIdx = raw.indexOf('.');
+  if (dotIdx !== -1) {
+    raw = raw.slice(0, dotIdx + 1) + raw.slice(dotIdx + 1).replace(/\./g, '');
   }
-  receivedStr = cleaned || '0';
+  if (raw.length > 1 && raw[0] === '0' && raw[1] !== '.') {
+    raw = raw.replace(/^0+/, '');
+  }
+  if (inp && inp.value !== raw) {
+    inp.value = raw;
+  }
+  receivedStr = raw === '' ? '0' : raw;
   updateCheckoutCalc(false);
 }
 
@@ -815,7 +821,8 @@ function updateCheckoutCalc(syncInput = true) {
 document.addEventListener('keydown', (e) => {
   const modal = document.getElementById('checkoutModal');
   if (!modal || !modal.classList.contains('open')) return;
-  if (document.activeElement && document.activeElement.id === 'coReceived') return;
+  const activeTag = document.activeElement ? document.activeElement.tagName : '';
+  if (activeTag === 'INPUT' || activeTag === 'TEXTAREA' || activeTag === 'SELECT') return;
   if (/^[0-9.]$/.test(e.key)) {
     e.preventDefault();
     numKey(e.key);
