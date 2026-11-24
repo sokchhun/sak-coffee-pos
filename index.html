@@ -1152,8 +1152,10 @@ async function _pullFromBackendInner(silent = false, forcePull = false) {
   }
   try {
     const k = encodeURIComponent((state.settings?.apiKey || '').trim());
-    const fetchUrl = k ? (url + (url.includes('?') ? '&' : '?') + 'apiKey=' + k) : url;
-    const res = await fetch(fetchUrl);
+    const sep = url.includes('?') ? '&' : '?';
+    const bust = '_t=' + Date.now();
+    const fetchUrl = url + sep + bust + (k ? ('&apiKey=' + k) : '');
+    const res = await fetch(fetchUrl, { cache: 'no-store' });
     const data = await res.json();
     if (data.status !== 'success') {
       if (!silent) alert('មិនអាចទាញទិន្នន័យពី Google Sheets បានទេ!');
