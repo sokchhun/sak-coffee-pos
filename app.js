@@ -173,13 +173,18 @@ function renderProducts() {
 
 function isDrinkProduct(p) {
   if (!p) return true;
-  const catId = Number(p.category_id);
-  if (catId === 4) return false;
+  const prod = state.products.find(x => Number(x.id) === Number(p.product_id ?? p.id)) || p;
+  const catId = Number(prod.category_id);
   const cat = (state.categories || []).find(c => Number(c.id) === catId);
-  const cname = String(cat?.name || '').toLowerCase();
-  if (cname.includes('នំ') || cname.includes('អាហារ') || cname.includes('គ្រឿងអលង្ការ') || cname.includes('bakery') || cname.includes('food')) {
-    return false;
-  }
+  const text = `${cat?.name || ''} ${prod.name || ''}`.toLowerCase();
+
+  const nonDrinkKeywords = [
+    'នំ', 'អាហារ', 'សម្រន់', 'បាយ', 'គុយទាវ', 'សាំងវិច', 'ខេក',
+    'គ្រឿងអលង្ការ', 'ក្រវិល', 'ចិញ្ចៀន', 'ខ្សែក', 'កងដៃ', 'កងជើង',
+    'food', 'snack', 'cake', 'bread', 'croissant', 'sandwich', 'jewelry', 'ring', 'necklace'
+  ];
+  if (nonDrinkKeywords.some(kw => text.includes(kw))) return false;
+  if (catId === 4) return false;
   return true;
 }
 
@@ -187,13 +192,14 @@ function addToCart(prodId) {
   const p = state.products.find(x => x.id === prodId);
   if (!p) return;
   const drink = isDrinkProduct(p);
+  const defSize = drink ? 'M' : '';
   const defSugar = drink ? '50%' : '';
   const defIce = drink ? 'ធម្មតា' : '';
-  const idx = cart.findIndex(c => c.product_id === prodId && c.size === 'M' && (c.sugar_level || '') === defSugar && (c.ice_level || '') === defIce && !c.note);
+  const idx = cart.findIndex(c => c.product_id === prodId && (c.size || '') === defSize && (c.sugar_level || '') === defSugar && (c.ice_level || '') === defIce && !c.note);
   if (idx > -1) cart[idx].qty++;
   else cart.push({
     product_id: p.id, name: p.name, base_price: Number(p.price_usd), unit_price: Number(p.price_usd),
-    unit_cost: Number(p.cost_usd || 0), qty: 1, size: 'M', sugar_level: defSugar, ice_level: defIce, note: '', is_drink: drink
+    unit_cost: Number(p.cost_usd || 0), qty: 1, size: defSize, sugar_level: defSugar, ice_level: defIce, note: '', is_drink: drink
   });
   renderCart();
   renderProducts();
@@ -231,14 +237,24 @@ function calcTotals() {
 function renderCart() {
   const list = document.getElementById('cartList');
   if (!cart.length) {
-    list.innerHTML = `<div class="cart-empty">ចុចលើភេសជ្ជៈខាងស្តាំដើម្បីបញ្ចូលក្នុងកន្ត្រក</div>`;
+    list.innerHTML = `<div class="cart-empty">ចុចលើទំនិញខាងស្តាំដើម្បីបញ្ចូលក្នុងកន្ត្រក</div>`;
   } else {
-    list.innerHTML = cart.map((item, idx) => `
+    list.innerHTML = cart.map((item, idx) => {
+      const showDrinkMods = isDrinkProduct(item);
+      const sizeLabel = (showDrinkMods && item.size) ? ` (${item.size})` : '';
+      const metaParts = [fmtUsd(item.unit_price)];
+      if (showDrinkMods) {
+        if (item.sugar_level) metaParts.push(`ផ្អែម ${item.sugar_level}`);
+        if (item.ice_level) metaParts.push(`ទឹកកក ${item.ice_level}`);
+      }
+      if (item.note) metaParts.push(item.note);
+
+      return `
       <div class="cart-row ${expandedCartIdx === idx ? 'expanded' : ''}">
         <div class="cart-row-main" onclick="toggleExpand(${idx})">
           <div>
-            <div class="cart-item-name">${item.name} (${item.size})</div>
-            <div class="cart-item-meta">${fmtUsd(item.unit_price)}${(item.sugar_level || item.ice_level) ? ` • ផ្អែម ${item.sugar_level || '-'} • ទឹកកក ${item.ice_level || '-'}` : ''}${item.note ? ' • ' + item.note : ''}</div>
+            <div class="cart-item-name">${item.name}${sizeLabel}</div>
+            <div class="cart-item-meta">${metaParts.join(' • ')}</div>
           </div>
           <div class="inline-qty" onclick="event.stopPropagation()">
             <button onclick="changeQty(${idx}, -1)">−</button>
@@ -259,25 +275,26 @@ function renderCart() {
             <span style="margin-left:auto;"></span>
             <button class="btn btn-danger btn-sm" onclick="removeCartItem(${idx})">លុប</button>
           </div>
-          ${(item.is_drink !== false && (item.sugar_level || item.ice_level)) ? `
+          ${showDrinkMods ? `
           <div class="mod-line">
             <span class="mod-label">ទំហំ</span>
-            ${['M','L'].map(sz => `<button class="chip ${item.size===sz?'active':''}" onclick="setMod(${idx},'size','${sz}')">${sz==='L'?'L (+$0.50)':'M'}</button>`).join('')}
+            ${['M','L'].map(sz => `<button class="chip ${(item.size || 'M')===sz?'active':''}" onclick="setMod(${idx},'size','${sz}')">${sz==='L'?'L (+$0.50)':'M'}</button>`).join('')}
           </div>
           <div class="mod-line">
             <span class="mod-label">ផ្អែម</span>
-            ${['0%','25%','50%','75%','100%'].map(s => `<button class="chip ${item.sugar_level===s?'active':''}" onclick="setMod(${idx},'sugar_level','${s}')">${s}</button>`).join('')}
+            ${['0%','25%','50%','75%','100%'].map(s => `<button class="chip ${(item.sugar_level || '50%')===s?'active':''}" onclick="setMod(${idx},'sugar_level','${s}')">${s}</button>`).join('')}
           </div>
           <div class="mod-line">
             <span class="mod-label">ទឹកកក</span>
-            ${['ធម្មតា','តិច','គ្មាន'].map(ic => `<button class="chip ${item.ice_level===ic?'active':''}" onclick="setMod(${idx},'ice_level','${ic}')">${ic}</button>`).join('')}
-          </div>` : ''}`
+            ${['ធម្មតា','តិច','គ្មាន'].map(ic => `<button class="chip ${(item.ice_level || 'ធម្មតា')===ic?'active':''}" onclick="setMod(${idx},'ice_level','${ic}')">${ic}</button>`).join('')}
+          </div>` : ''}
           <div class="mod-line">
             <span class="mod-label">ចំណាំ</span>
-            <input value="${item.note}" placeholder="បន្ថែមកំណត់ចំណាំ..." style="flex:1; padding:4px 8px; border:1px solid var(--border); border-radius:6px; font-size:12px;" onchange="setMod(${idx},'note',this.value)">
+            <input value="${item.note || ''}" placeholder="បន្ថែមកំណត់ចំណាំ..." style="flex:1; padding:4px 8px; border:1px solid var(--border); border-radius:6px; font-size:12px;" onchange="setMod(${idx},'note',this.value)">
           </div>
         </div>
-      </div>`).join('');
+      </div>`;
+    }).join('');
   }
   const t = calcTotals();
   document.getElementById('sumSubtotal').textContent = fmtUsd(t.subtotal);
@@ -317,7 +334,7 @@ function setCoCurrency(curr) {
 }
 
 function openCheckout() {
-  if (!cart.length) return alert('សូមជ្រើសរើសភេសជ្ជៈជាមុនសិន!');
+  if (!cart.length) return alert('សូមជ្រើសរើសទំនិញជាមុនសិន!');
   const t = calcTotals();
   document.getElementById('coTotalUsd').textContent = fmtUsd(t.total);
   document.getElementById('coTotalKhr').textContent = fmtKhr(t.total);
@@ -434,10 +451,13 @@ function printReceipt(o) {
     </div>
     <table style="width:100%; font-size:12px; border-collapse:collapse;">
       ${items.map(i => {
-  const hasSweetIce = Boolean(i.sugar_level || i.ice_level) && i.is_drink !== false;
-  const subTxt = hasSweetIce ? `<div style="font-size:10px;">ផ្អែម ${i.sugar_level || '-'}, ទឹកកក ${i.ice_level || '-'}</div>` : (i.note ? `<div style="font-size:10px;">${i.note}</div>` : '');
-  return `<tr><td>${i.name} x${i.qty}${subTxt}</td><td style="text-align:right; vertical-align:top;">${fmtUsd(i.unit_price * i.qty)}</td></tr>`;
-}).join('')}
+        const drink = isDrinkProduct(i);
+        const sizeLabel = (drink && i.size) ? ` (${i.size})` : '';
+        const subTxt = (drink && (i.sugar_level || i.ice_level))
+          ? `<div style="font-size:10px;">ផ្អែម ${i.sugar_level || '-'}, ទឹកកក ${i.ice_level || '-'}${i.note ? ' • ' + i.note : ''}</div>`
+          : (i.note ? `<div style="font-size:10px;">${i.note}</div>` : '');
+        return `<tr><td>${i.name}${sizeLabel} x${i.qty}${subTxt}</td><td style="text-align:right; vertical-align:top;">${fmtUsd(i.unit_price * i.qty)}</td></tr>`;
+      }).join('')}
     </table>
     <div style="border-top:1px dashed #000; margin-top:6px; padding-top:6px; font-size:12px;">
       <div style="display:flex; justify-content:space-between;"><span>សរុបរង:</span><span>${fmtUsd(o.subtotal)}</span></div>
@@ -605,9 +625,9 @@ async function pullFromBackend(silent = false) {
             qty: Number(row.qty || 1),
             unit_price: Number(row.unit_price_usd ?? row.unit_price ?? 0),
             unit_cost: Number(row.unit_cost_usd ?? row.unit_cost ?? 0),
-            size: String(row.size || 'M'),
-            sugar_level: String(row.sugar_level || '50%'),
-            ice_level: String(row.ice_level || 'ធម្មតា')
+            size: String(row.size || ''),
+            sugar_level: String(row.sugar_level || ''),
+            ice_level: String(row.ice_level || '')
           };
           if (!itemObj.name) return;
           keys.forEach(k => {
@@ -781,7 +801,7 @@ function resetProductForm() {
   const thumb = document.getElementById('pImgThumb');
   thumb.src = ''; thumb.style.display = 'none';
   document.getElementById('imgPreviewStatus').textContent = '';
-  document.getElementById('menuFormTitle').textContent = '➕ បន្ថែមភេសជ្ជៈថ្មី';
+  document.getElementById('menuFormTitle').textContent = '➕ បន្ថែមទំនិញថ្មី';
 }
 
 function toggleStock(id) {
@@ -998,13 +1018,20 @@ function renderEditOrderModal() {
   if (!editingOrder.items.length) {
     tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--danger);">អស់ទំនិញហើយ! ចុច «រក្សាទុក» ដើម្បីលុបវិក្កយបត្រនេះទាំងមូល។</td></tr>';
   } else {
-    tbody.innerHTML = editingOrder.items.map((i, idx) => `
+    tbody.innerHTML = editingOrder.items.map((i, idx) => {
+      const drink = isDrinkProduct(i);
+      const sizeLabel = (drink && i.size) ? ` (${i.size})` : '';
+      const subMeta = (drink && (i.sugar_level || i.ice_level))
+        ? `${fmtUsd(i.unit_price)} • ផ្អែម ${i.sugar_level || '50%'}`
+        : fmtUsd(i.unit_price);
+      return `
       <tr>
-        <td><strong>${i.name} (${i.size || 'M'})</strong><div style="font-size:11px; color:var(--muted);">${fmtUsd(i.unit_price)} • ផ្អែម ${i.sugar_level || '50%'}</div></td>
+        <td><strong>${i.name}${sizeLabel}</strong><div style="font-size:11px; color:var(--muted);">${subMeta}</div></td>
         <td style="text-align:center;"><div class="inline-qty"><button onclick="editOrderQty(${idx}, -1)">−</button><strong style="min-width:20px; text-align:center;">${i.qty}</strong><button onclick="editOrderQty(${idx}, 1)">+</button></div></td>
         <td style="text-align:right; font-weight:700;">${fmtUsd(i.unit_price * i.qty)}</td>
         <td style="text-align:center;"><button class="btn btn-danger btn-sm" onclick="editOrderRemove(${idx})">✖ លុប</button></td>
-      </tr>`).join('');
+      </tr>`;
+    }).join('');
   }
   const sub = editingOrder.items.reduce((s, i) => s + i.unit_price * i.qty, 0);
   let disc = 0;
