@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>ស័ក្តិ កាហ្វេ (Sak Coffee) — ONLINE / OFFLINE POS</title>
+<title>ស័ក្តិ កាហ្វេ (Sak Coffee) - Smart POS</title>
 <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -228,7 +228,7 @@
 <header class="topbar">
   <div class="brand">
     <span>☕ ស័ក្តិ កាហ្វេ (Sak Coffee)</span>
-    <span class="brand-badge" id="modeBadge">ONLINE / OFFLINE</span>
+    <span class="brand-badge">SMART POS</span>
   </div>
   <nav class="nav-tabs">
     <button class="nav-btn active" onclick="switchView('pos', this)">🛒 លក់ (POS)</button>
@@ -601,12 +601,7 @@ const DEFAULT_DATA = {
   orders: []
 };
 
-try {
-  if (window.indexedDB && typeof indexedDB.deleteDatabase === 'function') {
-    indexedDB.deleteDatabase('sak_coffee_pos_db_v1');
-  }
-} catch (e) {}
-let state = JSON.parse(localStorage.getItem('sak_coffee_pos_online_offline_v1') || 'null') || structuredClone(DEFAULT_DATA);
+let state = JSON.parse(localStorage.getItem('sak_coffee_pos_v3') || 'null') || structuredClone(DEFAULT_DATA);
 if (Array.isArray(state.products)) {
   const defMap = new Map(DEFAULT_DATA.products.map(dp => [Number(dp.id), dp.image_url]));
   state.products = state.products.map(p => {
@@ -626,7 +621,7 @@ state.settings = { ...DEFAULT_DATA.settings, ...(state.settings || {}) };
 if (!state.settings.apiUrl || !state.settings.apiUrl.trim() || state.settings.apiUrl.includes('AKfycbzLP3_IdnbJ5ih24W5R0eqD3nHpDzlbN5nASJ0CroAmKC9rnR_zvz9Q5hnziHo30TaB') || state.settings.apiUrl.includes('AKfycbwAGbcl0fW9e_S0g6YqGIsyoVZmmWs1jh7MMjSgxKB1eRdRji44b72qcIHDHP9F5DRO')) {
   state.settings.apiUrl = 'https://script.google.com/macros/s/AKfycbxSuY0pxzYKN9E7qt22uO6EOWq3pQCdYkS-aYRByeItuHlB5_-ebTF4kF9oqsW6bDOx/exec';
 }
-localStorage.setItem('sak_coffee_pos_online_offline_v1', JSON.stringify(state));
+localStorage.setItem('sak_coffee_pos_v3', JSON.stringify(state));
 let cart = [];
 let activeCat = 'all';
 let expandedCartIdx = -1;
@@ -636,7 +631,7 @@ let receivedStr = '0';
 
 function getPersistedOrders() {
   try {
-    const raw = localStorage.getItem('sak_coffee_pos_online_offline_v1');
+    const raw = localStorage.getItem('sak_coffee_pos_v3');
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed.orders) ? parsed.orders : [];
@@ -667,7 +662,7 @@ function saveState() {
     });
     state.orders = curOrders;
   } catch (e) {}
-  localStorage.setItem('sak_coffee_pos_online_offline_v1', JSON.stringify(state));
+  localStorage.setItem('sak_coffee_pos_v3', JSON.stringify(state));
   updateSyncIndicator();
   renderHeldOrders();
 }
@@ -1061,6 +1056,7 @@ async function pushOrderToBackend(order, action = 'create') {
         ...order,
         subtotal_usd: order.subtotal,
         discount_usd: order.discount,
+        items_json: JSON.stringify(order.items || []),
         action,
         apiKey: state.settings?.apiKey || ''
       })
@@ -1336,15 +1332,13 @@ function updateSyncIndicator() {
   const txt = document.getElementById('syncText');
   const pending = state.orders.filter(o => !o.synced).length;
   if (!state.settings.apiUrl) { dot.className = 'dot'; txt.textContent = 'Offline Only'; }
-  else if (!navigator.onLine) { dot.className = 'dot pending'; txt.textContent = pending > 0 ? `Offline • រង់ចាំ Sync (${pending})` : 'Offline (រក្សាទុកក្នុងម៉ាស៊ីន)'; }
   else if (pending > 0) { dot.className = 'dot pending'; txt.textContent = `រង់ចាំ Sync (${pending})`; }
   else { dot.className = 'dot online'; txt.textContent = 'Cloud Synced'; }
 }
-window.addEventListener('offline', updateSyncIndicator);
 
 // Orders View
 
-function inferItemsFromOrder(o, includeMissingPlaceholder = false) {
+function inferItemsFromOrder(o) {
   if (!o) return [];
   if (Array.isArray(o.items) && o.items.length) return o.items;
   if (typeof o.items === 'string' && o.items.trim().startsWith('[')) {
@@ -1359,16 +1353,6 @@ function inferItemsFromOrder(o, includeMissingPlaceholder = false) {
       if (Array.isArray(p) && p.length) return p;
     } catch (e) {}
   }
-  if (includeMissingPlaceholder) {
-    const amt = Number(o.subtotal ?? o.total_usd ?? 0);
-    return [{
-      name: 'មិនមានបញ្ជីមុខទំនិញ',
-      qty: 1,
-      unit_price: amt,
-      unit_cost: 0,
-      isMissingList: true
-    }];
-  }
   return [];
 }
 
@@ -1379,7 +1363,7 @@ function renderOrders() {
     <tr>
       <td><strong>${o.order_code}</strong></td>
       <td>${new Date(o.created_at).toLocaleString()}</td>
-      <td>${(() => { const arr = inferItemsFromOrder(o, false); return arr.length ? arr.map(i => `${i.name || i.product_name || 'Item'} x${i.qty || 1}`).join(', ') : `<span style="color:var(--muted);">មិនមានបញ្ជីមុខទំនិញ</span>`; })()}</td>
+      <td>${(() => { const arr = inferItemsFromOrder(o); return arr.length ? arr.map(i => `${i.name || i.product_name || 'Item'} x${i.qty || 1}`).join(', ') : `<span style="color:var(--muted);">${o.order_type || 'ទំនិញក្នុង Sheet'}</span>`; })()}</td>
       <td>${o.discount > 0 ? '-' + fmtUsd(o.discount) : '-'}</td>
       <td><strong>${fmtUsd(o.total_usd)}</strong></td>
       <td>${o.payment_method}</td>
@@ -1503,18 +1487,7 @@ function renderMenuTable() {
 
 // Reports (Daily / Monthly / Yearly)
 function toLocalDateStr(d) {
-  if (!d) return '';
-  if (d instanceof Date) {
-    if (isNaN(d.getTime())) return '';
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  }
-  const s = String(d).trim();
-  // Match DD/MM/YYYY or DD-MM-YYYY
-  const dmy = s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/);
-  if (dmy) {
-    return `${dmy[3]}-${String(dmy[2]).padStart(2, '0')}-${String(dmy[1]).padStart(2, '0')}`;
-  }
-  const dt = new Date(s);
+  const dt = (d instanceof Date) ? d : new Date(d);
   if (isNaN(dt.getTime())) return '';
   const y = dt.getFullYear();
   const m = String(dt.getMonth() + 1).padStart(2, '0');
@@ -1575,34 +1548,18 @@ function renderReports() {
 
   const byItem = {};
   filtered.forEach(o => {
-    const rawArr = inferItemsFromOrder(o, false);
-    if (rawArr.length > 0) {
-      rawArr.forEach(i => {
-        const k = i.name || i.product_name || 'Unknown';
-        byItem[k] = byItem[k] || { qty: 0, rev: 0, isMissing: false };
-        byItem[k].qty += Number(i.qty || 1);
-        byItem[k].rev += Number(i.unit_price || 0) * Number(i.qty || 1);
-      });
-    } else {
-      const missingAmt = Number(o.subtotal ?? o.total_usd ?? 0);
-      if (missingAmt > 0 || o.total_usd > 0) {
-        const k = 'មិនមានបញ្ជីមុខទំនិញ';
-        byItem[k] = byItem[k] || { qty: 0, rev: 0, isMissing: true };
-        byItem[k].qty += 1;
-        byItem[k].rev += missingAmt;
-        byItem[k].isMissing = true;
-      }
-    }
+    inferItemsFromOrder(o).forEach(i => {
+      const k = i.name || 'Unknown';
+      byItem[k] = byItem[k] || { qty: 0, rev: 0 };
+      byItem[k].qty += Number(i.qty || 1);
+      byItem[k].rev += Number(i.unit_price || 0) * Number(i.qty || 1);
+    });
   });
-  const topList = Object.entries(byItem).sort((a, b) => {
-    if (a[1].isMissing && !b[1].isMissing) return 1;
-    if (!a[1].isMissing && b[1].isMissing) return -1;
-    return b[1].qty - a[1].qty;
-  }).slice(0, 10);
+  const topList = Object.entries(byItem).sort((a, b) => b[1].qty - a[1].qty).slice(0, 10);
   const topTbl = document.getElementById('repTopItemsTable');
   if (topTbl) {
     topTbl.innerHTML = topList.map(([name, v]) =>
-      `<tr><td><strong style="${v.isMissing ? 'color:var(--muted);font-style:italic;' : ''}">${name}</strong></td><td style="text-align:center;">${v.isMissing ? '-' : v.qty}</td><td style="text-align:right;">${fmtUsd(v.rev)}</td></tr>`
+      `<tr><td><strong>${name}</strong></td><td style="text-align:center;">${v.qty}</td><td style="text-align:right;">${fmtUsd(v.rev)}</td></tr>`
     ).join('') || '<tr><td colspan="3" style="text-align:center; color:var(--muted);">គ្មានទិន្នន័យ</td></tr>';
   }
 
@@ -1664,10 +1621,6 @@ async function saveSettings() {
   if (keyEl) state.settings.apiKey = keyEl.value.trim();
   state.catalogUpdatedAt = Date.now();
   saveState();
-  if (!navigator.onLine) {
-    alert('បានរក្សាទុកការកំណត់ក្នុងម៉ាស៊ីនរួចរាល់ (Offline)! ប្រព័ន្ធនឹង Sync ទៅ Google Sheets ពេលមានអ៊ីនធឺណិតវិញ។');
-    return;
-  }
   await syncCatalogToBackend(false);
   state.catalogUpdatedAt = Date.now();
   saveState();
@@ -1717,6 +1670,7 @@ function openEditOrder(id) {
   const o = state.orders.find(x => x.id === id);
   if (!o) return;
   editingOrder = structuredClone(o);
+  editingOrder.items = structuredClone(inferItemsFromOrder(o));
   editingOrder._origSubtotal = Number(o.subtotal || 0);
   editingOrder._origDiscount = Number(o.discount || 0);
   document.getElementById('editOrderTitle').textContent = '✏️ កែប្រែវិក្កយបត្រ ' + o.order_code;
