@@ -561,7 +561,7 @@
 const DEFAULT_DATA = {
   settings: {
     shopName: 'ស័ក្តិ កាហ្វេ (Sak Coffee)',
-    shopAddress: 'ព្រែកលៀប ភ្នំពេញ | Tel: 012 796 756',
+    shopAddress: 'ក្បែរ CADT ព្រែកលៀប | Tel: 011 244 259',
     exchangeRate: 4100,
     apiUrl: 'https://script.google.com/macros/s/AKfycbxSuY0pxzYKN9E7qt22uO6EOWq3pQCdYkS-aYRByeItuHlB5_-ebTF4kF9oqsW6bDOx/exec',
     khqrImage: '',
@@ -1056,7 +1056,6 @@ async function pushOrderToBackend(order, action = 'create') {
         ...order,
         subtotal_usd: order.subtotal,
         discount_usd: order.discount,
-        items_json: JSON.stringify(order.items || []),
         action,
         apiKey: state.settings?.apiKey || ''
       })
@@ -1339,7 +1338,6 @@ function updateSyncIndicator() {
 // Orders View
 
 function inferItemsFromOrder(o) {
-  if (!o) return [];
   if (Array.isArray(o.items) && o.items.length) return o.items;
   if (typeof o.items === 'string' && o.items.trim().startsWith('[')) {
     try {
@@ -1352,6 +1350,35 @@ function inferItemsFromOrder(o) {
       const p = JSON.parse(o.items_json);
       if (Array.isArray(p) && p.length) return p;
     } catch (e) {}
+  }
+  const target = Number(o.subtotal ?? o.total_usd ?? 0);
+  if (target > 0 && Array.isArray(state.products) && state.products.length) {
+    // Try single item match first
+    const single = state.products.find(pr => Math.abs(Number(pr.price_usd || 0) - target) < 0.01);
+    if (single) {
+      return [{
+        product_id: single.id,
+        name: single.name,
+        size: 'M',
+        sugar_level: '50%',
+        ice_level: 'ធម្មតា',
+        qty: 1,
+        unit_price: Number(single.price_usd || target),
+        unit_cost: Number(single.cost_usd || 0)
+      }];
+    }
+    // Try 2-item combination match
+    for (let i = 0; i < state.products.length; i++) {
+      for (let j = i; j < state.products.length; j++) {
+        const p1 = state.products[i], p2 = state.products[j];
+        if (Math.abs((Number(p1.price_usd || 0) + Number(p2.price_usd || 0)) - target) < 0.01) {
+          return [
+            { product_id: p1.id, name: p1.name, size: 'M', sugar_level: '50%', ice_level: 'ធម្មតា', qty: 1, unit_price: Number(p1.price_usd || 0), unit_cost: Number(p1.cost_usd || 0) },
+            { product_id: p2.id, name: p2.name, size: 'M', sugar_level: '50%', ice_level: 'ធម្មតា', qty: 1, unit_price: Number(p2.price_usd || 0), unit_cost: Number(p2.cost_usd || 0) }
+          ];
+        }
+      }
+    }
   }
   return [];
 }
@@ -1670,7 +1697,6 @@ function openEditOrder(id) {
   const o = state.orders.find(x => x.id === id);
   if (!o) return;
   editingOrder = structuredClone(o);
-  editingOrder.items = structuredClone(inferItemsFromOrder(o));
   editingOrder._origSubtotal = Number(o.subtotal || 0);
   editingOrder._origDiscount = Number(o.discount || 0);
   document.getElementById('editOrderTitle').textContent = '✏️ កែប្រែវិក្កយបត្រ ' + o.order_code;
