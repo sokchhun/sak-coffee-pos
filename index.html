@@ -1344,7 +1344,8 @@ window.addEventListener('offline', updateSyncIndicator);
 
 // Orders View
 
-function inferItemsFromOrder(o) {
+function inferItemsFromOrder(o, includeMissingPlaceholder = false) {
+  if (!o) return [];
   if (Array.isArray(o.items) && o.items.length) return o.items;
   if (typeof o.items === 'string' && o.items.trim().startsWith('[')) {
     try {
@@ -1358,34 +1359,15 @@ function inferItemsFromOrder(o) {
       if (Array.isArray(p) && p.length) return p;
     } catch (e) {}
   }
-  const target = Number(o.subtotal ?? o.total_usd ?? 0);
-  if (target > 0 && Array.isArray(state.products) && state.products.length) {
-    // Try single item match first
-    const single = state.products.find(pr => Math.abs(Number(pr.price_usd || 0) - target) < 0.01);
-    if (single) {
-      return [{
-        product_id: single.id,
-        name: single.name,
-        size: 'M',
-        sugar_level: '50%',
-        ice_level: 'ធម្មតា',
-        qty: 1,
-        unit_price: Number(single.price_usd || target),
-        unit_cost: Number(single.cost_usd || 0)
-      }];
-    }
-    // Try 2-item combination match
-    for (let i = 0; i < state.products.length; i++) {
-      for (let j = i; j < state.products.length; j++) {
-        const p1 = state.products[i], p2 = state.products[j];
-        if (Math.abs((Number(p1.price_usd || 0) + Number(p2.price_usd || 0)) - target) < 0.01) {
-          return [
-            { product_id: p1.id, name: p1.name, size: 'M', sugar_level: '50%', ice_level: 'ធម្មតា', qty: 1, unit_price: Number(p1.price_usd || 0), unit_cost: Number(p1.cost_usd || 0) },
-            { product_id: p2.id, name: p2.name, size: 'M', sugar_level: '50%', ice_level: 'ធម្មតា', qty: 1, unit_price: Number(p2.price_usd || 0), unit_cost: Number(p2.cost_usd || 0) }
-          ];
-        }
-      }
-    }
+  if (includeMissingPlaceholder) {
+    const amt = Number(o.subtotal ?? o.total_usd ?? 0);
+    return [{
+      name: 'មិនមានបញ្ជីមុខទំនិញ',
+      qty: 1,
+      unit_price: amt,
+      unit_cost: 0,
+      isMissingList: true
+    }];
   }
   return [];
 }
@@ -1397,7 +1379,7 @@ function renderOrders() {
     <tr>
       <td><strong>${o.order_code}</strong></td>
       <td>${new Date(o.created_at).toLocaleString()}</td>
-      <td>${(() => { const arr = inferItemsFromOrder(o); return arr.length ? arr.map(i => `${i.name || i.product_name || 'Item'} x${i.qty || 1}`).join(', ') : `<span style="color:var(--muted);">${o.order_type || 'ទំនិញក្នុង Sheet'}</span>`; })()}</td>
+      <td>${(() => { const arr = inferItemsFromOrder(o, false); return arr.length ? arr.map(i => `${i.name || i.product_name || 'Item'} x${i.qty || 1}`).join(', ') : `<span style="color:var(--muted);">មិនមានបញ្ជីមុខទំនិញ</span>`; })()}</td>
       <td>${o.discount > 0 ? '-' + fmtUsd(o.discount) : '-'}</td>
       <td><strong>${fmtUsd(o.total_usd)}</strong></td>
       <td>${o.payment_method}</td>
@@ -1521,7 +1503,18 @@ function renderMenuTable() {
 
 // Reports (Daily / Monthly / Yearly)
 function toLocalDateStr(d) {
-  const dt = (d instanceof Date) ? d : new Date(d);
+  if (!d) return '';
+  if (d instanceof Date) {
+    if (isNaN(d.getTime())) return '';
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+  const s = String(d).trim();
+  // Match DD/MM/YYYY or DD-MM-YYYY
+  const dmy = s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/);
+  if (dmy) {
+    return `${dmy[3]}-${String(dmy[2]).padStart(2, '0')}-${String(dmy[1]).padStart(2, '0')}`;
+  }
+  const dt = new Date(s);
   if (isNaN(dt.getTime())) return '';
   const y = dt.getFullYear();
   const m = String(dt.getMonth() + 1).padStart(2, '0');
@@ -1582,18 +1575,34 @@ function renderReports() {
 
   const byItem = {};
   filtered.forEach(o => {
-    inferItemsFromOrder(o).forEach(i => {
-      const k = i.name || 'Unknown';
-      byItem[k] = byItem[k] || { qty: 0, rev: 0 };
-      byItem[k].qty += Number(i.qty || 1);
-      byItem[k].rev += Number(i.unit_price || 0) * Number(i.qty || 1);
-    });
+    const rawArr = inferItemsFromOrder(o, false);
+    if (rawArr.length > 0) {
+      rawArr.forEach(i => {
+        const k = i.name || i.product_name || 'Unknown';
+        byItem[k] = byItem[k] || { qty: 0, rev: 0, isMissing: false };
+        byItem[k].qty += Number(i.qty || 1);
+        byItem[k].rev += Number(i.unit_price || 0) * Number(i.qty || 1);
+      });
+    } else {
+      const missingAmt = Number(o.subtotal ?? o.total_usd ?? 0);
+      if (missingAmt > 0 || o.total_usd > 0) {
+        const k = 'មិនមានបញ្ជីមុខទំនិញ';
+        byItem[k] = byItem[k] || { qty: 0, rev: 0, isMissing: true };
+        byItem[k].qty += 1;
+        byItem[k].rev += missingAmt;
+        byItem[k].isMissing = true;
+      }
+    }
   });
-  const topList = Object.entries(byItem).sort((a, b) => b[1].qty - a[1].qty).slice(0, 10);
+  const topList = Object.entries(byItem).sort((a, b) => {
+    if (a[1].isMissing && !b[1].isMissing) return 1;
+    if (!a[1].isMissing && b[1].isMissing) return -1;
+    return b[1].qty - a[1].qty;
+  }).slice(0, 10);
   const topTbl = document.getElementById('repTopItemsTable');
   if (topTbl) {
     topTbl.innerHTML = topList.map(([name, v]) =>
-      `<tr><td><strong>${name}</strong></td><td style="text-align:center;">${v.qty}</td><td style="text-align:right;">${fmtUsd(v.rev)}</td></tr>`
+      `<tr><td><strong style="${v.isMissing ? 'color:var(--muted);font-style:italic;' : ''}">${name}</strong></td><td style="text-align:center;">${v.isMissing ? '-' : v.qty}</td><td style="text-align:right;">${fmtUsd(v.rev)}</td></tr>`
     ).join('') || '<tr><td colspan="3" style="text-align:center; color:var(--muted);">គ្មានទិន្នន័យ</td></tr>';
   }
 
