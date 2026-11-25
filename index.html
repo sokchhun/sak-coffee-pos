@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>ស័ក្តិ កាហ្វេ (Sak Coffee) - Smart POS</title>
+<title>ស័ក្តិ កាហ្វេ (Sak Coffee) — ONLINE / OFFLINE POS</title>
 <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
@@ -228,7 +228,7 @@
 <header class="topbar">
   <div class="brand">
     <span>☕ ស័ក្តិ កាហ្វេ (Sak Coffee)</span>
-    <span class="brand-badge">SMART POS</span>
+    <span class="brand-badge" id="modeBadge">ONLINE / OFFLINE</span>
   </div>
   <nav class="nav-tabs">
     <button class="nav-btn active" onclick="switchView('pos', this)">🛒 លក់ (POS)</button>
@@ -601,7 +601,12 @@ const DEFAULT_DATA = {
   orders: []
 };
 
-let state = JSON.parse(localStorage.getItem('sak_coffee_pos_v3') || 'null') || structuredClone(DEFAULT_DATA);
+try {
+  if (window.indexedDB && typeof indexedDB.deleteDatabase === 'function') {
+    indexedDB.deleteDatabase('sak_coffee_pos_db_v1');
+  }
+} catch (e) {}
+let state = JSON.parse(localStorage.getItem('sak_coffee_pos_online_offline_v1') || 'null') || structuredClone(DEFAULT_DATA);
 if (Array.isArray(state.products)) {
   const defMap = new Map(DEFAULT_DATA.products.map(dp => [Number(dp.id), dp.image_url]));
   state.products = state.products.map(p => {
@@ -621,7 +626,7 @@ state.settings = { ...DEFAULT_DATA.settings, ...(state.settings || {}) };
 if (!state.settings.apiUrl || !state.settings.apiUrl.trim() || state.settings.apiUrl.includes('AKfycbzLP3_IdnbJ5ih24W5R0eqD3nHpDzlbN5nASJ0CroAmKC9rnR_zvz9Q5hnziHo30TaB') || state.settings.apiUrl.includes('AKfycbwAGbcl0fW9e_S0g6YqGIsyoVZmmWs1jh7MMjSgxKB1eRdRji44b72qcIHDHP9F5DRO')) {
   state.settings.apiUrl = 'https://script.google.com/macros/s/AKfycbxSuY0pxzYKN9E7qt22uO6EOWq3pQCdYkS-aYRByeItuHlB5_-ebTF4kF9oqsW6bDOx/exec';
 }
-localStorage.setItem('sak_coffee_pos_v3', JSON.stringify(state));
+localStorage.setItem('sak_coffee_pos_online_offline_v1', JSON.stringify(state));
 let cart = [];
 let activeCat = 'all';
 let expandedCartIdx = -1;
@@ -631,7 +636,7 @@ let receivedStr = '0';
 
 function getPersistedOrders() {
   try {
-    const raw = localStorage.getItem('sak_coffee_pos_v3');
+    const raw = localStorage.getItem('sak_coffee_pos_online_offline_v1');
     if (!raw) return [];
     const parsed = JSON.parse(raw);
     return Array.isArray(parsed.orders) ? parsed.orders : [];
@@ -662,7 +667,7 @@ function saveState() {
     });
     state.orders = curOrders;
   } catch (e) {}
-  localStorage.setItem('sak_coffee_pos_v3', JSON.stringify(state));
+  localStorage.setItem('sak_coffee_pos_online_offline_v1', JSON.stringify(state));
   updateSyncIndicator();
   renderHeldOrders();
 }
