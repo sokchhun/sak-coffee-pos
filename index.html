@@ -150,7 +150,6 @@
   .prod-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--primary); }
   .prod-card.soldout { opacity: 0.45; pointer-events: none; }
   .prod-img { width: 88px; height: 88px; border-radius: 12px; object-fit: cover; background: #f3f4f6; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
-  .prod-icon { font-size: 40px; height: 72px; display: flex; align-items: center; justify-content: center; }
   .prod-name { font-size: 13px; font-weight: 600; line-height: 1.3; }
   .prod-price { font-size: 14px; font-weight: 700; color: var(--primary-dark); }
   .prod-badge {
@@ -159,7 +158,7 @@
     display: flex; align-items: center; justify-content: center;
   }
 
-  /* Page container for Orders, Menu, Reports, Settings */
+  /* Page container */
   .page-wrap { flex: 1; overflow-y: auto; padding: 18px; max-width: 1280px; width: 100%; margin: 0 auto; }
   .card { background: #fff; border-radius: 12px; padding: 16px; border: 1px solid var(--border); margin-bottom: 16px; }
   .card-title { font-size: 16px; font-weight: 700; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
@@ -188,7 +187,6 @@
   .modal-bg.open { display: flex; }
   .modal { background: #fff; border-radius: 14px; width: 100%; max-width: 880px; max-height: 92vh; overflow-y: auto; padding: 20px; }
   .checkout-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
-  .pay-methods { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
   .pay-btn {
     border: 2px solid var(--border); background: #fff; border-radius: 10px; padding: 12px 8px;
     cursor: pointer; font-weight: 700; font-size: 13px; text-align: center;
@@ -228,7 +226,7 @@
 <header class="topbar">
   <div class="brand">
     <span>☕ ស័ក្តិ កាហ្វេ (Sak Coffee)</span>
-    <span class="brand-badge">SMART POS</span>
+    <span class="brand-badge">ONLINE / OFFLINE</span>
   </div>
   <nav class="nav-tabs">
     <button class="nav-btn active" onclick="switchView('pos', this)">🛒 លក់ (POS)</button>
@@ -239,7 +237,7 @@
   </nav>
   <div style="display:flex;align-items:center;gap:8px;">
     <button type="button" class="nav-btn" style="padding:6px 12px;font-size:13px;background:#f59e0b;color:#111;font-weight:700;" onclick="lockPosSession()" title="ចាក់សោ Login ភ្លាមៗ">🔒 ចាក់សោ</button>
-    <div class="sync-pill" onclick="syncPendingOrders()" title="ចុចដើម្បី Sync ទៅ Google Sheets">
+    <div class="sync-pill" onclick="syncAllNow()" title="ចុចដើម្បី Sync ទៅ Google Sheets">
       <span class="dot" id="syncDot"></span>
       <span id="syncText">Offline</span>
     </div>
@@ -292,9 +290,9 @@
   <div class="page-wrap">
     <div class="card">
       <div class="card-title">
-        <span>🧾 ប្រវត្តិវិក្កយបត្រលក់</span>
+        <span>🧾 ប្រវត្តិវិក្កយបត្រលក់ (ថ្ងៃនេះ)</span>
         <div style="display:flex; gap:8px;">
-          <button class="btn btn-primary btn-sm" onclick="syncPendingOrders()">☁️ Sync ទៅ Google Sheets</button>
+          <button class="btn btn-primary btn-sm" onclick="syncAllNow()">☁️ Sync ជាមួយ Google Sheets</button>
           <button class="btn btn-light btn-sm" onclick="exportOrdersCSV()">⬇️ Export CSV</button>
           <button class="btn btn-danger btn-sm" onclick="resetSalesHistory()">🗑️ សម្អាតប្រវត្តិលក់</button>
         </div>
@@ -408,7 +406,7 @@
       </div>
       <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
         <button class="btn btn-primary" onclick="saveSettings()">💾 រក្សាទុកការកំណត់</button>
-        <button class="btn btn-success" onclick="pullFromBackend()">☁️ ទាញម៉ឺនុយពី Google Sheets</button>
+        <button class="btn btn-success" onclick="pullFromBackend(false)">☁️ ទាញទិន្នន័យពី Google Sheets</button>
         <button class="btn btn-light" onclick="backupJSON()">⬇️ Backup JSON</button>
         <label class="btn btn-light" style="cursor:pointer;">⬆️ Restore JSON<input type="file" accept=".json" style="display:none;" onchange="restoreJSON(event)"></label>
         <button class="btn btn-danger" onclick="resetSalesHistory()">🗑️ Reset ប្រវត្តិលក់ & របាយការណ៍</button>
@@ -446,7 +444,6 @@
       <button class="btn btn-light btn-sm" onclick="closeCheckout()">✖ បិទ</button>
     </div>
     <div class="checkout-grid" style="grid-template-columns: 1.1fr 1.15fr 0.85fr; gap:18px; align-items:start;">
-      <!-- Col 1: Total, Payment Type, Cash ($) & Cash (៛), Change -->
       <div>
         <div style="background:#f8fafc; padding:12px; border-radius:10px; margin-bottom:10px; border:1px solid var(--border);">
           <div style="font-size:12px; color:var(--muted);">ត្រូវបង់សរុប (Total)</div>
@@ -486,7 +483,6 @@
         </div>
       </div>
 
-      <!-- Col 2: POS-Style Numpad (C on top-left, 7-8-9, 4-5-6, 1-2-3, 0, 00, .) -->
       <div>
         <div class="numpad" style="grid-template-columns: repeat(3, 1fr); gap:6px;">
           <button type="button" class="num-btn" onclick="numKey('C')" style="background:#475569; color:#fff; border-color:#475569;">C</button>
@@ -506,7 +502,6 @@
         </div>
       </div>
 
-      <!-- Col 3: Quick Cash & Checkout Actions -->
       <div style="display:flex; flex-direction:column; gap:8px;">
         <div class="quick-cash" style="margin-top:0;">
           <button type="button" class="btn btn-light btn-sm" onclick="setExactCash()">គ្រប់ចំនួន</button>
@@ -524,7 +519,7 @@
   </div>
 </div>
 
-<!-- EDIT ORDER MODAL (លុប/កែប្រែទំនិញក្នុងវិក្កយបត្រដែលបានកុម្ម៉ង់រួច) -->
+<!-- EDIT ORDER MODAL -->
 <div class="modal-bg" id="editOrderModal">
   <div class="modal" style="max-width:620px;">
     <div class="card-title">
@@ -558,10 +553,12 @@
 <div id="receipt-print"></div>
 
 <script>
+const STORAGE_KEY = 'sak_coffee_pos_clean_v1';
+
 const DEFAULT_DATA = {
   settings: {
     shopName: 'ស័ក្តិ កាហ្វេ (Sak Coffee)',
-    shopAddress: 'ក្បែរ CADT ព្រែកលៀប | Tel: 011 244 259',
+    shopAddress: 'ព្រែកលៀប ភ្នំពេញ | Tel: 012 796 756',
     exchangeRate: 4100,
     apiUrl: 'https://script.google.com/macros/s/AKfycbxSuY0pxzYKN9E7qt22uO6EOWq3pQCdYkS-aYRByeItuHlB5_-ebTF4kF9oqsW6bDOx/exec',
     khqrImage: '',
@@ -598,83 +595,84 @@ const DEFAULT_DATA = {
     { id: 2, name: 'យកកែវមកខ្លួនឯង (-$0.25)', type: 'fixed', value: 0.25 },
     { id: 3, name: 'Happy Hour (15%)', type: 'percent', value: 15 }
   ],
-  orders: []
+  orders: [],
+  heldOrders: [],
+  deletedOrderCodes: [],
+  deletedOrderIds: []
 };
 
-let state = JSON.parse(localStorage.getItem('sak_coffee_pos_v3') || 'null') || structuredClone(DEFAULT_DATA);
-if (Array.isArray(state.products)) {
-  const defMap = new Map(DEFAULT_DATA.products.map(dp => [Number(dp.id), dp.image_url]));
-  state.products = state.products.map(p => {
-    const isSvg = typeof p.image_url === 'string' && p.image_url.startsWith('data:image/svg+xml');
-    return {
-      ...p,
-      image_url: (!p.image_url || isSvg) ? (defMap.get(Number(p.id)) || '') : p.image_url
+function loadInitialState() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('sak_coffee_pos_v3');
+    if (!raw) return structuredClone(DEFAULT_DATA);
+    const parsed = JSON.parse(raw);
+    const merged = {
+      ...structuredClone(DEFAULT_DATA),
+      ...parsed,
+      settings: { ...DEFAULT_DATA.settings, ...(parsed.settings || {}) }
     };
-  });
-  const existingIds = new Set(state.products.map(p => Number(p.id)));
-  DEFAULT_DATA.products.forEach(dp => {
-    if (!existingIds.has(Number(dp.id))) state.products.push(structuredClone(dp));
-  });
+    if (!merged.settings.shopAddress || merged.settings.shopAddress.includes('011 244 259')) {
+      merged.settings.shopAddress = DEFAULT_DATA.settings.shopAddress;
+    }
+    if (!Array.isArray(merged.orders)) merged.orders = [];
+    if (!Array.isArray(merged.heldOrders)) merged.heldOrders = [];
+    if (!Array.isArray(merged.deletedOrderCodes)) merged.deletedOrderCodes = [];
+    if (!Array.isArray(merged.deletedOrderIds)) merged.deletedOrderIds = [];
+    return merged;
+  } catch (e) {
+    return structuredClone(DEFAULT_DATA);
+  }
 }
-if (!Array.isArray(state.heldOrders)) state.heldOrders = [];
-state.settings = { ...DEFAULT_DATA.settings, ...(state.settings || {}) };
-if (!state.settings.apiUrl || !state.settings.apiUrl.trim() || state.settings.apiUrl.includes('AKfycbzLP3_IdnbJ5ih24W5R0eqD3nHpDzlbN5nASJ0CroAmKC9rnR_zvz9Q5hnziHo30TaB') || state.settings.apiUrl.includes('AKfycbwAGbcl0fW9e_S0g6YqGIsyoVZmmWs1jh7MMjSgxKB1eRdRji44b72qcIHDHP9F5DRO')) {
-  state.settings.apiUrl = 'https://script.google.com/macros/s/AKfycbxSuY0pxzYKN9E7qt22uO6EOWq3pQCdYkS-aYRByeItuHlB5_-ebTF4kF9oqsW6bDOx/exec';
-}
-localStorage.setItem('sak_coffee_pos_v3', JSON.stringify(state));
+
+let state = loadInitialState();
 let cart = [];
 let activeCat = 'all';
 let expandedCartIdx = -1;
 let selectedPay = 'Cash';
 let receivedStr = '0';
-
-
-function getPersistedOrders() {
-  try {
-    const raw = localStorage.getItem('sak_coffee_pos_v3');
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed.orders) ? parsed.orders : [];
-  } catch (e) {
-    return [];
-  }
-}
+let coCurrency = 'USD';
 
 function saveState() {
-  try {
-    const diskOrders = getPersistedOrders();
-    const deletedCodes = new Set((state.deletedOrderCodes || []).map(String));
-    const deletedIds = new Set((state.deletedOrderIds || []).map(String));
-    const curOrders = (Array.isArray(state.orders) ? state.orders : []).filter(o =>
-      o && !deletedCodes.has(String(o.order_code || '')) && !deletedIds.has(String(o.id || ''))
-    );
-    const curCodes = new Set(curOrders.map(o => String(o.order_code || o.id)));
-    diskOrders.forEach(doOrder => {
-      if (doOrder && doOrder.synced === false) {
-        const key = String(doOrder.order_code || doOrder.id);
-        const rawCode = String(doOrder.order_code || '');
-        const rawId = String(doOrder.id || '');
-        if (key && !curCodes.has(key) && !deletedCodes.has(rawCode) && !deletedIds.has(rawId)) {
-          curOrders.unshift(doOrder);
-          curCodes.add(key);
-        }
-      }
-    });
-    state.orders = curOrders;
-  } catch (e) {}
-  localStorage.setItem('sak_coffee_pos_v3', JSON.stringify(state));
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   updateSyncIndicator();
   renderHeldOrders();
 }
 
 function fmtUsd(n) { return '$' + Number(n || 0).toFixed(2); }
-function fmtKhr(usd) { return Math.round((usd || 0) * state.settings.exchangeRate).toLocaleString('en-US') + ' ៛'; }
+function fmtKhr(usd) { return Math.round((usd || 0) * Number(state.settings.exchangeRate || 4100)).toLocaleString('en-US') + ' ៛'; }
+
+function toLocalDateStr(d) {
+  if (!d) return '';
+  if (d instanceof Date) {
+    if (isNaN(d.getTime())) return '';
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+  const s = String(d).trim();
+  const dmy = s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/);
+  if (dmy) return `${dmy[3]}-${String(dmy[2]).padStart(2, '0')}-${String(dmy[1]).padStart(2, '0')}`;
+  const dt = new Date(s);
+  if (isNaN(dt.getTime())) return '';
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+}
+
+function extractOrderItems(o) {
+  if (!o) return [];
+  if (Array.isArray(o.items) && o.items.length) return o.items;
+  for (const field of [o.items, o.items_json, o.items_JSON]) {
+    if (typeof field === 'string' && field.trim().startsWith('[')) {
+      try {
+        const arr = JSON.parse(field);
+        if (Array.isArray(arr) && arr.length) return arr;
+      } catch (e) {}
+    }
+  }
+  return [];
+}
 
 let adminUnlocked = false;
 function verifyAdminPin(actionLabel = 'ចូលប្រើមុខងារនេះ') {
   const pin = String(state.settings?.adminPin || '').trim();
-  if (!pin) return true;
-  if (adminUnlocked) return true;
+  if (!pin || adminUnlocked) return true;
   const entered = prompt(`🔐 សូមបញ្ចូលលេខកូដសម្ងាត់អ្នកគ្រប់គ្រង (Admin PIN) ដើម្បី${actionLabel}៖`);
   if (entered === null) return false;
   if (String(entered).trim() === pin) {
@@ -684,14 +682,11 @@ function verifyAdminPin(actionLabel = 'ចូលប្រើមុខងារ�
   alert('❌ លេខកូដសម្ងាត់មិនត្រឹមត្រូវទេ!');
   return false;
 }
+
 function switchView(name, btn) {
   if (name === 'menu' || name === 'reports' || name === 'settings') {
-    const labelMap = {
-      menu: 'គ្រប់គ្រងម៉ឺនុយ',
-      reports: 'មើលរបាយការណ៍',
-      settings: 'ចូលកំណត់ប្រព័ន្ធ'
-    };
-    if (!verifyAdminPin(labelMap[name] || 'ចូលប្រើមុខងារនេះ')) return;
+    const labels = { menu: 'គ្រប់គ្រងម៉ឺនុយ', reports: 'មើលរបាយការណ៍', settings: 'ចូលកំណត់ប្រព័ន្ធ' };
+    if (!verifyAdminPin(labels[name])) return;
   }
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById('view-' + name).classList.add('active');
@@ -710,8 +705,7 @@ function renderCategories() {
     html += `<button class="cat-btn ${activeCat === c.id ? 'active' : ''}" onclick="setCat(${c.id})">${c.icon || ''} ${c.name}</button>`;
   });
   bar.innerHTML = html;
-  const pCat = document.getElementById('pCat');
-  pCat.innerHTML = state.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  document.getElementById('pCat').innerHTML = state.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 }
 
 function setCat(id) { activeCat = id; renderCategories(); renderProducts(); }
@@ -722,10 +716,10 @@ function renderProducts() {
   const filtered = state.products.filter(p => (activeCat === 'all' || p.category_id == activeCat) && p.name.toLowerCase().includes(q));
   grid.innerHTML = filtered.map(p => {
     const qtyInCart = cart.filter(c => c.product_id === p.id).reduce((s, c) => s + c.qty, 0);
-    const imgSrc = p.image_url || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=300&q=80'; const visual = `<img class="prod-img" src="${imgSrc}" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=300&q=80';">`;
+    const imgSrc = p.image_url || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=300&q=80';
     return `<div class="prod-card ${p.is_available === false ? 'soldout' : ''}" onclick="addToCart(${p.id})">
       ${qtyInCart ? `<span class="prod-badge">${qtyInCart}</span>` : ''}
-      ${visual}
+      <img class="prod-img" src="${imgSrc}" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=300&q=80';">
       <div class="prod-name">${p.name}</div>
       <div class="prod-price">${fmtUsd(p.price_usd)}</div>
     </div>`;
@@ -787,13 +781,13 @@ function renderCart() {
             <div class="cart-item-meta">${fmtUsd(item.unit_price)} • ផ្អែម ${item.sugar_level} • ទឹកកក ${item.ice_level}${item.note ? ' • ' + item.note : ''}</div>
           </div>
           <div class="inline-qty" onclick="event.stopPropagation()">
-            <button onclick="changeQty(${idx}, -1)" title="ដក ១">−</button>
+            <button onclick="changeQty(${idx}, -1)">−</button>
             <strong style="min-width:20px; text-align:center;">${item.qty}</strong>
-            <button onclick="changeQty(${idx}, 1)" title="បន្ថែម ១">+</button>
+            <button onclick="changeQty(${idx}, 1)">+</button>
           </div>
           <div style="text-align:right; font-weight:700;">${fmtUsd(item.unit_price * item.qty)}</div>
           <div style="text-align:center;" onclick="event.stopPropagation()">
-            <button class="btn-x" onclick="removeCartItem(${idx})" title="លុបទំនិញនេះ">✖</button>
+            <button class="btn-x" onclick="removeCartItem(${idx})">✖</button>
           </div>
         </div>
         <div class="cart-mod">
@@ -842,29 +836,21 @@ function setMod(idx, key, val) {
 function clearCart() { cart = []; expandedCartIdx = -1; document.getElementById('discountSelect').value = 'none'; renderCart(); renderProducts(); }
 
 // Checkout
-let coCurrency = 'USD';
-
 function setCoCurrency(curr) {
   const rate = Number(state.settings.exchangeRate || 4100);
   const currentNum = Number(receivedStr || 0);
   if (curr !== coCurrency) {
     if (curr === 'KHR') {
-      const khrVal = Math.round((currentNum * rate) / 100) * 100;
-      receivedStr = String(khrVal || 0);
+      receivedStr = String(Math.round((currentNum * rate) / 100) * 100 || 0);
     } else {
       const usdVal = currentNum / rate;
       receivedStr = usdVal > 0 ? usdVal.toFixed(2) : '0';
     }
     coCurrency = curr;
   }
-  const btnUsd = document.getElementById('btnCurrUsd');
-  const btnKhr = document.getElementById('btnCurrKhr');
-  const lbl = document.getElementById('coRecLabel');
-  if (btnUsd && btnKhr) {
-    btnUsd.classList.toggle('active', curr === 'USD');
-    btnKhr.classList.toggle('active', curr === 'KHR');
-  }
-  if (lbl) lbl.textContent = curr === 'USD' ? 'ប្រាក់ទទួល (USD $)' : 'ប្រាក់ទទួល (KHR ៛)';
+  document.getElementById('btnCurrUsd').classList.toggle('active', curr === 'USD');
+  document.getElementById('btnCurrKhr').classList.toggle('active', curr === 'KHR');
+  document.getElementById('coRecLabel').textContent = curr === 'USD' ? 'ប្រាក់ទទួល (USD $)' : 'ប្រាក់ទទួល (KHR ៛)';
   updateCheckoutCalc(true);
   const inp = document.getElementById('coReceived');
   if (inp) { inp.focus(); inp.select(); }
@@ -877,14 +863,9 @@ function openCheckout() {
   document.getElementById('coTotalKhr').textContent = fmtKhr(t.total);
   coCurrency = 'USD';
   receivedStr = t.total.toFixed(2);
-  const btnUsd = document.getElementById('btnCurrUsd');
-  const btnKhr = document.getElementById('btnCurrKhr');
-  const lbl = document.getElementById('coRecLabel');
-  if (btnUsd && btnKhr) {
-    btnUsd.classList.add('active');
-    btnKhr.classList.remove('active');
-  }
-  if (lbl) lbl.textContent = 'ប្រាក់ទទួល (USD $)';
+  document.getElementById('btnCurrUsd').classList.add('active');
+  document.getElementById('btnCurrKhr').classList.remove('active');
+  document.getElementById('coRecLabel').textContent = 'ប្រាក់ទទួល (USD $)';
   updateCheckoutCalc(true);
   document.getElementById('checkoutModal').classList.add('open');
   setTimeout(() => { const el = document.getElementById('coReceived'); if (el) { el.focus(); el.select(); } }, 50);
@@ -913,29 +894,17 @@ function numKey(k) {
 function setExactCash() {
   const totalUsd = calcTotals().total;
   const rate = Number(state.settings.exchangeRate || 4100);
-  if (coCurrency === 'KHR') {
-    receivedStr = String(Math.ceil((totalUsd * rate) / 100) * 100);
-  } else {
-    receivedStr = totalUsd.toFixed(2);
-  }
+  receivedStr = coCurrency === 'KHR' ? String(Math.ceil((totalUsd * rate) / 100) * 100) : totalUsd.toFixed(2);
   updateCheckoutCalc(true);
 }
 function addCash(amt) {
   const rate = Number(state.settings.exchangeRate || 4100);
-  if (coCurrency === 'KHR') {
-    receivedStr = String(Number(receivedStr || 0) + Math.round(amt * rate));
-  } else {
-    receivedStr = (Number(receivedStr || 0) + amt).toFixed(2);
-  }
+  receivedStr = coCurrency === 'KHR' ? String(Number(receivedStr || 0) + Math.round(amt * rate)) : (Number(receivedStr || 0) + amt).toFixed(2);
   updateCheckoutCalc(true);
 }
 function addCashKhr(khr) {
   const rate = Number(state.settings.exchangeRate || 4100);
-  if (coCurrency === 'KHR') {
-    receivedStr = String(Number(receivedStr || 0) + khr);
-  } else {
-    receivedStr = (Number(receivedStr || 0) + (khr / rate)).toFixed(2);
-  }
+  receivedStr = coCurrency === 'KHR' ? String(Number(receivedStr || 0) + khr) : (Number(receivedStr || 0) + (khr / rate)).toFixed(2);
   updateCheckoutCalc(true);
 }
 function onCoReceivedInput(val) {
@@ -951,7 +920,6 @@ function onCoReceivedInput(val) {
   receivedStr = raw === '' ? '0' : raw;
   updateCheckoutCalc(false);
 }
-
 function updateCheckoutCalc(syncInput = true) {
   const t = calcTotals();
   const rate = Number(state.settings.exchangeRate || 4100);
@@ -963,40 +931,11 @@ function updateCheckoutCalc(syncInput = true) {
   document.getElementById('coChange').textContent = `${fmtUsd(chgUsd)} (${fmtKhr(chgUsd)})`;
 }
 
-document.addEventListener('keydown', (e) => {
-  const modal = document.getElementById('checkoutModal');
-  if (!modal || !modal.classList.contains('open')) return;
-  if (e.key === 'Escape') {
-    e.preventDefault();
-    closeCheckout();
-    return;
-  }
-  const activeId = document.activeElement ? document.activeElement.id : '';
-  const isCashInput = (activeId === 'coReceived');
-  // Map Numpad keys even if NumLock is off on another computer
-  const numpadMap = {
-    'Numpad0': '0', 'Numpad1': '1', 'Numpad2': '2', 'Numpad3': '3',
-    'Numpad4': '4', 'Numpad5': '5', 'Numpad6': '6', 'Numpad7': '7',
-    'Numpad8': '8', 'Numpad9': '9', 'NumpadDecimal': '.'
-  };
-  const mappedKey = numpadMap[e.code] || (/^[0-9.]$/.test(e.key) ? e.key : '');
-  if (!isCashInput && mappedKey) {
-    e.preventDefault();
-    numKey(mappedKey);
-  } else if (!isCashInput && (e.key === 'Backspace' || e.code === 'Backspace')) {
-    e.preventDefault();
-    numKey('BKSP');
-  } else if (!isCashInput && (e.key === 'Enter' || e.code === 'NumpadEnter')) {
-    e.preventDefault();
-    completeOrder(false);
-  }
-});
-
 async function completeOrder(doPrint) {
   const t = calcTotals();
   const now = new Date();
-  const randSuffix = String(now.getTime()).slice(-4);
-  const code = 'SC-' + now.toISOString().slice(2,10).replace(/-/g,'') + '-' + String(state.orders.length + 1).padStart(3, '0') + '-' + randSuffix;
+  const code = 'SC-' + now.toISOString().slice(2,10).replace(/-/g,'') + '-' + String(state.orders.length + 1).padStart(3, '0') + '-' + String(now.getTime()).slice(-4);
+  const itemsCopy = structuredClone(cart);
   const order = {
     id: Date.now(),
     order_code: code,
@@ -1004,13 +943,14 @@ async function completeOrder(doPrint) {
     discount_name: t.discountName,
     discount: Number(t.discount.toFixed(2)),
     total_usd: Number(t.total.toFixed(2)),
-    exchange_rate: state.settings.exchangeRate,
-    total_khr: Math.round(t.total * state.settings.exchangeRate),
+    exchange_rate: Number(state.settings.exchangeRate || 4100),
+    total_khr: Math.round(t.total * Number(state.settings.exchangeRate || 4100)),
     payment_method: selectedPay,
     order_type: document.getElementById('orderTypeSelect').value,
     created_at: now.toISOString(),
     synced: false,
-    items: structuredClone(cart)
+    items: itemsCopy,
+    items_json: JSON.stringify(itemsCopy)
   };
   state.orders.unshift(order);
   saveState();
@@ -1024,6 +964,7 @@ async function completeOrder(doPrint) {
 }
 
 function printReceipt(o) {
+  const items = extractOrderItems(o);
   const el = document.getElementById('receipt-print');
   el.innerHTML = `
     <div style="text-align:center; border-bottom:1px dashed #000; padding-bottom:6px; margin-bottom:6px;">
@@ -1032,28 +973,32 @@ function printReceipt(o) {
       <div style="font-size:11px; margin-top:4px;">${o.order_code} • ${new Date(o.created_at).toLocaleString()}</div>
     </div>
     <table style="width:100%; font-size:12px; border-collapse:collapse;">
-      ${o.items.map(i => `<tr><td>${i.name} (${i.size}) x${i.qty}<div style="font-size:10px;">ផ្អែម ${i.sugar_level}, ទឹកកក ${i.ice_level}</div></td><td style="text-align:right; vertical-align:top;">${fmtUsd(i.unit_price * i.qty)}</td></tr>`).join('')}
+      ${items.map(i => `<tr><td>${i.name} (${i.size || 'M'}) x${i.qty}<div style="font-size:10px;">ផ្អែម ${i.sugar_level || '50%'}, ទឹកកក ${i.ice_level || 'ធម្មតា'}</div></td><td style="text-align:right; vertical-align:top;">${fmtUsd(i.unit_price * i.qty)}</td></tr>`).join('')}
     </table>
     <div style="border-top:1px dashed #000; margin-top:6px; padding-top:6px; font-size:12px;">
       <div style="display:flex; justify-content:space-between;"><span>សរុបរង:</span><span>${fmtUsd(o.subtotal)}</span></div>
       ${o.discount > 0 ? `<div style="display:flex; justify-content:space-between;"><span>បញ្ចុះតម្លៃ (${o.discount_name}):</span><span>-${fmtUsd(o.discount)}</span></div>` : ''}
       <div style="display:flex; justify-content:space-between; font-weight:700; font-size:14px;"><span>ត្រូវបង់:</span><span>${fmtUsd(o.total_usd)}</span></div>
-      <div style="display:flex; justify-content:space-between;"><span>ប្រាក់រៀល:</span><span>${o.total_khr.toLocaleString()} ៛</span></div>
+      <div style="display:flex; justify-content:space-between;"><span>ប្រាក់រៀល:</span><span>${Number(o.total_khr || 0).toLocaleString()} ៛</span></div>
       <div style="display:flex; justify-content:space-between;"><span>ទូទាត់:</span><span>${o.payment_method} (${o.order_type})</span></div>
     </div>
     <div style="text-align:center; margin-top:10px; font-size:11px;">សូមអរគុណ! សង្ឃឹមថាបានជួបគ្នាម្តងទៀត ☕</div>`;
   window.print();
 }
 
-// Backend Sync (Google Apps Script)
+// Cloud Sync (Google Apps Script)
 async function pushOrderToBackend(order, action = 'create') {
-  if (!state.settings.apiUrl) return false;
+  const url = (state.settings.apiUrl || '').trim();
+  if (!url) return false;
   try {
-    const res = await fetch(state.settings.apiUrl, {
+    const itemsArr = extractOrderItems(order);
+    const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
       body: JSON.stringify({
         ...order,
+        items: itemsArr,
+        items_json: JSON.stringify(itemsArr),
         subtotal_usd: order.subtotal,
         discount_usd: order.discount,
         action,
@@ -1075,8 +1020,9 @@ async function pushOrderToBackend(order, action = 'create') {
 let isSyncing = false;
 async function syncPendingOrders(silent = false) {
   if (isSyncing) return;
-  if (!state.settings.apiUrl) {
-    if (!silent) alert('សូមបញ្ចូល Google Apps Script URL ក្នុងផ្ទាំង «កំណត់» ជាមុនសិន!');
+  const url = (state.settings.apiUrl || '').trim();
+  if (!url) {
+    if (!silent) alert('សូមបញ្ចូល Google Apps Script URL ក្នុងផ្ទាំង «⚙️ កំណត់» ជាមុនសិន!');
     return;
   }
   if (!navigator.onLine) {
@@ -1084,32 +1030,33 @@ async function syncPendingOrders(silent = false) {
     return;
   }
   const pending = state.orders.filter(o => !o.synced);
-  if (!pending.length) {
-    if (!silent) alert('ទិន្នន័យទាំងអស់ត្រូវបាន Sync រួចរាល់ហើយ!');
-    return;
-  }
+  if (!pending.length) return;
   isSyncing = true;
   try {
-    let ok = 0;
     for (const o of pending) {
       if (await pushOrderToBackend(o, o._syncAction || 'create')) {
         delete o._syncAction;
-        ok++;
       }
     }
     saveState();
     renderOrders();
-    if (!silent) alert(`Sync ជោគជ័យ ${ok} / ${pending.length} វិក្កយបត្រ!`);
   } finally {
     isSyncing = false;
   }
+}
+
+async function syncAllNow() {
+  if (!state.settings.apiUrl) return alert('សូមបញ្ចូល Google Apps Script URL ក្នុងផ្ទាំង «⚙️ កំណត់» ជាមុនសិន!');
+  if (!navigator.onLine) return alert('មិនមានអ៊ីនធឺណិតទេ! ប្រព័ន្ធកំពុងរក្សាទុកក្នុងម៉ាស៊ីន (Offline)។');
+  await syncPendingOrders(true);
+  await pullFromBackend(false);
 }
 
 async function syncCatalogToBackend(silent = true) {
   if (!silent && !verifyAdminPin('Sync ម៉ឺនុយទៅ Google Sheets')) return false;
   const url = (state.settings.apiUrl || '').trim();
   if (!url) {
-    if (!silent) alert('សូមបញ្ចូល Google Apps Script URL ក្នុងផ្ទាំង «កំណត់» ជាមុនសិន!');
+    if (!silent) alert('សូមបញ្ចូល Google Apps Script URL ក្នុងផ្ទាំង «⚙️ កំណត់» ជាមុនសិន!');
     return false;
   }
   try {
@@ -1127,13 +1074,12 @@ async function syncCatalogToBackend(silent = true) {
     });
     const data = await res.json();
     if (data.status === 'success') {
-      if (!silent) alert('បាន Sync ម៉ឺនុយ និងការកំណត់ទៅ Google Sheets រួចរាល់! កុំព្យូទ័រផ្សេងនឹងទាញបានស្វ័យប្រវត្តិក្នុងរយៈពេល ១៥ វិនាទី។');
+      if (!silent) alert('បាន Sync ម៉ឺនុយ និងការកំណត់ទៅ Google Sheets រួចរាល់!');
       return true;
     } else if (!silent) {
-      alert('Sync ម៉ឺនុយបរាជ័យ៖ ' + (data.message || 'Unknown error'));
+      alert('Sync បរាជ័យ៖ ' + (data.message || 'Unknown error'));
     }
   } catch (e) {
-    console.warn('Catalog sync error:', e);
     if (!silent) alert('មិនអាច Sync ទៅ Google Sheets បានទេ៖ ' + e.message);
   }
   return false;
@@ -1142,175 +1088,88 @@ async function syncCatalogToBackend(silent = true) {
 let isPulling = false;
 async function pullFromBackend(silent = false) {
   if (isPulling) return;
-  isPulling = true;
-  try {
-    return await _pullFromBackendInner(silent, !silent);
-  } finally {
-    isPulling = false;
-  }
-}
-async function _pullFromBackendInner(silent = false, forcePull = false) {
   const url = (document.getElementById('setApiUrl')?.value || state.settings.apiUrl || '').trim();
-  if (!url) {
-    if (!silent) alert('សូមបញ្ចូល Google Apps Script URL សិន!');
-    return;
-  }
+  if (!url || !navigator.onLine) return;
+  isPulling = true;
   try {
     const k = encodeURIComponent((state.settings?.apiKey || '').trim());
     const sep = url.includes('?') ? '&' : '?';
-    const bust = '_t=' + Date.now();
-    const fetchUrl = url + sep + bust + (k ? ('&apiKey=' + k) : '');
-    const res = await fetch(fetchUrl, { cache: 'no-store' });
+    const res = await fetch(url + sep + '_t=' + Date.now() + (k ? ('&apiKey=' + k) : ''), { cache: 'no-store' });
     const data = await res.json();
     if (data.status !== 'success') {
-      if (!silent) alert('មិនអាចទាញទិន្នន័យពី Google Sheets បានទេ!');
+      if (!silent) alert('មិនអាចទាញទិន្នន័យពី Google Sheets បានទេ៖ ' + (data.message || ''));
       return;
     }
+
     if (Array.isArray(data.categories) && data.categories.length) {
-      const seenCats = new Set();
-      state.categories = data.categories
-        .map(c => ({
-          id: Number(c.id),
-          name: String(c.name || '').trim(),
-          icon: String(c.icon || '☕')
-        }))
-        .filter(c => {
-          const k = c.name.toLowerCase();
-          if (!k || seenCats.has(k)) return false;
-          seenCats.add(k);
-          return true;
-        });
+      state.categories = data.categories.map(c => ({ id: Number(c.id), name: String(c.name || '').trim(), icon: String(c.icon || '☕') }));
     }
     if (Array.isArray(data.products) && data.products.length) {
       const defMap = new Map(DEFAULT_DATA.products.map(dp => [Number(dp.id), dp.image_url]));
-      const seenNames = new Set();
-      const seenIds = new Set();
-      const pulledProducts = data.products
-        .filter(p => p && (p.name || p.product_name))
-        .map((p, idx) => {
-          const rawId = Number(p.id);
-          const pid = (Number.isFinite(rawId) && rawId > 0) ? rawId : (1000 + idx);
-          const pname = String(p.name || p.product_name || '').trim();
-          const rawImg = String(p.image_url || '').trim();
-          const isSvg = rawImg.startsWith('data:image/svg+xml');
-          const finalImg = (!rawImg || isSvg) ? (defMap.get(pid) || '') : rawImg;
-          return {
-            ...p,
-            id: pid,
-            category_id: Number(p.category_id || 1),
-            name: pname,
-            price_usd: Number(p.price_usd || 0),
-            cost_usd: Number(p.cost_usd || 0),
-            icon: String(p.icon || '☕'),
-            image_url: finalImg,
-            is_available: p.is_available !== false && p.is_available !== 'FALSE'
-          };
-        })
-        .filter(p => {
-          const keyName = p.name.toLowerCase();
-          if (!keyName || seenNames.has(keyName) || seenIds.has(p.id)) return false;
-          seenNames.add(keyName);
-          seenIds.add(p.id);
-          return true;
-        });
-      // Merge any custom local products (id > 1000000 or not in DEFAULT_DATA) if missing from sheet
-      const pulledNames = new Set(pulledProducts.map(x => x.name.toLowerCase()));
-      const pulledIds = new Set(pulledProducts.map(x => Number(x.id)));
-      const localCustom = (state.products || []).filter(lp => {
-        const lid = Number(lp.id);
-        const lname = String(lp.name || '').trim().toLowerCase();
-        return lname && !pulledNames.has(lname) && !pulledIds.has(lid) && lid > 1000000;
+      state.products = data.products.filter(p => p && p.name).map((p, idx) => {
+        const pid = Number(p.id) || (1000 + idx);
+        return {
+          ...p,
+          id: pid,
+          category_id: Number(p.category_id || 1),
+          name: String(p.name).trim(),
+          price_usd: Number(p.price_usd || 0),
+          cost_usd: Number(p.cost_usd || 0),
+          icon: String(p.icon || '☕'),
+          image_url: p.image_url || defMap.get(pid) || '',
+          is_available: p.is_available !== false && p.is_available !== 'FALSE'
+        };
       });
-      state.products = pulledProducts.concat(localCustom);
     }
     if (Array.isArray(data.discounts)) {
-      const sheetDiscounts = data.discounts
-        .filter(d => d && (d.name || d.discount_name) && d.is_active !== false && d.is_active !== 'FALSE')
-        .map((d, idx) => ({
-          ...d,
-          id: Number(d.id) || (1000 + idx),
-          name: String(d.name || d.discount_name || '').trim(),
-          type: d.type === 'fixed' ? 'fixed' : 'percent',
-          value: Number(d.value || 0)
-        }));
-      const deletedIds = new Set((state.deletedDiscountIds || []).map(String));
-      const deletedNames = new Set((state.deletedDiscountNames || []).map(s => String(s).toLowerCase()));
-      state.discounts = sheetDiscounts.filter(d =>
-        !deletedIds.has(String(d.id)) && !deletedNames.has(String(d.name).toLowerCase())
-      );
-    }
-    if (data.settings && Object.keys(data.settings).length) {
-      const isEditingSettings = document.getElementById('view-settings')?.classList.contains('active');
-      if (!isEditingSettings || forcePull) {
-        const keepApi = state.settings.apiUrl || url;
-        const keepKhqr = state.settings.khqrImage || '';
-        const keepLoginPin = state.settings.loginPin || '';
-        const keepAdminPin = state.settings.adminPin || '';
-        const keepApiKey = state.settings.apiKey || '';
-        state.settings = {
-          ...state.settings,
-          ...data.settings,
-          exchangeRate: Number(data.settings.exchangeRate || state.settings.exchangeRate || 4100),
-          apiUrl: keepApi,
-          khqrImage: data.settings.khqrImage || keepKhqr,
-          loginPin: (data.settings.loginPin !== undefined && data.settings.loginPin !== '') ? String(data.settings.loginPin) : keepLoginPin,
-          adminPin: (data.settings.adminPin !== undefined && data.settings.adminPin !== '') ? String(data.settings.adminPin) : keepAdminPin,
-          apiKey: (data.settings.apiKey !== undefined && data.settings.apiKey !== '') ? String(data.settings.apiKey) : keepApiKey
-        };
-      }
+      state.discounts = data.discounts
+        .filter(d => d && d.name && d.is_active !== false && d.is_active !== 'FALSE')
+        .map((d, idx) => ({ id: Number(d.id) || (1000 + idx), name: String(d.name).trim(), type: d.type === 'fixed' ? 'fixed' : 'percent', value: Number(d.value || 0) }));
     }
     if (Array.isArray(data.orders)) {
       const deletedCodes = new Set((state.deletedOrderCodes || []).map(String));
       const deletedIds = new Set((state.deletedOrderIds || []).map(String));
-      const localUnsynced = (state.orders || []).filter(o => o && !o.synced && !deletedCodes.has(String(o.order_code)) && !deletedIds.has(String(o.id)));
-      const mergedMap = new Map();
       const existingByCode = new Map((state.orders || []).map(ex => [String(ex.order_code || ''), ex]));
+      const merged = new Map();
+
       data.orders.forEach((o, idx) => {
         const code = String(o.order_code || o.id || ('ROW-' + (idx + 1))).trim();
         const oid = String(o.id || '');
         if (!code || deletedCodes.has(code) || (oid && deletedIds.has(oid))) return;
-        let parsedFromField = [];
-        if (Array.isArray(o.items)) {
-          parsedFromField = o.items;
-        } else if (typeof o.items === 'string' && o.items.trim().startsWith('[')) {
-          try { parsedFromField = JSON.parse(o.items); } catch (e) {}
-        } else if (typeof o.items_json === 'string' && o.items_json.trim().startsWith('[')) {
-          try { parsedFromField = JSON.parse(o.items_json); } catch (e) {}
-        }
-        const prevOrder = existingByCode.get(code);
-        const normItems = parsedFromField.length
-          ? parsedFromField
-          : (prevOrder && Array.isArray(prevOrder.items) && prevOrder.items.length ? prevOrder.items : []);
-        const normSubtotal = Number(o.subtotal ?? o.subtotal_usd ?? o.total_usd ?? 0);
-        const normDiscount = Number(o.discount ?? o.discount_usd ?? 0);
-        const normTotal = Number(o.total_usd ?? Math.max(0, normSubtotal - normDiscount));
-        const normRate = Number(o.exchange_rate || state.settings.exchangeRate || 4100);
-        const normKhr = Number(o.total_khr || Math.round(normTotal * normRate));
-        mergedMap.set(code, {
+        const pulledItems = extractOrderItems(o);
+        const prev = existingByCode.get(code);
+        const finalItems = pulledItems.length ? pulledItems : (prev ? extractOrderItems(prev) : []);
+        const sub = Number(o.subtotal ?? o.subtotal_usd ?? o.total_usd ?? 0);
+        const disc = Number(o.discount ?? o.discount_usd ?? 0);
+        const tot = Number(o.total_usd ?? Math.max(0, sub - disc));
+        merged.set(code, {
           ...o,
           id: Number(o.id) || (Date.now() + idx),
           order_code: code,
-          subtotal: normSubtotal,
-          discount: normDiscount,
-          total_usd: normTotal,
-          exchange_rate: normRate,
-          total_khr: normKhr,
+          subtotal: sub,
+          discount: disc,
+          total_usd: tot,
+          exchange_rate: Number(o.exchange_rate || state.settings.exchangeRate || 4100),
+          total_khr: Number(o.total_khr || Math.round(tot * Number(state.settings.exchangeRate || 4100))),
           payment_method: String(o.payment_method || 'Cash'),
           order_type: String(o.order_type || 'Takeaway'),
           created_at: String(o.created_at || new Date().toISOString()),
-          items: normItems,
+          items: finalItems,
+          items_json: JSON.stringify(finalItems),
           synced: true
         });
       });
-      // Always preserve local unsynced/offline orders (and never let sheet pull wipe them out)
-      localUnsynced.forEach(o => {
-        const c = String(o.order_code);
-        if (c && !deletedCodes.has(c)) {
-          mergedMap.set(c, { ...o, synced: false });
+
+      (state.orders || []).forEach(localO => {
+        const code = String(localO.order_code || '');
+        if (!localO.synced && code && !deletedCodes.has(code)) {
+          merged.set(code, localO);
         }
       });
-      state.orders = Array.from(mergedMap.values()).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+      state.orders = Array.from(merged.values()).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     }
+
     saveState();
     renderCategories();
     renderProducts();
@@ -1319,10 +1178,11 @@ async function _pullFromBackendInner(silent = false, forcePull = false) {
     renderOrders();
     renderMenuTable();
     renderReports();
-    if (document.getElementById('view-settings')?.classList.contains('active')) renderSettings();
-    if (!silent) alert('បានទាញទិន្នន័យទាំងអស់ពី Google Sheets រួចរាល់!');
+    if (!silent) alert('បានទាញទិន្នន័យពី Google Sheets រួចរាល់!');
   } catch (e) {
-    if (!silent) alert('មិនអាចភ្ជាប់ Backend បានទេ៖ ' + e.message);
+    if (!silent) alert('មិនអាចភ្ជាប់ Google Sheets បានទេ៖ ' + e.message);
+  } finally {
+    isPulling = false;
   }
 }
 
@@ -1331,79 +1191,40 @@ function updateSyncIndicator() {
   const txt = document.getElementById('syncText');
   const pending = state.orders.filter(o => !o.synced).length;
   if (!state.settings.apiUrl) { dot.className = 'dot'; txt.textContent = 'Offline Only'; }
+  else if (!navigator.onLine) { dot.className = 'dot pending'; txt.textContent = pending > 0 ? `Offline (${pending})` : 'Offline'; }
   else if (pending > 0) { dot.className = 'dot pending'; txt.textContent = `រង់ចាំ Sync (${pending})`; }
   else { dot.className = 'dot online'; txt.textContent = 'Cloud Synced'; }
 }
+window.addEventListener('offline', updateSyncIndicator);
 
 // Orders View
-
-function inferItemsFromOrder(o) {
-  if (Array.isArray(o.items) && o.items.length) return o.items;
-  if (typeof o.items === 'string' && o.items.trim().startsWith('[')) {
-    try {
-      const p = JSON.parse(o.items);
-      if (Array.isArray(p) && p.length) return p;
-    } catch (e) {}
-  }
-  if (typeof o.items_json === 'string' && o.items_json.trim().startsWith('[')) {
-    try {
-      const p = JSON.parse(o.items_json);
-      if (Array.isArray(p) && p.length) return p;
-    } catch (e) {}
-  }
-  const target = Number(o.subtotal ?? o.total_usd ?? 0);
-  if (target > 0 && Array.isArray(state.products) && state.products.length) {
-    // Try single item match first
-    const single = state.products.find(pr => Math.abs(Number(pr.price_usd || 0) - target) < 0.01);
-    if (single) {
-      return [{
-        product_id: single.id,
-        name: single.name,
-        size: 'M',
-        sugar_level: '50%',
-        ice_level: 'ធម្មតា',
-        qty: 1,
-        unit_price: Number(single.price_usd || target),
-        unit_cost: Number(single.cost_usd || 0)
-      }];
-    }
-    // Try 2-item combination match
-    for (let i = 0; i < state.products.length; i++) {
-      for (let j = i; j < state.products.length; j++) {
-        const p1 = state.products[i], p2 = state.products[j];
-        if (Math.abs((Number(p1.price_usd || 0) + Number(p2.price_usd || 0)) - target) < 0.01) {
-          return [
-            { product_id: p1.id, name: p1.name, size: 'M', sugar_level: '50%', ice_level: 'ធម្មតា', qty: 1, unit_price: Number(p1.price_usd || 0), unit_cost: Number(p1.cost_usd || 0) },
-            { product_id: p2.id, name: p2.name, size: 'M', sugar_level: '50%', ice_level: 'ធម្មតា', qty: 1, unit_price: Number(p2.price_usd || 0), unit_cost: Number(p2.cost_usd || 0) }
-          ];
-        }
-      }
-    }
-  }
-  return [];
-}
-
 function renderOrders() {
   const todayStr = toLocalDateStr(new Date());
   const todayOrders = (state.orders || []).filter(o => o && toLocalDateStr(o.created_at) === todayStr);
-  document.getElementById('ordersTable').innerHTML = todayOrders.map(o => `
-    <tr>
-      <td><strong>${o.order_code}</strong></td>
-      <td>${new Date(o.created_at).toLocaleString()}</td>
-      <td>${(() => { const arr = inferItemsFromOrder(o); return arr.length ? arr.map(i => `${i.name || i.product_name || 'Item'} x${i.qty || 1}`).join(', ') : `<span style="color:var(--muted);">${o.order_type || 'ទំនិញក្នុង Sheet'}</span>`; })()}</td>
-      <td>${o.discount > 0 ? '-' + fmtUsd(o.discount) : '-'}</td>
-      <td><strong>${fmtUsd(o.total_usd)}</strong></td>
-      <td>${o.payment_method}</td>
-      <td>${o.synced ? '✅' : '⏳'}</td>
-      <td style="white-space:nowrap;">
-        <button class="btn btn-primary btn-sm" onclick="openEditOrder(${o.id})" title="លុប ឬកែទំនិញក្នុងវិក្កយបត្រ">✏️ កែ</button>
-        <button class="btn btn-light btn-sm" onclick='printReceipt(${JSON.stringify(o).replace(/'/g,"&#39;")})'>🖨️</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteOrder(${o.id})">លុប</button>
-      </td>
-    </tr>`).join('') || '<tr><td colspan="8" style="text-align:center; color:var(--muted);">មិនទាន់មានប្រវត្តិលក់នៅឡើយ</td></tr>';
+  document.getElementById('ordersTable').innerHTML = todayOrders.map(o => {
+    const arr = extractOrderItems(o);
+    const itemsHtml = arr.length
+      ? arr.map(i => `${i.name || i.product_name || 'Item'} x${i.qty || 1}`).join(', ')
+      : `<span style="color:var(--muted);">មិនមានបញ្ជីមុខទំនិញ</span>`;
+    return `
+      <tr>
+        <td><strong>${o.order_code}</strong></td>
+        <td>${new Date(o.created_at).toLocaleString()}</td>
+        <td>${itemsHtml}</td>
+        <td>${o.discount > 0 ? '-' + fmtUsd(o.discount) : '-'}</td>
+        <td><strong>${fmtUsd(o.total_usd)}</strong></td>
+        <td>${o.payment_method}</td>
+        <td>${o.synced ? '✅' : '⏳'}</td>
+        <td style="white-space:nowrap;">
+          <button class="btn btn-primary btn-sm" onclick="openEditOrder(${o.id})">✏️ កែ</button>
+          <button class="btn btn-light btn-sm" onclick='printReceipt(${JSON.stringify(o).replace(/'/g,"&#39;")})'>🖨️</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteOrder(${o.id})">លុប</button>
+        </td>
+      </tr>`;
+  }).join('') || '<tr><td colspan="8" style="text-align:center; color:var(--muted);">មិនទាន់មានប្រវត្តិលក់ថ្ងៃនេះនៅឡើយ</td></tr>';
 }
 
-// Menu CRUD + Image Compression
+// Menu CRUD
 function resizeImage(file, maxSize, cb) {
   const reader = new FileReader();
   reader.onload = e => {
@@ -1427,7 +1248,7 @@ function handleProdImage(e) {
   resizeImage(f, 240, dataUrl => {
     document.getElementById('pImgData').value = dataUrl;
     const thumb = document.getElementById('pImgThumb');
-    if (thumb) { thumb.src = dataUrl; thumb.style.display = 'inline-block'; }
+    thumb.src = dataUrl; thumb.style.display = 'inline-block';
     document.getElementById('imgPreviewStatus').textContent = '✅ រូបភាពរួចរាល់!';
   });
 }
@@ -1449,7 +1270,7 @@ function saveProduct() {
   if (!obj.name || obj.price_usd <= 0) return alert('សូមបញ្ចូលឈ្មោះ និងតម្លៃលក់!');
   const idx = existing ? state.products.findIndex(p => String(p.id) === String(existing.id)) : -1;
   if (idx > -1) state.products[idx] = obj; else state.products.push(obj);
-  state.catalogUpdatedAt = Date.now(); saveState(); resetProductForm(); renderMenuTable(); renderProducts(); syncCatalogToBackend(false);
+  saveState(); resetProductForm(); renderMenuTable(); renderProducts(); syncCatalogToBackend(false);
   alert(idx > -1 ? 'បានកែប្រែទំនិញរួចរាល់!' : 'បានបន្ថែមទំនិញថ្មីរួចរាល់!');
 }
 
@@ -1460,23 +1281,17 @@ function editProduct(id) {
   document.getElementById('pCat').value = p.category_id;
   document.getElementById('pPrice').value = p.price_usd;
   document.getElementById('pCost').value = p.cost_usd || 0;
-  document.getElementById('pIcon').value = p.icon || '☕';
   document.getElementById('pImgData').value = p.image_url || '';
   const thumb = document.getElementById('pImgThumb');
-  if (thumb) {
-    if (p.image_url) { thumb.src = p.image_url; thumb.style.display = 'inline-block'; }
-    else { thumb.src = ''; thumb.style.display = 'none'; }
-  }
-  document.getElementById('imgPreviewStatus').textContent = p.image_url ? '🖼️ កំពុងប្រើរូបភាពពិតដែលមានស្រាប់' : '';
+  if (p.image_url) { thumb.src = p.image_url; thumb.style.display = 'inline-block'; }
+  else { thumb.src = ''; thumb.style.display = 'none'; }
   document.getElementById('menuFormTitle').textContent = '✏️ កែប្រែទំនិញ (' + p.name + ')';
-  document.querySelector('#view-menu .page-wrap').scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 function resetProductForm() {
   ['editProdId','pName','pPrice','pCost','pImgData','pImgFile'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('pIcon').value = '☕';
   const thumb = document.getElementById('pImgThumb');
-  if (thumb) { thumb.src = ''; thumb.style.display = 'none'; }
+  thumb.src = ''; thumb.style.display = 'none';
   document.getElementById('imgPreviewStatus').textContent = '';
   document.getElementById('menuFormTitle').textContent = '➕ បន្ថែមភេសជ្ជៈថ្មី';
 }
@@ -1498,7 +1313,7 @@ function renderMenuTable() {
   document.getElementById('menuTable').innerHTML = state.products.map(p => {
     const cat = state.categories.find(c => c.id == p.category_id)?.name || '-';
     return `<tr>
-      <td><img src="${p.image_url || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=300&q=80'}" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=300&q=80';" style="width:42px;height:42px;border-radius:8px;object-fit:cover;"></td>
+      <td><img src="${p.image_url || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=300&q=80'}" style="width:42px;height:42px;border-radius:8px;object-fit:cover;"></td>
       <td><strong>${p.name}</strong></td>
       <td>${cat}</td>
       <td>${fmtUsd(p.price_usd)}</td>
@@ -1512,24 +1327,14 @@ function renderMenuTable() {
   }).join('');
 }
 
-// Reports (Daily / Monthly / Yearly)
-function toLocalDateStr(d) {
-  const dt = (d instanceof Date) ? d : new Date(d);
-  if (isNaN(dt.getTime())) return '';
-  const y = dt.getFullYear();
-  const m = String(dt.getMonth() + 1).padStart(2, '0');
-  const day = String(dt.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
-}
-
+// Reports
 function initReportFilters() {
   const now = new Date();
   const todayLocal = toLocalDateStr(now);
   document.getElementById('repDate').value = todayLocal;
   document.getElementById('repMonth').value = todayLocal.slice(0, 7);
-  const ySel = document.getElementById('repYear');
   const curY = now.getFullYear();
-  ySel.innerHTML = [curY - 1, curY, curY + 1].map(y => `<option value="${y}" ${y===curY?'selected':''}>ឆ្នាំ ${y}</option>`).join('');
+  document.getElementById('repYear').innerHTML = [curY - 1, curY, curY + 1].map(y => `<option value="${y}" ${y===curY?'selected':''}>ឆ្នាំ ${y}</option>`).join('');
 }
 
 function renderReports() {
@@ -1550,9 +1355,9 @@ function renderReports() {
     return dt.startsWith(yVal);
   });
 
-  const rev = filtered.reduce((s, o) => s + o.total_usd, 0);
-  const disc = filtered.reduce((s, o) => s + o.discount, 0);
-  const cost = filtered.reduce((s, o) => s + inferItemsFromOrder(o).reduce((is, i) => is + (Number(i.unit_cost || 0)) * Number(i.qty || 1), 0), 0);
+  const rev = filtered.reduce((s, o) => s + Number(o.total_usd || 0), 0);
+  const disc = filtered.reduce((s, o) => s + Number(o.discount || 0), 0);
+  const cost = filtered.reduce((s, o) => s + extractOrderItems(o).reduce((is, i) => is + Number(i.unit_cost || 0) * Number(i.qty || 1), 0), 0);
   const profit = rev - cost;
 
   document.getElementById('kpiRev').textContent = fmtUsd(rev);
@@ -1567,7 +1372,7 @@ function renderReports() {
   filtered.forEach(o => {
     byPay[o.payment_method] = byPay[o.payment_method] || { count: 0, sum: 0 };
     byPay[o.payment_method].count++;
-    byPay[o.payment_method].sum += o.total_usd;
+    byPay[o.payment_method].sum += Number(o.total_usd || 0);
   });
   document.getElementById('repPayTable').innerHTML = Object.entries(byPay).map(([k, v]) =>
     `<tr><td><strong>${k}</strong></td><td style="text-align:center;">${v.count}</td><td style="text-align:right;">${fmtUsd(v.sum)}</td></tr>`
@@ -1575,24 +1380,29 @@ function renderReports() {
 
   const byItem = {};
   filtered.forEach(o => {
-    inferItemsFromOrder(o).forEach(i => {
-      const k = i.name || 'Unknown';
-      byItem[k] = byItem[k] || { qty: 0, rev: 0 };
-      byItem[k].qty += Number(i.qty || 1);
-      byItem[k].rev += Number(i.unit_price || 0) * Number(i.qty || 1);
-    });
+    const arr = extractOrderItems(o);
+    if (arr.length) {
+      arr.forEach(i => {
+        const k = i.name || 'Unknown';
+        byItem[k] = byItem[k] || { qty: 0, rev: 0, isMissing: false };
+        byItem[k].qty += Number(i.qty || 1);
+        byItem[k].rev += Number(i.unit_price || 0) * Number(i.qty || 1);
+      });
+    } else if (Number(o.total_usd || 0) > 0) {
+      const k = 'មិនមានបញ្ជីមុខទំនិញ';
+      byItem[k] = byItem[k] || { qty: 0, rev: 0, isMissing: true };
+      byItem[k].qty += 1;
+      byItem[k].rev += Number(o.subtotal ?? o.total_usd ?? 0);
+    }
   });
-  const topList = Object.entries(byItem).sort((a, b) => b[1].qty - a[1].qty).slice(0, 10);
-  const topTbl = document.getElementById('repTopItemsTable');
-  if (topTbl) {
-    topTbl.innerHTML = topList.map(([name, v]) =>
-      `<tr><td><strong>${name}</strong></td><td style="text-align:center;">${v.qty}</td><td style="text-align:right;">${fmtUsd(v.rev)}</td></tr>`
-    ).join('') || '<tr><td colspan="3" style="text-align:center; color:var(--muted);">គ្មានទិន្នន័យ</td></tr>';
-  }
+  const topList = Object.entries(byItem).sort((a, b) => (a[1].isMissing === b[1].isMissing ? b[1].qty - a[1].qty : (a[1].isMissing ? 1 : -1))).slice(0, 10);
+  document.getElementById('repTopItemsTable').innerHTML = topList.map(([name, v]) =>
+    `<tr><td><strong style="${v.isMissing ? 'color:var(--muted);font-style:italic;' : ''}">${name}</strong></td><td style="text-align:center;">${v.isMissing ? '-' : v.qty}</td><td style="text-align:right;">${fmtUsd(v.rev)}</td></tr>`
+  ).join('') || '<tr><td colspan="3" style="text-align:center; color:var(--muted);">គ្មានទិន្នន័យ</td></tr>';
 
   if (mode === 'yearly') {
     const months = Array(12).fill(0);
-    filtered.forEach(o => { const m = new Date(o.created_at).getMonth(); months[m] += o.total_usd; });
+    filtered.forEach(o => { const m = new Date(o.created_at).getMonth(); months[m] += Number(o.total_usd || 0); });
     const maxV = Math.max(...months, 1);
     document.getElementById('yearlyChart').innerHTML = months.map((v, i) => `
       <div class="bar-col">
@@ -1609,25 +1419,15 @@ function renderSettings() {
   document.getElementById('setShopAddress').value = state.settings.shopAddress;
   document.getElementById('setRate').value = state.settings.exchangeRate;
   document.getElementById('setApiUrl').value = state.settings.apiUrl || '';
-  const lpinEl = document.getElementById('setLoginPin');
-  if (lpinEl) lpinEl.value = state.settings.loginPin || '';
-  const pinEl = document.getElementById('setAdminPin');
-  if (pinEl) pinEl.value = state.settings.adminPin || '';
-  const keyEl = document.getElementById('setApiKey');
-  if (keyEl) keyEl.value = state.settings.apiKey || '';
-  const catTbl = document.getElementById('categoriesTable');
-  if (catTbl) {
-    catTbl.innerHTML = state.categories.map(c => `
-      <tr>
-        <td>${c.icon || '☕'}</td><td><strong>${c.name}</strong></td>
-        <td><button class="btn btn-danger btn-sm" onclick="delCategory(${c.id})">លុប</button></td>
-      </tr>`).join('');
-  }
+  document.getElementById('setLoginPin').value = state.settings.loginPin || '';
+  document.getElementById('setAdminPin').value = state.settings.adminPin || '';
+  document.getElementById('setApiKey').value = state.settings.apiKey || '';
+  document.getElementById('categoriesTable').innerHTML = state.categories.map(c => `
+    <tr><td>${c.icon || '☕'}</td><td><strong>${c.name}</strong></td><td><button class="btn btn-danger btn-sm" onclick="delCategory(${c.id})">លុប</button></td></tr>`
+  ).join('');
   document.getElementById('discountsTable').innerHTML = state.discounts.map(d => `
-    <tr>
-      <td>${d.name}</td><td>${d.type === 'percent' ? '%' : '$'}</td><td>${d.value}</td>
-      <td><button class="btn btn-danger btn-sm" onclick="delDiscount(${d.id})">លុប</button></td>
-    </tr>`).join('');
+    <tr><td>${d.name}</td><td>${d.type === 'percent' ? '%' : '$'}</td><td>${d.value}</td><td><button class="btn btn-danger btn-sm" onclick="delDiscount(${d.id})">លុប</button></td></tr>`
+  ).join('');
 }
 
 function handleKhqrImage(e) {
@@ -1640,17 +1440,12 @@ async function saveSettings() {
   state.settings.shopAddress = document.getElementById('setShopAddress').value;
   state.settings.exchangeRate = Number(document.getElementById('setRate').value || 4100);
   state.settings.apiUrl = document.getElementById('setApiUrl').value.trim();
-  const lpinEl = document.getElementById('setLoginPin');
-  if (lpinEl) state.settings.loginPin = lpinEl.value.trim();
-  const pinEl = document.getElementById('setAdminPin');
-  if (pinEl) state.settings.adminPin = pinEl.value.trim();
-  const keyEl = document.getElementById('setApiKey');
-  if (keyEl) state.settings.apiKey = keyEl.value.trim();
-  state.catalogUpdatedAt = Date.now();
+  state.settings.loginPin = document.getElementById('setLoginPin').value.trim();
+  state.settings.adminPin = document.getElementById('setAdminPin').value.trim();
+  state.settings.apiKey = document.getElementById('setApiKey').value.trim();
   saveState();
+  if (!navigator.onLine) return alert('បានរក្សាទុកក្នុងម៉ាស៊ីនរួចរាល់ (Offline)!');
   await syncCatalogToBackend(false);
-  state.catalogUpdatedAt = Date.now();
-  saveState();
 }
 
 function addDiscount() {
@@ -1665,19 +1460,26 @@ function addDiscount() {
 }
 function delDiscount(id) {
   if (!verifyAdminPin('លុបបញ្ចុះតម្លៃ')) return;
-  if (!confirm('តើអ្នកចង់លុបប្រភេទបញ្ចុះតម្លៃនេះមែនទេ?')) return;
-  const target = state.discounts.find(d => String(d.id) === String(id));
-  if (!Array.isArray(state.deletedDiscountIds)) state.deletedDiscountIds = [];
-  if (!Array.isArray(state.deletedDiscountNames)) state.deletedDiscountNames = [];
-  state.deletedDiscountIds.push(String(id));
-  if (target && target.name) state.deletedDiscountNames.push(String(target.name).toLowerCase());
+  if (!confirm('លុបប្រភេទបញ្ចុះតម្លៃនេះ?')) return;
   state.discounts = state.discounts.filter(d => String(d.id) !== String(id));
-  state.catalogUpdatedAt = Date.now();
-  saveState();
-  renderSettings();
-  renderDiscountOptions();
-  renderCart();
-  syncCatalogToBackend(false);
+  saveState(); renderSettings(); renderDiscountOptions(); renderCart(); syncCatalogToBackend(true);
+}
+
+function addCategory() {
+  if (!verifyAdminPin('បន្ថែមប្រភេទម៉ឺនុយ')) return;
+  const name = document.getElementById('cName').value.trim();
+  const icon = document.getElementById('cIcon').value.trim() || '☕';
+  if (!name) return alert('សូមបញ្ចូលឈ្មោះប្រភេទម៉ឺនុយ!');
+  state.categories.push({ id: Date.now(), name, icon });
+  saveState(); renderCategories(); renderSettings(); syncCatalogToBackend(true);
+  document.getElementById('cName').value = '';
+}
+function delCategory(id) {
+  if (!verifyAdminPin('លុបប្រភេទម៉ឺនុយ')) return;
+  if (state.products.some(p => String(p.category_id) === String(id))) return alert('មិនអាចលុបប្រភេទនេះបានទេ ព្រោះមានមុខទំនិញកំពុងប្រើប្រាស់វា!');
+  if (!confirm('លុបប្រភេទម៉ឺនុយនេះ?')) return;
+  state.categories = state.categories.filter(c => String(c.id) !== String(id));
+  saveState(); renderCategories(); renderSettings(); syncCatalogToBackend(true);
 }
 
 function exportOrdersCSV() {
@@ -1690,25 +1492,21 @@ function exportOrdersCSV() {
   a.click();
 }
 
+// Edit & Delete Order
 let editingOrder = null;
-
 function openEditOrder(id) {
   if (!verifyAdminPin('កែប្រែ ឬលុបទំនិញក្នុងវិក្កយបត្រ')) return;
   const o = state.orders.find(x => x.id === id);
   if (!o) return;
   editingOrder = structuredClone(o);
+  editingOrder.items = structuredClone(extractOrderItems(o));
   editingOrder._origSubtotal = Number(o.subtotal || 0);
   editingOrder._origDiscount = Number(o.discount || 0);
   document.getElementById('editOrderTitle').textContent = '✏️ កែប្រែវិក្កយបត្រ ' + o.order_code;
   renderEditOrderModal();
   document.getElementById('editOrderModal').classList.add('open');
 }
-
-function closeEditOrder() {
-  editingOrder = null;
-  document.getElementById('editOrderModal').classList.remove('open');
-}
-
+function closeEditOrder() { editingOrder = null; document.getElementById('editOrderModal').classList.remove('open'); }
 function renderEditOrderModal() {
   if (!editingOrder) return;
   const tbody = document.getElementById('editOrderItems');
@@ -1717,27 +1515,15 @@ function renderEditOrderModal() {
   } else {
     tbody.innerHTML = editingOrder.items.map((i, idx) => `
       <tr>
-        <td>
-          <strong>${i.name} (${i.size || 'M'})</strong>
-          <div style="font-size:11px; color:var(--muted);">${fmtUsd(i.unit_price)} • ផ្អែម ${i.sugar_level || '50%'}</div>
-        </td>
-        <td style="text-align:center;">
-          <div class="inline-qty">
-            <button onclick="editOrderQty(${idx}, -1)">−</button>
-            <strong style="min-width:20px; text-align:center;">${i.qty}</strong>
-            <button onclick="editOrderQty(${idx}, 1)">+</button>
-          </div>
-        </td>
+        <td><strong>${i.name} (${i.size || 'M'})</strong><div style="font-size:11px; color:var(--muted);">${fmtUsd(i.unit_price)} • ផ្អែម ${i.sugar_level || '50%'}</div></td>
+        <td style="text-align:center;"><div class="inline-qty"><button onclick="editOrderQty(${idx}, -1)">−</button><strong style="min-width:20px; text-align:center;">${i.qty}</strong><button onclick="editOrderQty(${idx}, 1)">+</button></div></td>
         <td style="text-align:right; font-weight:700;">${fmtUsd(i.unit_price * i.qty)}</td>
-        <td style="text-align:center;">
-          <button class="btn btn-danger btn-sm" onclick="editOrderRemove(${idx})">✖ លុប</button>
-        </td>
+        <td style="text-align:center;"><button class="btn btn-danger btn-sm" onclick="editOrderRemove(${idx})">✖ លុប</button></td>
       </tr>`).join('');
   }
   const sub = editingOrder.items.reduce((s, i) => s + i.unit_price * i.qty, 0);
   let disc = 0;
   if (editingOrder._origSubtotal > 0 && editingOrder._origDiscount > 0) {
-    // Recalculate discount proportionally if it was a percentage, or cap at new subtotal
     const discObj = state.discounts.find(d => d.name === editingOrder.discount_name);
     if (discObj && discObj.type === 'percent') disc = sub * (discObj.value / 100);
     else if (discObj && discObj.type === 'fixed') disc = Math.min(sub, discObj.value);
@@ -1749,57 +1535,39 @@ function renderEditOrderModal() {
   editingOrder.discount = Number(disc.toFixed(2));
   editingOrder.total_usd = Number(total.toFixed(2));
   editingOrder.total_khr = Math.round(total * rate);
-
   document.getElementById('eoSubtotal').textContent = fmtUsd(editingOrder.subtotal);
   document.getElementById('eoDiscount').textContent = '-' + fmtUsd(editingOrder.discount);
   document.getElementById('eoTotal').textContent = fmtUsd(editingOrder.total_usd);
   document.getElementById('eoKhr').textContent = editingOrder.total_khr.toLocaleString('en-US') + ' ៛';
 }
-
-function editOrderQty(idx, delta) {
-  editingOrder.items[idx].qty += delta;
-  if (editingOrder.items[idx].qty <= 0) editingOrder.items.splice(idx, 1);
-  renderEditOrderModal();
-}
-
-function editOrderRemove(idx) {
-  editingOrder.items.splice(idx, 1);
-  renderEditOrderModal();
-}
-
+function editOrderQty(idx, delta) { editingOrder.items[idx].qty += delta; if (editingOrder.items[idx].qty <= 0) editingOrder.items.splice(idx, 1); renderEditOrderModal(); }
+function editOrderRemove(idx) { editingOrder.items.splice(idx, 1); renderEditOrderModal(); }
 async function saveEditedOrder(doPrint) {
   if (!editingOrder) return;
   const idx = state.orders.findIndex(x => x.id === editingOrder.id);
   if (idx === -1) return closeEditOrder();
   if (!editingOrder.items.length) {
-    if (!confirm('វិក្កយបត្រនេះគ្មានទំនិញសល់ទេ តើអ្នកចង់លុបវិក្កយបត្រនេះចោលតែម្តងទេ?')) return;
+    if (!confirm('លុបវិក្កយបត្រនេះចោលតែម្តងទេ?')) return;
     const removed = state.orders[idx];
     state.orders.splice(idx, 1);
-    saveState();
-    closeEditOrder();
-    renderOrders();
-    renderReports();
+    saveState(); closeEditOrder(); renderOrders(); renderReports();
     if (state.settings.apiUrl && removed.synced) await pushOrderToBackend(removed, 'delete');
     return;
   }
   delete editingOrder._origSubtotal;
   delete editingOrder._origDiscount;
+  editingOrder.items_json = JSON.stringify(editingOrder.items);
   const wasSynced = editingOrder.synced;
   editingOrder.synced = false;
   state.orders[idx] = editingOrder;
   saveState();
   const updated = state.orders[idx];
-  closeEditOrder();
-  renderOrders();
-  renderReports();
+  closeEditOrder(); renderOrders(); renderReports();
   if (doPrint) printReceipt(updated);
   updated._syncAction = wasSynced ? 'update' : 'create';
   saveState();
   if (state.settings.apiUrl && navigator.onLine) {
-    if (await pushOrderToBackend(updated, updated._syncAction)) {
-      delete updated._syncAction;
-      saveState();
-    }
+    if (await pushOrderToBackend(updated, updated._syncAction)) { delete updated._syncAction; saveState(); }
     renderOrders();
   }
 }
@@ -1807,36 +1575,19 @@ async function saveEditedOrder(doPrint) {
 async function deleteOrder(id) {
   if (!verifyAdminPin('លុបវិក្កយបត្រ')) return;
   if (!confirm('តើអ្នកពិតជាចង់លុបវិក្កយបត្រនេះមែនទេ?')) return;
-  const target = state.orders.find(o => String(o.id) === String(id) || String(o.order_code) === String(id));
-  if (!Array.isArray(state.deletedOrderCodes)) state.deletedOrderCodes = [];
-  if (!Array.isArray(state.deletedOrderIds)) state.deletedOrderIds = [];
+  const target = state.orders.find(o => String(o.id) === String(id));
   state.deletedOrderIds.push(String(id));
-  if (target) {
-    if (target.id) state.deletedOrderIds.push(String(target.id));
-    if (target.order_code && !state.deletedOrderCodes.includes(String(target.order_code))) {
-      state.deletedOrderCodes.push(String(target.order_code));
-    }
-  }
-  state.orders = state.orders.filter(o =>
-    String(o.id) !== String(id) &&
-    (!target || (String(o.id) !== String(target.id) && String(o.order_code) !== String(target.order_code)))
-  );
-  saveState();
-  renderOrders();
-  renderReports();
-  if (target && state.settings.apiUrl && navigator.onLine) {
-    await pushOrderToBackend(target, 'delete');
-  }
+  if (target && target.order_code) state.deletedOrderCodes.push(String(target.order_code));
+  state.orders = state.orders.filter(o => String(o.id) !== String(id));
+  saveState(); renderOrders(); renderReports();
+  if (target && state.settings.apiUrl && navigator.onLine) await pushOrderToBackend(target, 'delete');
 }
 
 async function resetSalesHistory() {
   if (!verifyAdminPin('Reset លុបប្រវត្តិលក់')) return;
-  if (!confirm('តើអ្នកពិតជាចង់ Reset លុបប្រវត្តិវិក្កយបត្រលក់ និងរបាយការណ៍ទាំងអស់មែនទេ?\n(ម៉ឺនុយ និងការកំណត់ហាងនឹងមិនបាត់បង់ទេ)')) return;
-  if (!confirm('បញ្ជាក់ម្តងទៀត៖ ទិន្នន័យលក់ទាំងក្នុងម៉ាស៊ីននេះ និងក្នុង Google Sheets នឹងត្រូវលុបចោលទាំងស្រុង! តើអ្នកយល់ព្រមទេ?')) return;
+  if (!confirm('តើអ្នកពិតជាចង់ Reset លុបប្រវត្តិវិក្កយបត្រលក់ និងរបាយការណ៍ទាំងអស់មែនទេ?')) return;
   state.orders = [];
-  saveState();
-  renderOrders();
-  renderReports();
+  saveState(); renderOrders(); renderReports();
   if (state.settings.apiUrl && navigator.onLine) {
     try {
       await fetch(state.settings.apiUrl, {
@@ -1844,9 +1595,9 @@ async function resetSalesHistory() {
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action: 'reset', apiKey: state.settings?.apiKey || '' })
       });
-    } catch (e) { console.warn('Reset sync error:', e); }
+    } catch (e) {}
   }
-  alert('បាន Reset ប្រវត្តិវិក្កយបត្រលក់ និងរបាយការណ៍រួចរាល់!');
+  alert('បាន Reset ប្រវត្តិលក់រួចរាល់!');
 }
 
 function backupJSON() {
@@ -1863,10 +1614,10 @@ function restoreJSON(e) {
   r.readAsText(f);
 }
 
-// Hold / Park Orders
+// Hold Orders
 function holdCurrentOrder() {
   if (!cart.length) return alert('មិនមានទំនិញក្នុងកន្ត្រកសម្រាប់ផ្អាកទេ!');
-  const label = prompt('ដាក់ឈ្មោះ ឬលេខតុសម្រាប់វិក្កយបត្រផ្អាកនេះ (ឧ. តុទី ២ ឬ និស្សិតអាវខៀវ)៖', 'ភ្ញៀវ #' + (state.heldOrders.length + 1));
+  const label = prompt('ដាក់ឈ្មោះ ឬលេខតុសម្រាប់វិក្កយបត្រផ្អាកនេះ៖', 'ភ្ញៀវ #' + (state.heldOrders.length + 1));
   if (label === null) return;
   state.heldOrders.push({
     id: Date.now(),
@@ -1875,199 +1626,79 @@ function holdCurrentOrder() {
     discountVal: document.getElementById('discountSelect').value,
     items: structuredClone(cart)
   });
-  saveState();
-  clearCart();
-  renderHeldOrders();
+  saveState(); clearCart(); renderHeldOrders();
 }
-
 function resumeHeldOrder(id) {
   const idx = state.heldOrders.findIndex(h => h.id === id);
   if (idx === -1) return;
-  if (cart.length && !confirm('កន្ត្រកបច្ចុប្បន្នមានទំនិញស្រាប់ តើអ្នកចង់ជំនួសដោយវិក្កយបត្រដែលផ្អាកនេះទេ?')) return;
+  if (cart.length && !confirm('ជំនួសកន្ត្រកបច្ចុប្បន្នដោយវិក្កយបត្រដែលផ្អាកនេះ?')) return;
   const held = state.heldOrders.splice(idx, 1)[0];
   cart = held.items || [];
   document.getElementById('orderTypeSelect').value = held.orderType || 'Takeaway';
   document.getElementById('discountSelect').value = held.discountVal || 'none';
-  saveState();
-  renderCart();
-  renderProducts();
-  renderHeldOrders();
+  saveState(); renderCart(); renderProducts(); renderHeldOrders();
 }
-
 function renderHeldOrders() {
   const bar = document.getElementById('heldOrdersBar');
   if (!bar) return;
-  if (!state.heldOrders || !state.heldOrders.length) {
-    bar.style.display = 'none';
-    bar.innerHTML = '';
-    return;
-  }
+  if (!state.heldOrders || !state.heldOrders.length) { bar.style.display = 'none'; bar.innerHTML = ''; return; }
   bar.style.display = 'flex';
-  bar.innerHTML = state.heldOrders.map(h => `
-    <button class="chip" style="background:#fef3c7; border-color:#f59e0b; color:#92400e; font-weight:600;" onclick="resumeHeldOrder(${h.id})" title="ចុចដើម្បីបើកវិក្កយបត្រនេះមកគិតលុយវិញ">
-      ⏸️ ${h.label} (${h.items.reduce((s,i)=>s+i.qty,0)})
-    </button>`).join('');
+  bar.innerHTML = state.heldOrders.map(h => `<button class="chip" style="background:#fef3c7; border-color:#f59e0b; color:#92400e; font-weight:600;" onclick="resumeHeldOrder(${h.id})">⏸️ ${h.label} (${h.items.reduce((s,i)=>s+i.qty,0)})</button>`).join('');
 }
 
-function addCategory() {
-  if (!verifyAdminPin('បន្ថែមប្រភេទម៉ឺនុយ')) return;
-  const name = document.getElementById('cName').value.trim();
-  const icon = document.getElementById('cIcon').value.trim() || '☕';
-  if (!name) return alert('សូមបញ្ចូលឈ្មោះប្រភេទម៉ឺនុយ!');
-  state.categories.push({ id: Date.now(), name, icon });
-  saveState();
-  renderCategories();
-  renderSettings();
-  syncCatalogToBackend(true);
-  document.getElementById('cName').value = '';
-}
-
-function delCategory(id) {
-  if (!verifyAdminPin('លុបប្រភេទម៉ឺនុយ')) return;
-  if (state.products.some(p => String(p.category_id) === String(id))) {
-    return alert('មិនអាចលុបប្រភេទនេះបានទេ ព្រោះមានមុខទំនិញកំពុងប្រើប្រាស់វា!');
-  }
-  if (!confirm('តើអ្នកចង់លុបប្រភេទម៉ឺនុយនេះមែនទេ?')) return;
-  state.categories = state.categories.filter(c => String(c.id) !== String(id));
-  saveState();
-  renderCategories();
-  renderSettings();
-  syncCatalogToBackend(true);
-}
-
-// Init
-
+// Login PIN Lock
 let sessionLoggedIn = false;
-function showLoginModal(onSuccess) {
+function showLoginModal() {
   const lpin = String(state.settings?.loginPin || '').trim();
-  if (!lpin) {
-    sessionLoggedIn = true;
-    if (typeof onSuccess === 'function') onSuccess();
-    return;
-  }
-  if (sessionLoggedIn) {
-    if (typeof onSuccess === 'function') onSuccess();
-    return;
-  }
-
-  const existing = document.getElementById('loginPinOverlay');
-  if (existing) existing.remove();
-
+  if (!lpin || sessionLoggedIn) { sessionLoggedIn = true; return; }
   const overlay = document.createElement('div');
   overlay.id = 'loginPinOverlay';
   overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.88);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;';
-
   overlay.innerHTML = `
-    <div style="background:#ffffff;color:#1f2937;width:100%;max-width:380px;border-radius:16px;padding:24px;box-shadow:0 20px 45px rgba(0,0,0,0.35);text-align:center;">
+    <div style="background:#fff;color:#1f2937;width:100%;max-width:380px;border-radius:16px;padding:24px;box-shadow:0 20px 45px rgba(0,0,0,0.35);text-align:center;">
       <div style="font-size:38px;margin-bottom:6px;">🔐</div>
-      <h2 style="font-size:20px;font-weight:700;color:#1e293b;">ចូលប្រើប្រព័ន្ធ POS</h2>
-      <p style="font-size:13px;color:#64748b;margin-top:4px;margin-bottom:16px;">ស័ក្តិ កាហ្វេ (Sak Coffee) — សូមបញ្ចូល Login PIN</p>
-      <input id="loginPinInput" type="password" inputmode="numeric" autocomplete="off" placeholder="បញ្ចូលលេខកូដ PIN..."
-        style="width:100%;padding:12px 14px;font-size:20px;font-weight:700;text-align:center;letter-spacing:6px;border:2px solid #cbd5e1;border-radius:10px;outline:none;margin-bottom:10px;">
+      <h2 style="font-size:20px;font-weight:700;">ចូលប្រើប្រព័ន្ធ POS</h2>
+      <p style="font-size:13px;color:#64748b;margin:4px 0 16px;">ស័ក្តិ កាហ្វេ (Sak Coffee) — សូមបញ្ចូល Login PIN</p>
+      <input id="loginPinInput" type="password" inputmode="numeric" placeholder="បញ្ចូលលេខកូដ PIN..." style="width:100%;padding:12px;font-size:20px;font-weight:700;text-align:center;letter-spacing:6px;border:2px solid #cbd5e1;border-radius:10px;margin-bottom:10px;">
       <div id="loginPinError" style="color:#dc2626;font-size:12px;font-weight:600;min-height:18px;margin-bottom:10px;"></div>
-      <button id="loginPinSubmit" type="button"
-        style="width:100%;padding:12px;font-size:15px;font-weight:700;border:none;border-radius:10px;background:#2563eb;color:#ffffff;cursor:pointer;">
-        🔓 ចូលប្រើ (Login)
-      </button>
-    </div>
-  `;
-
+      <button id="loginPinSubmit" type="button" style="width:100%;padding:12px;font-size:15px;font-weight:700;border:none;border-radius:10px;background:#2563eb;color:#fff;cursor:pointer;">🔓 ចូលប្រើ (Login)</button>
+    </div>`;
   document.body.appendChild(overlay);
   const inp = document.getElementById('loginPinInput');
   const err = document.getElementById('loginPinError');
-  const btn = document.getElementById('loginPinSubmit');
-
-  function attemptLogin() {
-    const val = String(inp.value || '').trim();
-    if (!val) {
-      err.textContent = 'សូមបញ្ចូលលេខកូដ PIN ជាមុនសិន!';
-      inp.focus();
-      return;
-    }
-    if (val === lpin) {
-      sessionLoggedIn = true;
-      overlay.remove();
-      if (typeof onSuccess === 'function') onSuccess();
-    } else {
-      err.textContent = '❌ លេខកូដ PIN មិនត្រឹមត្រូវទេ! សូមព្យាយាមម្តងទៀត។';
-      inp.value = '';
-      inp.focus();
-    }
-  }
-
-  btn.addEventListener('click', attemptLogin);
-  inp.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      attemptLogin();
-    }
-  });
+  const attempt = () => {
+    if (String(inp.value || '').trim() === lpin) { sessionLoggedIn = true; overlay.remove(); }
+    else { err.textContent = '❌ លេខកូដ PIN មិនត្រឹមត្រូវទេ!'; inp.value = ''; inp.focus(); }
+  };
+  document.getElementById('loginPinSubmit').onclick = attempt;
+  inp.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); attempt(); } };
   setTimeout(() => inp.focus(), 40);
 }
-
 function lockPosSession() {
-  sessionLoggedIn = false;
-  adminUnlocked = false;
-  if (!String(state.settings?.loginPin || '').trim()) {
-    alert('សូមកំណត់ Login PIN ក្នុងផ្ទាំង «⚙️ កំណត់» ជាមុនសិន!');
-    return;
-  }
+  sessionLoggedIn = false; adminUnlocked = false;
+  if (!String(state.settings?.loginPin || '').trim()) return alert('សូមកំណត់ Login PIN ក្នុងផ្ទាំង «⚙️ កំណត់» ជាមុនសិន!');
   showLoginModal();
 }
 
-try {
-  const lpinAtBoot = String(state.settings?.loginPin || '').trim();
-  if (lpinAtBoot && !sessionLoggedIn) {
-    setTimeout(() => showLoginModal(), 50);
-  }
-  if (Array.isArray(state.discounts)) {
-    const delIds = new Set((state.deletedDiscountIds || []).map(String));
-    const delNames = new Set((state.deletedDiscountNames || []).map(s => String(s).toLowerCase()));
-    state.discounts = state.discounts.filter(d =>
-      !delIds.has(String(d.id)) && !delNames.has(String(d.name || '').toLowerCase())
-    );
-  }
-  renderCategories();
-  renderProducts();
-  renderDiscountOptions();
-  renderCart();
-  initReportFilters();
-  updateSyncIndicator();
-  renderHeldOrders();
-} catch (err) {
-  console.error('Init error:', err);
-  state = structuredClone(DEFAULT_DATA);
-  renderCategories();
-  renderProducts();
-  renderDiscountOptions();
-  renderCart();
-}
+// Init
+showLoginModal();
+renderCategories();
+renderProducts();
+renderDiscountOptions();
+renderCart();
+initReportFilters();
+updateSyncIndicator();
+renderHeldOrders();
 
-// Auto-Sync ស្វ័យប្រវត្តិ (ពេលបើកទំព័រ, ពេលភ្ជាប់អ៊ីនធឺណិតវិញ, និងរៀងរាល់ ៣០ វិនាទី)
-window.addEventListener('online', async () => {
-  await syncPendingOrders(true);
-  if (!state.orders.some(o => !o.synced)) {
-    await pullFromBackend(true);
-  }
-});
-window.addEventListener('load', async () => {
-  if (navigator.onLine) {
-    await syncPendingOrders(true);
-    await pullFromBackend(true);
-  }
-});
+window.addEventListener('online', async () => { await syncPendingOrders(true); await pullFromBackend(true); });
+window.addEventListener('load', async () => { if (navigator.onLine) { await syncPendingOrders(true); await pullFromBackend(true); } });
 setInterval(async () => {
   if (!navigator.onLine) return;
-  if (state.orders.some(o => !o.synced)) {
-    await syncPendingOrders(true);
-    return;
-  }
+  if (state.orders.some(o => !o.synced)) { await syncPendingOrders(true); return; }
   const inSettings = document.getElementById('view-settings')?.classList.contains('active');
   const inMenu = document.getElementById('view-menu')?.classList.contains('active');
-  if (!inSettings && !inMenu && (!state.catalogUpdatedAt || (Date.now() - state.catalogUpdatedAt > 60000))) {
-    await pullFromBackend(true);
-  }
-}, 15000);
+  if (!inSettings && !inMenu) await pullFromBackend(true);
+}, 20000);
 </script>
 </body>
 </html>
