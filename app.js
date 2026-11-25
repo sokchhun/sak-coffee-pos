@@ -171,14 +171,29 @@ function renderProducts() {
   }).join('');
 }
 
+function isDrinkProduct(p) {
+  if (!p) return true;
+  const catId = Number(p.category_id);
+  if (catId === 4) return false;
+  const cat = (state.categories || []).find(c => Number(c.id) === catId);
+  const cname = String(cat?.name || '').toLowerCase();
+  if (cname.includes('នំ') || cname.includes('អាហារ') || cname.includes('គ្រឿងអលង្ការ') || cname.includes('bakery') || cname.includes('food')) {
+    return false;
+  }
+  return true;
+}
+
 function addToCart(prodId) {
   const p = state.products.find(x => x.id === prodId);
   if (!p) return;
-  const idx = cart.findIndex(c => c.product_id === prodId && c.size === 'M' && c.sugar_level === '50%' && c.ice_level === 'ធម្មតា' && !c.note);
+  const drink = isDrinkProduct(p);
+  const defSugar = drink ? '50%' : '';
+  const defIce = drink ? 'ធម្មតា' : '';
+  const idx = cart.findIndex(c => c.product_id === prodId && c.size === 'M' && (c.sugar_level || '') === defSugar && (c.ice_level || '') === defIce && !c.note);
   if (idx > -1) cart[idx].qty++;
   else cart.push({
     product_id: p.id, name: p.name, base_price: Number(p.price_usd), unit_price: Number(p.price_usd),
-    unit_cost: Number(p.cost_usd || 0), qty: 1, size: 'M', sugar_level: '50%', ice_level: 'ធម្មតា', note: ''
+    unit_cost: Number(p.cost_usd || 0), qty: 1, size: 'M', sugar_level: defSugar, ice_level: defIce, note: '', is_drink: drink
   });
   renderCart();
   renderProducts();
@@ -223,7 +238,7 @@ function renderCart() {
         <div class="cart-row-main" onclick="toggleExpand(${idx})">
           <div>
             <div class="cart-item-name">${item.name} (${item.size})</div>
-            <div class="cart-item-meta">${fmtUsd(item.unit_price)} • ផ្អែម ${item.sugar_level} • ទឹកកក ${item.ice_level}${item.note ? ' • ' + item.note : ''}</div>
+            <div class="cart-item-meta">${fmtUsd(item.unit_price)}${(item.sugar_level || item.ice_level) ? ` • ផ្អែម ${item.sugar_level || '-'} • ទឹកកក ${item.ice_level || '-'}` : ''}${item.note ? ' • ' + item.note : ''}</div>
           </div>
           <div class="inline-qty" onclick="event.stopPropagation()">
             <button onclick="changeQty(${idx}, -1)">−</button>
@@ -244,6 +259,7 @@ function renderCart() {
             <span style="margin-left:auto;"></span>
             <button class="btn btn-danger btn-sm" onclick="removeCartItem(${idx})">លុប</button>
           </div>
+          ${(item.is_drink !== false && (item.sugar_level || item.ice_level)) ? `
           <div class="mod-line">
             <span class="mod-label">ទំហំ</span>
             ${['M','L'].map(sz => `<button class="chip ${item.size===sz?'active':''}" onclick="setMod(${idx},'size','${sz}')">${sz==='L'?'L (+$0.50)':'M'}</button>`).join('')}
@@ -255,7 +271,7 @@ function renderCart() {
           <div class="mod-line">
             <span class="mod-label">ទឹកកក</span>
             ${['ធម្មតា','តិច','គ្មាន'].map(ic => `<button class="chip ${item.ice_level===ic?'active':''}" onclick="setMod(${idx},'ice_level','${ic}')">${ic}</button>`).join('')}
-          </div>
+          </div>` : ''}`
           <div class="mod-line">
             <span class="mod-label">ចំណាំ</span>
             <input value="${item.note}" placeholder="បន្ថែមកំណត់ចំណាំ..." style="flex:1; padding:4px 8px; border:1px solid var(--border); border-radius:6px; font-size:12px;" onchange="setMod(${idx},'note',this.value)">
@@ -417,7 +433,11 @@ function printReceipt(o) {
       <div style="font-size:11px; margin-top:4px;">${o.order_code} • ${new Date(o.created_at).toLocaleString()}</div>
     </div>
     <table style="width:100%; font-size:12px; border-collapse:collapse;">
-      ${items.map(i => `<tr><td>${i.name} (${i.size || 'M'}) x${i.qty}<div style="font-size:10px;">ផ្អែម ${i.sugar_level || '50%'}, ទឹកកក ${i.ice_level || 'ធម្មតា'}</div></td><td style="text-align:right; vertical-align:top;">${fmtUsd(i.unit_price * i.qty)}</td></tr>`).join('')}
+      ${items.map(i => {
+  const hasSweetIce = Boolean(i.sugar_level || i.ice_level) && i.is_drink !== false;
+  const subTxt = hasSweetIce ? `<div style="font-size:10px;">ផ្អែម ${i.sugar_level || '-'}, ទឹកកក ${i.ice_level || '-'}</div>` : (i.note ? `<div style="font-size:10px;">${i.note}</div>` : '');
+  return `<tr><td>${i.name} x${i.qty}${subTxt}</td><td style="text-align:right; vertical-align:top;">${fmtUsd(i.unit_price * i.qty)}</td></tr>`;
+}).join('')}
     </table>
     <div style="border-top:1px dashed #000; margin-top:6px; padding-top:6px; font-size:12px;">
       <div style="display:flex; justify-content:space-between;"><span>សរុបរង:</span><span>${fmtUsd(o.subtotal)}</span></div>
