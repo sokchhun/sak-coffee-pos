@@ -561,7 +561,7 @@
 const DEFAULT_DATA = {
   settings: {
     shopName: 'ស័ក្តិ កាហ្វេ (Sak Coffee)',
-    shopAddress: 'ក្បែរ CADT ព្រែកលៀប | Tel: 011 244 259',
+    shopAddress: 'ក្បែរ CADT ព្រែកលៀប | Tel: 012 796 756',
     exchangeRate: 4100,
     apiUrl: 'https://script.google.com/macros/s/AKfycbxSuY0pxzYKN9E7qt22uO6EOWq3pQCdYkS-aYRByeItuHlB5_-ebTF4kF9oqsW6bDOx/exec',
     khqrImage: '',
@@ -596,7 +596,6 @@ const DEFAULT_DATA = {
   discounts: [
     { id: 1, name: 'និស្សិត CADT (10%)', type: 'percent', value: 10 },
     { id: 2, name: 'យកកែវមកខ្លួនឯង (-$0.25)', type: 'fixed', value: 0.25 },
-    { id: 3, name: 'Happy Hour (15%)', type: 'percent', value: 15 }
   ],
   orders: []
 };
@@ -643,13 +642,18 @@ function getPersistedOrders() {
 function saveState() {
   try {
     const diskOrders = getPersistedOrders();
-    const curOrders = Array.isArray(state.orders) ? state.orders : [];
-    const curCodes = new Set(curOrders.map(o => String(o.order_code || o.id)));
     const deletedCodes = new Set((state.deletedOrderCodes || []).map(String));
+    const deletedIds = new Set((state.deletedOrderIds || []).map(String));
+    const curOrders = (Array.isArray(state.orders) ? state.orders : []).filter(o =>
+      o && !deletedCodes.has(String(o.order_code || '')) && !deletedIds.has(String(o.id || ''))
+    );
+    const curCodes = new Set(curOrders.map(o => String(o.order_code || o.id)));
     diskOrders.forEach(doOrder => {
       if (doOrder && doOrder.synced === false) {
         const key = String(doOrder.order_code || doOrder.id);
-        if (key && !curCodes.has(key) && !deletedCodes.has(key)) {
+        const rawCode = String(doOrder.order_code || '');
+        const rawId = String(doOrder.id || '');
+        if (key && !curCodes.has(key) && !deletedCodes.has(rawCode) && !deletedIds.has(rawId)) {
           curOrders.unshift(doOrder);
           curCodes.add(key);
         }
@@ -1247,12 +1251,14 @@ async function _pullFromBackendInner(silent = false, forcePull = false) {
     }
     if (Array.isArray(data.orders)) {
       const deletedCodes = new Set((state.deletedOrderCodes || []).map(String));
-      const localUnsynced = (state.orders || []).filter(o => o && !o.synced && !deletedCodes.has(String(o.order_code)));
+      const deletedIds = new Set((state.deletedOrderIds || []).map(String));
+      const localUnsynced = (state.orders || []).filter(o => o && !o.synced && !deletedCodes.has(String(o.order_code)) && !deletedIds.has(String(o.id)));
       const mergedMap = new Map();
       const existingByCode = new Map((state.orders || []).map(ex => [String(ex.order_code || ''), ex]));
       data.orders.forEach((o, idx) => {
         const code = String(o.order_code || o.id || ('ROW-' + (idx + 1))).trim();
-        if (!code || deletedCodes.has(code)) return;
+        const oid = String(o.id || '');
+        if (!code || deletedCodes.has(code) || (oid && deletedIds.has(oid))) return;
         let parsedFromField = [];
         if (Array.isArray(o.items)) {
           parsedFromField = o.items;
@@ -1495,10 +1501,20 @@ function renderMenuTable() {
 }
 
 // Reports (Daily / Monthly / Yearly)
+function toLocalDateStr(d) {
+  const dt = (d instanceof Date) ? d : new Date(d);
+  if (isNaN(dt.getTime())) return '';
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth() + 1).padStart(2, '0');
+  const day = String(dt.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 function initReportFilters() {
   const now = new Date();
-  document.getElementById('repDate').value = now.toISOString().slice(0, 10);
-  document.getElementById('repMonth').value = now.toISOString().slice(0, 7);
+  const todayLocal = toLocalDateStr(now);
+  document.getElementById('repDate').value = todayLocal;
+  document.getElementById('repMonth').value = todayLocal.slice(0, 7);
   const ySel = document.getElementById('repYear');
   const curY = now.getFullYear();
   ySel.innerHTML = [curY - 1, curY, curY + 1].map(y => `<option value="${y}" ${y===curY?'selected':''}>ឆ្នាំ ${y}</option>`).join('');
@@ -1516,7 +1532,7 @@ function renderReports() {
   const yVal = document.getElementById('repYear').value;
 
   const filtered = state.orders.filter(o => {
-    const dt = o.created_at.slice(0, 10);
+    const dt = toLocalDateStr(o.created_at);
     if (mode === 'daily') return dt === dVal;
     if (mode === 'monthly') return dt.startsWith(mVal);
     return dt.startsWith(yVal);
@@ -1776,18 +1792,24 @@ async function saveEditedOrder(doPrint) {
 async function deleteOrder(id) {
   if (!verifyAdminPin('លុបវិក្កយបត្រ')) return;
   if (!confirm('តើអ្នកពិតជាចង់លុបវិក្កយបត្រនេះមែនទេ?')) return;
-  const target = state.orders.find(o => o.id === id);
-  if (target && target.order_code) {
-    if (!Array.isArray(state.deletedOrderCodes)) state.deletedOrderCodes = [];
-    if (!state.deletedOrderCodes.includes(String(target.order_code))) {
+  const target = state.orders.find(o => String(o.id) === String(id) || String(o.order_code) === String(id));
+  if (!Array.isArray(state.deletedOrderCodes)) state.deletedOrderCodes = [];
+  if (!Array.isArray(state.deletedOrderIds)) state.deletedOrderIds = [];
+  state.deletedOrderIds.push(String(id));
+  if (target) {
+    if (target.id) state.deletedOrderIds.push(String(target.id));
+    if (target.order_code && !state.deletedOrderCodes.includes(String(target.order_code))) {
       state.deletedOrderCodes.push(String(target.order_code));
     }
   }
-  state.orders = state.orders.filter(o => o.id !== id);
+  state.orders = state.orders.filter(o =>
+    String(o.id) !== String(id) &&
+    (!target || (String(o.id) !== String(target.id) && String(o.order_code) !== String(target.order_code)))
+  );
   saveState();
   renderOrders();
   renderReports();
-  if (target && state.settings.apiUrl) {
+  if (target && state.settings.apiUrl && navigator.onLine) {
     await pushOrderToBackend(target, 'delete');
   }
 }
