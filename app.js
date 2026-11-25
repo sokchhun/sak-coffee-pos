@@ -174,10 +174,16 @@ function renderProducts() {
 function isDrinkProduct(p) {
   if (!p) return true;
   const prod = state.products.find(x => Number(x.id) === Number(p.product_id ?? p.id)) || p;
+  if (prod.has_sweet_ice === false || prod.has_sweet_ice === 0 || String(prod.has_sweet_ice).toUpperCase() === 'FALSE') {
+    return false;
+  }
+  if (prod.has_sweet_ice === true || prod.has_sweet_ice === 1 || String(prod.has_sweet_ice).toUpperCase() === 'TRUE') {
+    return true;
+  }
+  if (p.is_drink === false) return false;
   const catId = Number(prod.category_id);
   const cat = (state.categories || []).find(c => Number(c.id) === catId);
   const text = `${cat?.name || ''} ${prod.name || ''}`.toLowerCase();
-
   const nonDrinkKeywords = [
     'នំ', 'អាហារ', 'សម្រន់', 'បាយ', 'គុយទាវ', 'សាំងវិច', 'ខេក',
     'គ្រឿងអលង្ការ', 'ក្រវិល', 'ចិញ្ចៀន', 'ខ្សែក', 'កងដៃ', 'កងជើង',
@@ -600,6 +606,7 @@ async function pullFromBackend(silent = false) {
           cost_usd: Number(p.cost_usd || 0),
           icon: String(p.icon || '☕'),
           image_url: p.image_url || defMap.get(pid) || '',
+          has_sweet_ice: p.has_sweet_ice === undefined || p.has_sweet_ice === '' ? undefined : (p.has_sweet_ice !== false && p.has_sweet_ice !== 0 && String(p.has_sweet_ice).toUpperCase() !== 'FALSE'),
           is_available: p.is_available !== false && p.is_available !== 'FALSE'
         };
       });
@@ -765,6 +772,8 @@ function saveProduct() {
   if (!verifyAdminPin('រក្សាទុក/កែប្រែម៉ឺនុយ')) return;
   const idVal = document.getElementById('editProdId').value;
   const existing = idVal ? state.products.find(p => String(p.id) === String(idVal)) : null;
+  const sweetIceSel = document.getElementById('pHasSweetIce');
+  const hasSweetIce = sweetIceSel ? (sweetIceSel.value !== '0') : true;
   const obj = {
     id: existing ? existing.id : Date.now(),
     name: document.getElementById('pName').value.trim(),
@@ -773,6 +782,7 @@ function saveProduct() {
     cost_usd: Number(document.getElementById('pCost').value || 0),
     icon: document.getElementById('pIcon').value || '☕',
     image_url: document.getElementById('pImgData').value,
+    has_sweet_ice: hasSweetIce,
     is_available: existing ? (existing.is_available !== false) : true
   };
   if (!obj.name || obj.price_usd <= 0) return alert('សូមបញ្ចូលឈ្មោះ និងតម្លៃលក់!');
@@ -790,6 +800,8 @@ function editProduct(id) {
   document.getElementById('pPrice').value = p.price_usd;
   document.getElementById('pCost').value = p.cost_usd || 0;
   document.getElementById('pImgData').value = p.image_url || '';
+  const sweetIceSel = document.getElementById('pHasSweetIce');
+  if (sweetIceSel) sweetIceSel.value = isDrinkProduct(p) ? '1' : '0';
   const thumb = document.getElementById('pImgThumb');
   if (p.image_url) { thumb.src = p.image_url; thumb.style.display = 'inline-block'; }
   else { thumb.src = ''; thumb.style.display = 'none'; }
@@ -822,7 +834,7 @@ function renderMenuTable() {
     const cat = state.categories.find(c => c.id == p.category_id)?.name || '-';
     return `<tr>
       <td><img src="${p.image_url || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=300&q=80'}" style="width:42px;height:42px;border-radius:8px;object-fit:cover;"></td>
-      <td><strong>${p.name}</strong></td>
+      <td><strong>${p.name}</strong><div style="font-size:11px;color:var(--muted);">${isDrinkProduct(p) ? '🧊 មានស្ករ & ទឹកកក' : '🚫 គ្មានស្ករ & ទឹកកក'}</div></td>
       <td>${cat}</td>
       <td>${fmtUsd(p.price_usd)}</td>
       <td>${fmtUsd(p.cost_usd)}</td>
