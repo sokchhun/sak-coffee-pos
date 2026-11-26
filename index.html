@@ -1,539 +1,3 @@
-<!DOCTYPE html>
-<html lang="km">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>ស័ក្តិ កាហ្វេ (Sak Coffee) - Smart POS</title>
-<link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --nav-bg: #1e293b;
-    --primary: #3b82f6;
-    --primary-dark: #2563eb;
-    --success: #22c55e;
-    --danger: #ef4444;
-    --warning: #f59e0b;
-    --bg: #0f172a;
-    --card: #1e293b;
-    --text: #f1f5f9;
-    --muted: #94a3b8;
-    --border: #334155;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Kantumruy Pro', system-ui, sans-serif; }
-  body { background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-  .topbar {
-    background: var(--nav-bg); color: #fff; min-height: 56px; padding: 6px 16px; gap: 8px; flex-wrap: wrap;
-    display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
-    border-bottom: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  }
-  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; }
-  .brand-badge { background: var(--warning); color: #111; font-size: 11px; padding: 2px 8px; border-radius: 99px; font-weight: 700; }
-  .nav-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
-  .nav-btn {
-    background: transparent; color: #cbd5e1; border: none; padding: 8px 14px;
-    border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: .15s;
-  }
-  .nav-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
-  .nav-btn.active { background: var(--primary); color: #fff; }
-  .sync-pill {
-    font-size: 12px; padding: 5px 12px; border-radius: 99px; background: rgba(255,255,255,0.08);
-    border: 1px solid var(--border); display: flex; align-items: center; gap: 6px; cursor: pointer;
-  }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: #9ca3af; }
-  .dot.online { background: #22c55e; }
-  .dot.pending { background: #f59e0b; }
-
-  .view { display: none; flex: 1; overflow: hidden; }
-  .view.active { display: flex; }
-  .pos-left {
-    width: 42%; min-width: 360px; max-width: 520px; background: var(--card);
-    border-right: 1px solid var(--border); display: flex; flex-direction: column;
-  }
-  .pos-right { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 12px; gap: 10px; background: var(--bg); }
-  .cart-header {
-    background: var(--primary); color: #fff; padding: 10px 14px;
-    display: grid; grid-template-columns: 1fr 86px 68px 34px; font-size: 13px; font-weight: 600;
-  }
-  .cart-list { flex: 1; overflow-y: auto; background: #111827; }
-  .cart-empty { text-align: center; padding: 48px 16px; color: var(--muted); font-size: 14px; }
-  .cart-row { border-bottom: 1px solid var(--border); background: var(--card); }
-  .cart-row-main {
-    display: grid; grid-template-columns: 1fr 86px 68px 34px; align-items: center;
-    padding: 10px 14px; cursor: pointer; transition: background .12s; gap: 4px;
-  }
-  .cart-row-main:hover { background: #263347; }
-  .inline-qty { display: flex; align-items: center; justify-content: center; gap: 4px; }
-  .inline-qty button {
-    width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--border);
-    background: #0f172a; color: #fff; font-weight: 700; cursor: pointer; font-size: 14px; line-height: 1;
-  }
-  .inline-qty button:hover { background: var(--primary); border-color: var(--primary); }
-  .btn-x {
-    width: 26px; height: 26px; border-radius: 6px; border: none; background: rgba(239,68,68,0.18);
-    color: #f87171; font-weight: 700; cursor: pointer; font-size: 13px;
-    display: inline-flex; align-items: center; justify-content: center;
-  }
-  .btn-x:hover { background: var(--danger); color: #fff; }
-  .cart-item-name { font-weight: 600; font-size: 14px; color: #f8fafc; }
-  .cart-item-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
-  .cart-mod {
-    background: #162032; padding: 10px 14px; border-top: 1px dashed var(--border);
-    display: none; flex-direction: column; gap: 8px;
-  }
-  .cart-row.expanded .cart-mod { display: flex; }
-  .mod-line { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12px; }
-  .mod-label { width: 58px; font-weight: 600; color: var(--muted); }
-  .chip {
-    border: 1px solid var(--border); background: #0f172a; color: var(--text); padding: 4px 10px;
-    border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500;
-  }
-  .chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
-  .qty-btn {
-    width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border);
-    background: #0f172a; color: #fff; font-weight: 700; cursor: pointer;
-  }
-  .cart-footer { border-top: 2px solid var(--border); padding: 12px 14px; background: var(--card); display: flex; flex-direction: column; gap: 8px; }
-  .discount-bar { display: flex; gap: 8px; align-items: center; }
-  .discount-bar select, .discount-bar input {
-    padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; background: #0f172a; color: var(--text);
-  }
-  .discount-bar select { flex: 1; }
-  .totals-line { display: flex; justify-content: space-between; font-size: 14px; color: var(--muted); }
-  .totals-grand { display: flex; justify-content: space-between; font-size: 20px; font-weight: 700; color: #fff; }
-  .totals-khr { text-align: right; font-size: 13px; font-weight: 600; color: #60a5fa; }
-  .cart-actions { display: grid; grid-template-columns: 1fr 1fr 1.6fr; gap: 8px; margin-top: 4px; }
-
-  .btn {
-    border: none; border-radius: 8px; padding: 10px 14px; font-size: 14px; font-weight: 600;
-    cursor: pointer; transition: .15s; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
-  }
-  .btn-primary { background: var(--primary); color: #fff; }
-  .btn-primary:hover { background: var(--primary-dark); }
-  .btn-success { background: var(--success); color: #fff; }
-  .btn-success:hover { filter: brightness(0.95); }
-  .btn-danger { background: var(--danger); color: #fff; }
-  .btn-light { background: #334155; color: #f1f5f9; }
-  .btn-light:hover { background: #475569; }
-  .btn-sm { padding: 6px 10px; font-size: 12px; }
-
-  .search-cats { display: flex; flex-direction: column; gap: 8px; }
-  .search-input {
-    width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px;
-    font-size: 14px; background: var(--card); color: var(--text);
-  }
-  .cat-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
-  .cat-btn {
-    border: 1px solid var(--border); padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 600;
-    cursor: pointer; white-space: nowrap; background: var(--card); color: var(--text);
-  }
-  .cat-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
-  .product-grid {
-    flex: 1; overflow-y: auto; display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
-    gap: 10px; align-content: start; padding-bottom: 16px;
-  }
-  .prod-card {
-    background: var(--card); border-radius: 12px; padding: 12px 10px; cursor: pointer;
-    border: 1px solid var(--border); position: relative; transition: transform .1s, box-shadow .1s;
-    display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px;
-  }
-  .prod-card:active { transform: scale(0.97); }
-  .prod-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.35); border-color: var(--primary); }
-  .prod-card.soldout { opacity: 0.45; pointer-events: none; }
-  .prod-img { width: 88px; height: 88px; border-radius: 12px; object-fit: cover; background: #0f172a; }
-  .prod-name { font-size: 13px; font-weight: 600; line-height: 1.3; color: #f8fafc; }
-  .prod-price { font-size: 14px; font-weight: 700; color: #60a5fa; }
-  .prod-badge {
-    position: absolute; top: 8px; right: 8px; background: var(--danger); color: #fff;
-    width: 24px; height: 24px; border-radius: 50%; font-size: 12px; font-weight: 700;
-    display: flex; align-items: center; justify-content: center;
-  }
-
-  .page-wrap { flex: 1; overflow-y: auto; padding: 18px; max-width: 1280px; width: 100%; margin: 0 auto; scroll-behavior: smooth; }
-  .card { background: var(--card); border-radius: 12px; padding: 16px; border: 1px solid var(--border); margin-bottom: 16px; transition: box-shadow .25s, border-color .25s; }
-  .card-title { font-size: 16px; font-weight: 700; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
-  table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
-  table.tbl th, table.tbl td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; }
-  table.tbl th { background: #162032; font-weight: 700; color: var(--muted); }
-  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-bottom: 16px; }
-  .kpi { background: var(--card); border-radius: 12px; padding: 14px; border: 1px solid var(--border); }
-  .kpi-label { font-size: 12px; color: var(--muted); }
-  .kpi-val { font-size: 22px; font-weight: 700; color: #fff; margin-top: 4px; }
-  .kpi-sub { font-size: 12px; color: var(--success); margin-top: 2px; }
-
-  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
-  .field { display: flex; flex-direction: column; gap: 4px; }
-  .field label { font-size: 12px; font-weight: 600; color: var(--muted); }
-  .field input, .field select, .field textarea {
-    padding: 9px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px;
-    background: #0f172a; color: var(--text);
-  }
-  .notice-banner {
-    background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.4);
-    color: #bbf7d0; padding: 10px 14px; border-radius: 10px; font-size: 13px; margin-bottom: 14px;
-    display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
-  }
-
-  .modal-bg {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none;
-    align-items: center; justify-content: center; z-index: 100; padding: 16px;
-  }
-  .modal-bg.open { display: flex; }
-  .modal { background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 14px; width: 100%; max-width: 880px; max-height: 92vh; overflow-y: auto; padding: 20px; }
-  .checkout-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
-  .pay-btn {
-    border: 2px solid var(--border); background: #0f172a; color: var(--text); border-radius: 10px; padding: 12px 8px;
-    cursor: pointer; font-weight: 700; font-size: 13px; text-align: center;
-  }
-  .pay-btn.active { border-color: var(--primary); background: rgba(59,130,246,0.2); color: #93c5fd; }
-  .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-  .num-btn {
-    padding: 14px; font-size: 18px; font-weight: 700; border: 1px solid var(--border);
-    background: #334155; color: #fff; border-radius: 10px; cursor: pointer;
-  }
-  .num-btn:active { background: #475569; }
-  .quick-cash { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 8px; }
-  .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 180px; padding-top: 20px; }
-  .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
-  .bar-fill { width: 100%; background: var(--primary); border-radius: 6px 6px 0 0; min-height: 2px; transition: height .3s; }
-  .bar-lbl { font-size: 11px; color: var(--muted); }
-  .bar-val { font-size: 10px; font-weight: 700; }
-
-  #receipt-print { display: none; }
-  @media print {
-    body * { visibility: hidden; }
-    #receipt-print, #receipt-print * { visibility: visible; }
-    #receipt-print {
-      display: block !important; position: fixed; left: 0; top: 0; width: 76mm;
-      font-family: 'Kantumruy Pro', monospace; font-size: 12px; color: #000; padding: 4mm; background: #fff;
-    }
-  }
-  @media (max-width: 900px) {
-    .checkout-grid { grid-template-columns: 1fr; }
-    .pos-left { width: 46%; min-width: 280px; }
-  }
-</style>
-</head>
-<body>
-
-<header class="topbar">
-  <div class="brand">
-    <span>☕ ស័ក្តិ កាហ្វេ (Sak Coffee)</span>
-    <span class="brand-badge">SKOY POS</span>
-  </div>
-  <nav class="nav-tabs">
-    <button class="nav-btn active" onclick="switchView('pos', this)">🛒 លក់ (POS)</button>
-    <button class="nav-btn" onclick="switchView('orders', this)">🧾 ប្រវត្តិលក់</button>
-    <button class="nav-btn" onclick="switchView('menu', this)">📋 ម៉ឺនុយ</button>
-    <button class="nav-btn" onclick="switchView('reports', this)">📊 របាយការណ៍</button>
-    <button class="nav-btn" onclick="switchView('settings', this)">⚙️ កំណត់</button>
-  </nav>
-  <div style="display:flex;align-items:center;gap:8px;">
-    <button type="button" class="nav-btn" style="padding:6px 12px;font-size:13px;background:#f59e0b;color:#111;font-weight:700;" onclick="lockPosSession()" title="ចាក់សោ Login ភ្លាមៗ">🔒 ចាក់សោ</button>
-    <div class="sync-pill" onclick="syncAllNow()" title="ចុចដើម្បី Sync ជាមួយ Google Sheets">
-      <span class="dot" id="syncDot"></span>
-      <span id="syncText">Offline</span>
-    </div>
-  </div>
-</header>
-
-<section id="view-pos" class="view active">
-  <div class="pos-left">
-    <div class="cart-header">
-      <div>ទំនិញ</div>
-      <div style="text-align:center;">ចំនួន</div>
-      <div style="text-align:right;">សរុប</div>
-      <div style="text-align:center;">លុប</div>
-    </div>
-    <div class="cart-list" id="cartList"></div>
-    <div class="cart-footer">
-      <div class="discount-bar">
-        <select id="discountSelect" onchange="renderCart()"></select>
-        <input type="number" id="customDiscount" placeholder="បញ្ចុះ ($)" step="0.25" min="0" style="width:95px; display:none;" oninput="renderCart()">
-        <select id="orderTypeSelect" style="width:110px;">
-          <option value="Takeaway">ខ្ចប់ (Takeaway)</option>
-          <option value="Dine-in">ញ៉ាំក្នុងហាង</option>
-        </select>
-      </div>
-      <div class="totals-line"><span>សរុបរង (Subtotal)</span><span id="sumSubtotal">$0.00</span></div>
-      <div class="totals-line"><span>បញ្ចុះតម្លៃ (Discount)</span><span id="sumDiscount" style="color:#f87171;">-$0.00</span></div>
-      <div class="totals-grand"><span>ត្រូវបង់ (Total)</span><span id="sumTotal">$0.00</span></div>
-      <div class="totals-khr" id="sumKhr">0 ៛</div>
-      <div id="heldOrdersBar" style="display:none; gap:6px; flex-wrap:wrap; padding-top:2px;"></div>
-      <div class="cart-actions">
-        <button class="btn btn-light" onclick="clearCart()">🗑️ សម្អាត</button>
-        <button class="btn" style="background:#f59e0b; color:#111;" onclick="holdCurrentOrder()">⏸️ ផ្អាកទុក</button>
-        <button class="btn btn-success" onclick="openCheckout()">💳 គិតលុយ</button>
-      </div>
-    </div>
-  </div>
-
-  <div class="pos-right">
-    <div class="search-cats">
-      <input class="search-input" id="searchInput" placeholder="🔍 ស្វែងរកទំនិញ ឬភេសជ្ជៈ..." oninput="renderProducts()">
-      <div class="cat-bar" id="catBar"></div>
-    </div>
-    <div class="product-grid" id="productGrid"></div>
-  </div>
-</section>
-
-<section id="view-orders" class="view">
-  <div class="page-wrap">
-    <div class="card">
-      <div class="card-title">
-        <span>🧾 ប្រវត្តិវិក្កយបត្រលក់ (ថ្ងៃនេះ)</span>
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
-          <button class="btn btn-primary btn-sm" onclick="syncAllNow()">☁️ Sync ជាមួយ Google Sheets</button>
-          <button class="btn btn-light btn-sm" onclick="exportOrdersCSV()">⬇️ Export CSV</button>
-          <button class="btn btn-danger btn-sm" onclick="resetSalesHistory()">🗑️ សម្អាតប្រវត្តិលក់</button>
-        </div>
-      </div>
-      <table class="tbl">
-        <thead>
-          <tr><th>លេខកូដ</th><th>កាលបរិច្ឆេទ</th><th>ទំនិញ</th><th>បញ្ចុះតម្លៃ</th><th>សរុប ($)</th><th>ទូទាត់</th><th>Sync</th><th>សកម្មភាព</th></tr>
-        </thead>
-        <tbody id="ordersTable"></tbody>
-      </table>
-    </div>
-  </div>
-</section>
-
-<section id="view-menu" class="view">
-  <div class="page-wrap" id="menuPageWrap">
-    <div class="notice-banner">
-      <span>☁️ <strong>ភ្ជាប់ Google Sheets ស្វ័យប្រវត្តិ:</strong> ការបន្ថែម កែ ឬលុបទំនិញ នឹងរក្សាទុកក្នុងម៉ាស៊ីន និងបញ្ជូនទៅ Google Sheet <code>sak_coffee_database-v2</code> ដោយស្វ័យប្រវត្តិ។</span>
-      <button class="btn btn-success btn-sm" onclick="pullFromBackend(false)">☁️ ទាញម៉ឺនុយពី Sheets</button>
-    </div>
-
-    <div class="card" id="menuFormCard" style="scroll-margin-top: 20px;">
-      <div class="card-title">
-        <span id="menuFormTitle">➕ បន្ថែម / កែទំនិញ</span>
-        <button class="btn btn-light btn-sm" onclick="resetProductForm()">សម្អាតទម្រង់</button>
-      </div>
-      <input type="hidden" id="editProdId">
-      <div class="form-grid">
-        <div class="field"><label>ឈ្មោះទំនិញ ឬភេសជ្ជៈ</label><input id="pName" placeholder="ឧ. Iced Latte ឬ ក្រវិល"></div>
-        <div class="field"><label>ប្រភេទ (Category)</label><select id="pCat"></select></div>
-        <div class="field"><label>តម្លៃលក់ ($)</label><input id="pPrice" type="number" step="0.05" placeholder="2.00"></div>
-        <div class="field"><label>តម្លៃដើម ($)</label><input id="pCost" type="number" step="0.05" placeholder="0.80"></div>
-        <input type="hidden" id="pIcon" value="☕">
-        <div class="field"><label>Upload រូបភាព (បង្រួមស្វ័យប្រវត្តិ)</label><input id="pImgFile" type="file" accept="image/*" onchange="handleProdImage(event)"></div>
-        <div class="field"><label>ជម្រើសភេសជ្ជៈ</label><select id="pHasSweetIce"><option value="1" selected>🧊 ត្រូវការកម្រិតស្ករ &amp; ទឹកកក</option><option value="0">🚫 មិនត្រូវការស្ករ &amp; ទឹកកក</option></select></div>
-      </div>
-      <input type="hidden" id="pImgData">
-      <div style="margin-top:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-        <button class="btn btn-primary" onclick="saveProduct()">💾 រក្សាទុកទំនិញ</button>
-        <img id="pImgThumb" style="display:none; width:44px; height:44px; border-radius:8px; object-fit:cover; border:1px solid var(--border);">
-        <span id="imgPreviewStatus" style="font-size:12px; color:var(--muted);"></span>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title">
-        <span>📋 បញ្ជីម៉ឺនុយទាំងអស់</span>
-        <button class="btn btn-success btn-sm" onclick="pullFromBackend(false)">☁️ ទាញម៉ឺនុយពី Sheets</button>
-      </div>
-      <table class="tbl">
-        <thead><tr><th>រូប</th><th>ឈ្មោះ</th><th>ប្រភេទ</th><th>តម្លៃលក់</th><th>តម្លៃដើម</th><th>ស្ថានភាព</th><th>សកម្មភាព</th></tr></thead>
-        <tbody id="menuTable"></tbody>
-      </table>
-    </div>
-  </div>
-</section>
-
-<section id="view-reports" class="view">
-  <div class="page-wrap">
-    <div class="card" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-      <strong>តម្រងរបាយការណ៍៖</strong>
-      <select id="repMode" onchange="renderReports()" style="padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:#0f172a; color:var(--text);">
-        <option value="daily">ប្រចាំថ្ងៃ (Daily)</option>
-        <option value="monthly">ប្រចាំខែ (Monthly)</option>
-        <option value="yearly">ប្រចាំឆ្នាំ (Yearly)</option>
-      </select>
-      <input type="date" id="repDate" onchange="renderReports()" style="padding:8px; border-radius:8px; border:1px solid var(--border); background:#0f172a; color:var(--text);">
-      <input type="month" id="repMonth" onchange="renderReports()" style="padding:8px; border-radius:8px; border:1px solid var(--border); background:#0f172a; color:var(--text); display:none;">
-      <select id="repYear" onchange="renderReports()" style="padding:8px; border-radius:8px; border:1px solid var(--border); background:#0f172a; color:var(--text); display:none;"></select>
-      <button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="exportOrdersCSV()">⬇️ Export CSV</button>
-    </div>
-
-    <div class="kpi-grid">
-      <div class="kpi"><div class="kpi-label">ចំណូលសរុប (Revenue)</div><div class="kpi-val" id="kpiRev">$0.00</div><div class="kpi-sub" id="kpiRevKhr">0 ៛</div></div>
-      <div class="kpi"><div class="kpi-label">ប្រាក់ចំណេញប៉ាន់ស្មាន (Profit)</div><div class="kpi-val" id="kpiProfit">$0.00</div><div class="kpi-sub" id="kpiCost">ដើមទុន: $0.00</div></div>
-      <div class="kpi"><div class="kpi-label">ចំនួនវិក្កយបត្រ (Orders)</div><div class="kpi-val" id="kpiCount">0</div><div class="kpi-sub" id="kpiAvg">មធ្យម: $0.00/វិក្កយបត្រ</div></div>
-      <div class="kpi"><div class="kpi-label">បញ្ចុះតម្លៃសរុប (Discounts)</div><div class="kpi-val" id="kpiDisc">$0.00</div></div>
-    </div>
-
-    <div class="card" id="yearlyChartCard" style="display:none;">
-      <div class="card-title"><span>📈 ក្រាហ្វិកចំណូល ១២ ខែប្រចាំឆ្នាំ</span></div>
-      <div class="bar-chart" id="yearlyChart"></div>
-    </div>
-
-    <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
-      <div class="card" style="margin-bottom:0;">
-        <div class="card-title"><span>🏆 ទំនិញលក់ដាច់បំផុត (Top Items)</span></div>
-        <table class="tbl"><thead><tr><th>មុខទំនិញ</th><th style="text-align:center;">ចំនួន</th><th style="text-align:right;">សរុប ($)</th></tr></thead><tbody id="repTopItemsTable"></tbody></table>
-      </div>
-      <div class="card" style="margin-bottom:0;">
-        <div class="card-title"><span>💳 ចំណូលតាមវិធីទូទាត់</span></div>
-        <table class="tbl"><thead><tr><th>វិធីទូទាត់</th><th style="text-align:center;">វិក្កយបត្រ</th><th style="text-align:right;">សរុប ($)</th></tr></thead><tbody id="repPayTable"></tbody></table>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section id="view-settings" class="view">
-  <div class="page-wrap">
-    <div class="card">
-      <div class="card-title"><span>🏪 ព័ត៌មានហាង និងការភ្ជាប់ Backend (Google Sheets)</span></div>
-      <div class="form-grid">
-        <div class="field"><label>ឈ្មោះហាង</label><input id="setShopName"></div>
-        <div class="field"><label>អាសយដ្ឋាន / ទូរស័ព្ទ</label><input id="setShopAddress"></div>
-        <div class="field"><label>អត្រាប្តូរប្រាក់ (1$ = ? ៛)</label><input id="setRate" type="number"></div>
-        <div class="field"><label>Google Apps Script Web App URL (Backend API)</label><input id="setApiUrl"></div>
-        <div class="field"><label>Upload រូបភាព KHQR ហាង (ABA / ACLEDA)</label><input type="file" accept="image/*" onchange="handleKhqrImage(event)"></div>
-        <div class="field"><label>លេខកូដសម្ងាត់ចូលប្រើដំបូង (Login PIN - ទុកទទេបើមិនប្រើ)</label><input id="setLoginPin" type="password" placeholder="ឧ. 0000"></div>
-        <div class="field"><label>លេខកូដសម្ងាត់អ្នកគ្រប់គ្រង (Admin PIN - ទុកទទេបើមិនប្រើ)</label><input id="setAdminPin" type="password" placeholder="ឧ. 1234"></div>
-      </div>
-      <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
-        <button class="btn btn-primary" onclick="saveSettings()">💾 រក្សាទុកការកំណត់</button>
-        <button class="btn btn-success" onclick="pullFromBackend(false)">☁️ ទាញទិន្នន័យពី Google Sheets</button>
-        <button class="btn btn-light" onclick="backupJSON()">⬇️ Backup JSON</button>
-        <label class="btn btn-light" style="cursor:pointer;">⬆️ Restore JSON<input type="file" accept=".json" style="display:none;" onchange="restoreJSON(event)"></label>
-        <button class="btn btn-danger" onclick="resetSalesHistory()">🗑️ Reset ប្រវត្តិលក់ & របាយការណ៍</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-title"><span>📂 គ្រប់គ្រងប្រភេទម៉ឺនុយ (Categories)</span></div>
-      <div class="form-grid" style="margin-bottom:12px;">
-        <div class="field"><label>ឈ្មោះប្រភេទថ្មី</label><input id="cName" placeholder="ឧ. គ្រឿងអលង្ការ"></div>
-        <div class="field"><label>Icon / Emoji</label><input id="cIcon" placeholder="💍" value="💍"></div>
-        <div class="field" style="justify-content:flex-end;"><button class="btn btn-primary" onclick="addCategory()">➕ បន្ថែមប្រភេទ</button></div>
-      </div>
-      <table class="tbl"><thead><tr><th>Icon</th><th>ឈ្មោះប្រភេទ</th><th>សកម្មភាព</th></tr></thead><tbody id="categoriesTable"></tbody></table>
-    </div>
-
-    <div class="card">
-      <div class="card-title"><span>🏷️ គ្រប់គ្រងប្រភេទបញ្ចុះតម្លៃ (Discounts)</span></div>
-      <div class="form-grid" style="margin-bottom:12px;">
-        <div class="field"><label>ឈ្មោះបញ្ចុះតម្លៃ</label><input id="dName" placeholder="ឧ. និស្សិត CADT"></div>
-        <div class="field"><label>ប្រភេទ</label><select id="dType"><option value="percent">ភាគរយ (%)</option><option value="fixed">ទឹកប្រាក់ផ្ទាល់ ($)</option></select></div>
-        <div class="field"><label>ចំនួន (ឧ. 10 ឬ 0.25)</label><input id="dVal" type="number" step="0.05"></div>
-        <div class="field" style="justify-content:flex-end;"><button class="btn btn-primary" onclick="addDiscount()">➕ បន្ថែម</button></div>
-      </div>
-      <table class="tbl"><thead><tr><th>ឈ្មោះ</th><th>ប្រភេទ</th><th>តម្លៃ</th><th>សកម្មភាព</th></tr></thead><tbody id="discountsTable"></tbody></table>
-    </div>
-  </div>
-</section>
-
-<div class="modal-bg" id="checkoutModal">
-  <div class="modal" style="max-width:960px;">
-    <div class="card-title">
-      <span>💳 ទូទាត់ប្រាក់ (Checkout)</span>
-      <button class="btn btn-light btn-sm" onclick="closeCheckout()">✖ បិទ</button>
-    </div>
-    <div class="checkout-grid" style="grid-template-columns: 1.1fr 1.15fr 0.85fr; gap:18px; align-items:start;">
-      <div>
-        <div style="background:#0f172a; padding:12px; border-radius:10px; margin-bottom:10px; border:1px solid var(--border);">
-          <div style="font-size:12px; color:var(--muted);">ត្រូវបង់សរុប (Total)</div>
-          <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:4px;">
-            <span style="font-size:24px; font-weight:700; color:#fff;" id="coTotalUsd">$0.00</span>
-            <span style="font-size:16px; font-weight:700; color:#60a5fa;" id="coTotalKhr">0 ៛</span>
-          </div>
-        </div>
-        <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">
-          <button type="button" class="pay-btn active" style="padding:7px 10px; font-size:12px;" onclick="selectPay('Cash', this)">Cash</button>
-          <button type="button" class="pay-btn" style="padding:7px 10px; font-size:12px;" onclick="selectPay('ABA', this)">ABA</button>
-          <button type="button" class="pay-btn" style="padding:7px 10px; font-size:12px;" onclick="selectPay('ACLEDA', this)">ACLEDA</button>
-        </div>
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:6px;">
-          <span style="font-size:12px; font-weight:700; color:var(--muted);">ប្រអប់បញ្ចូលសកម្ម៖</span>
-          <div style="display:inline-flex; gap:4px; background:#0f172a; padding:3px; border-radius:8px; border:1px solid var(--border);">
-            <button type="button" id="btnCurrUsd" class="chip active" style="padding:3px 10px; font-weight:700;" onclick="setCoCurrency('USD')">💵 ដុល្លា ($)</button>
-            <button type="button" id="btnCurrKhr" class="chip" style="padding:3px 10px; font-weight:700;" onclick="setCoCurrency('KHR')">🇰🇭 រៀល (៛)</button>
-          </div>
-        </div>
-        <div style="margin-bottom:10px;">
-          <div style="font-size:12px; font-weight:600; color:var(--muted); margin-bottom:4px;" id="coRecLabel">ប្រាក់ទទួល (USD $)</div>
-          <input id="coReceived" type="text" inputmode="decimal" autocomplete="off" value="0" onclick="this.select()" oninput="onCoReceivedInput(this.value)" style="width:100%; font-size:24px; font-weight:700; padding:10px 12px; text-align:right; border:2px solid var(--primary); border-radius:10px; background:#0f172a; color:#fff;">
-        </div>
-        <div style="background:rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.4); border-radius:8px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center; font-size:14px; font-weight:700;">
-          <span style="color:#86efac;">ប្រាក់អាប់ (Change):</span>
-          <span id="coChange" style="color:#4ade80;">$0.00 (0 ៛)</span>
-        </div>
-        <div id="khqrBox" style="display:none; text-align:center; margin-top:10px; padding:8px; border:1px dashed var(--border); border-radius:10px;">
-          <img id="khqrPreview" style="max-width:160px; border-radius:8px; display:none; margin:0 auto;">
-          <div id="khqrPlaceholder" style="font-size:12px; color:var(--muted);">សូម Upload រូប KHQR ក្នុងផ្ទាំង «កំណត់»</div>
-        </div>
-      </div>
-
-      <div>
-        <div class="numpad" style="grid-template-columns: repeat(3, 1fr); gap:6px;">
-          <button type="button" class="num-btn" onclick="numKey('C')" style="background:#475569;">C</button>
-          <button type="button" class="num-btn" onclick="numKey('7')">7</button>
-          <button type="button" class="num-btn" onclick="numKey('8')">8</button>
-          <button type="button" class="num-btn" onclick="numKey('9')">9</button>
-          <button type="button" class="num-btn" onclick="numKey('4')">4</button>
-          <button type="button" class="num-btn" onclick="numKey('5')">5</button>
-          <button type="button" class="num-btn" onclick="numKey('6')">6</button>
-          <button type="button" class="num-btn" onclick="numKey('1')">1</button>
-          <button type="button" class="num-btn" onclick="numKey('2')">2</button>
-          <button type="button" class="num-btn" onclick="numKey('3')">3</button>
-          <button type="button" class="num-btn" onclick="numKey('0')">0</button>
-          <button type="button" class="num-btn" onclick="numKey('00')">00</button>
-          <button type="button" class="num-btn" onclick="numKey('.')">.</button>
-          <button type="button" class="num-btn" onclick="numKey('BKSP')" style="background:#64748b; grid-column: span 2;">⌫ លុប</button>
-        </div>
-      </div>
-
-      <div style="display:flex; flex-direction:column; gap:8px;">
-        <div class="quick-cash" style="margin-top:0;">
-          <button type="button" class="btn btn-light btn-sm" onclick="setExactCash()">គ្រប់ចំនួន</button>
-          <button type="button" class="btn btn-light btn-sm" onclick="addCash(1)">+$1</button>
-          <button type="button" class="btn btn-light btn-sm" onclick="addCash(5)">+$5</button>
-          <button type="button" class="btn btn-light btn-sm" onclick="addCash(10)">+$10</button>
-          <button type="button" class="btn btn-light btn-sm" onclick="addCashKhr(5000)">+5,000៛</button>
-          <button type="button" class="btn btn-light btn-sm" onclick="addCashKhr(10000)">+10,000៛</button>
-        </div>
-        <button type="button" class="btn btn-success" style="padding:13px;" onclick="completeOrder(true)">🖨️ បង់ប្រាក់ & ព្រីន 80mm</button>
-        <button type="button" class="btn btn-primary" style="padding:13px;" onclick="completeOrder(false)">✅ បង់ប្រាក់ (មិនព្រីន)</button>
-        <button type="button" class="btn btn-danger" style="padding:10px;" onclick="closeCheckout()">✖ បោះបង់</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="modal-bg" id="editOrderModal">
-  <div class="modal" style="max-width:620px;">
-    <div class="card-title">
-      <span id="editOrderTitle">✏️ កែប្រែវិក្កយបត្រ</span>
-      <button class="btn btn-light btn-sm" onclick="closeEditOrder()">✖ បិទ</button>
-    </div>
-    <p style="font-size:12px; color:var(--muted); margin-bottom:10px;">
-      ចុចប៊ូតុង <strong>−</strong> ដើម្បីដក ១ កែវ ឬចុច <strong>✖ លុប</strong> ដើម្បីលុបទំនិញដែលភ្ញៀវមិនយកចេញពីវិក្កយបត្រនេះ។
-    </p>
-    <table class="tbl">
-      <thead>
-        <tr><th>ទំនិញ</th><th style="text-align:center;">ចំនួន</th><th style="text-align:right;">សរុប</th><th style="text-align:center;">សកម្មភាព</th></tr>
-      </thead>
-      <tbody id="editOrderItems"></tbody>
-    </table>
-    <div style="margin-top:14px; padding:12px; background:#0f172a; border-radius:10px; display:flex; flex-direction:column; gap:6px; font-size:14px;">
-      <div style="display:flex; justify-content:space-between;"><span>សរុបរង (Subtotal):</span><strong id="eoSubtotal">$0.00</strong></div>
-      <div style="display:flex; justify-content:space-between;"><span>បញ្ចុះតម្លៃ (Discount):</span><strong id="eoDiscount" style="color:#f87171;">-$0.00</strong></div>
-      <div style="display:flex; justify-content:space-between; font-size:17px;"><span>ត្រូវបង់ថ្មី (Total):</span><strong id="eoTotal" style="color:#60a5fa;">$0.00</strong></div>
-      <div style="text-align:right; font-size:13px; color:var(--muted);" id="eoKhr">0 ៛</div>
-    </div>
-    <div style="margin-top:14px; display:flex; justify-content:flex-end; gap:8px;">
-      <button class="btn btn-light" onclick="closeEditOrder()">បោះបង់</button>
-      <button class="btn btn-primary" onclick="saveEditedOrder(false)">💾 រក្សាទុក</button>
-      <button class="btn btn-success" onclick="saveEditedOrder(true)">🖨️ រក្សាទុក & ព្រីនឡើងវិញ</button>
-    </div>
-  </div>
-</div>
-
-<div id="receipt-print"></div>
-
 <script>
 const FIXED_API_URL = 'https://script.google.com/macros/s/AKfycbxSuY0pxzYKN9E7qt22uO6EOWq3pQCdYkS-aYRByeItuHlB5_-ebTF4kF9oqsW6bDOx/exec';
 function getFixedApiUrl() {
@@ -615,6 +79,7 @@ let expandedCartIdx = -1;
 let selectedPay = 'Cash';
 let receivedStr = '0';
 let coCurrency = 'USD';
+let catalogDirty = false;
 
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -988,7 +453,9 @@ function printReceipt(o) {
 
 async function syncCatalogToBackend() {
   const url = getFixedApiUrl();
-  if (!url || !navigator.onLine) return false;
+  if (!url) return false;
+  catalogDirty = true;
+  if (!navigator.onLine) return false;
   try {
     const res = await fetch(url, {
       method: 'POST',
@@ -1002,11 +469,14 @@ async function syncCatalogToBackend() {
       })
     });
     const data = await res.json();
-    return data.status === 'success';
+    if (data.status === 'success') {
+      catalogDirty = false;
+      return true;
+    }
   } catch (e) {
     console.warn('Catalog sync failed:', e);
-    return false;
   }
+  return false;
 }
 
 async function pushOrderToBackend(order, action) {
@@ -1042,9 +512,10 @@ async function syncPendingOrders(silent) {
   const url = getFixedApiUrl();
   if (!url || !navigator.onLine) return;
   const pending = state.orders.filter(o => !o.synced);
-  if (!pending.length) return;
+  if (!pending.length && !catalogDirty) return;
   isSyncing = true;
   try {
+    if (catalogDirty) await syncCatalogToBackend();
     for (let i = 0; i < pending.length; i++) {
       const o = pending[i];
       if (await pushOrderToBackend(o, o._syncAction || 'create')) delete o._syncAction;
@@ -1066,6 +537,7 @@ async function pullFromBackend(silent) {
   if (isPulling) return;
   const url = getFixedApiUrl();
   if (!url || !navigator.onLine) return;
+  if (catalogDirty) await syncCatalogToBackend();
   isPulling = true;
   try {
     const sep = url.includes('?') ? '&' : '?';
@@ -1076,14 +548,11 @@ async function pullFromBackend(silent) {
       return;
     }
     if (Array.isArray(data.categories) && data.categories.length) {
-      const sheetCats = data.categories.map(c => ({ id: c.id, name: String(c.name || '').trim(), icon: String(c.icon || '☕') }));
-      const catMap = new Map(sheetCats.map(c => [String(c.id), c]));
-      (state.categories || []).forEach(c => { if (!catMap.has(String(c.id))) catMap.set(String(c.id), c); });
-      state.categories = Array.from(catMap.values());
+      state.categories = data.categories.map(c => ({ id: c.id, name: String(c.name || '').trim(), icon: String(c.icon || '☕') }));
     }
     if (Array.isArray(data.products) && data.products.length) {
       const defMap = new Map(DEFAULT_DATA.products.map(dp => [String(dp.id), dp.image_url]));
-      const sheetProds = data.products.filter(p => p && p.name).map((p, idx) => {
+      state.products = data.products.filter(p => p && p.name).map((p, idx) => {
         const pid = (p.id !== undefined && p.id !== '') ? p.id : (1000 + idx);
         return {
           ...p,
@@ -1098,17 +567,11 @@ async function pullFromBackend(silent) {
           is_available: p.is_available !== false && p.is_available !== 'FALSE'
         };
       });
-      const prodMap = new Map(sheetProds.map(p => [String(p.id), p]));
-      (state.products || []).forEach(p => { if (!prodMap.has(String(p.id))) prodMap.set(String(p.id), p); });
-      state.products = Array.from(prodMap.values());
     }
     if (Array.isArray(data.discounts)) {
-      const sheetDiscs = data.discounts
+      state.discounts = data.discounts
         .filter(d => d && d.name && d.is_active !== false && d.is_active !== 'FALSE')
         .map((d, idx) => ({ id: d.id || (1000 + idx), name: String(d.name).trim(), type: d.type === 'fixed' ? 'fixed' : 'percent', value: Number(d.value || 0) }));
-      const discMap = new Map(sheetDiscs.map(d => [String(d.id), d]));
-      (state.discounts || []).forEach(d => { if (!discMap.has(String(d.id))) discMap.set(String(d.id), d); });
-      state.discounts = Array.from(discMap.values());
     }
     if (Array.isArray(data.orders)) {
       const deletedCodes = new Set((state.deletedOrderCodes || []).map(String));
@@ -1189,7 +652,7 @@ async function pullFromBackend(silent) {
 function updateSyncIndicator() {
   const dot = document.getElementById('syncDot');
   const txt = document.getElementById('syncText');
-  const pending = state.orders.filter(o => !o.synced).length;
+  const pending = state.orders.filter(o => !o.synced).length + (catalogDirty ? 1 : 0);
   if (!state.settings.apiUrl) { dot.className = 'dot'; txt.textContent = 'Offline Only'; }
   else if (!navigator.onLine) { dot.className = 'dot pending'; txt.textContent = pending > 0 ? 'Offline (' + pending + ')' : 'Offline'; }
   else if (pending > 0) { dot.className = 'dot pending'; txt.textContent = 'រង់ចាំ Sync (' + pending + ')'; }
@@ -1276,7 +739,7 @@ async function saveProduct() {
   if (idx > -1) state.products[idx] = obj; else state.products.push(obj);
   saveState(); resetProductForm(); renderMenuTable(); renderProducts();
   const synced = await syncCatalogToBackend();
-  alert((idx > -1 ? 'បានកែប្រែទំនិញរួចរាល់!' : 'បានបន្ថែមទំនិញថ្មីរួចរាល់!') + (synced ? ' (បានបញ្ជូនទៅ Google Sheets)' : ' (រក្សាទុកក្នុងម៉ាស៊ីន)'));
+  alert((idx > -1 ? 'បានកែប្រែទំនិញរួចរាល់!' : 'បានបន្ថែមទំនិញថ្មីរួចរាល់!') + (synced ? ' (បាន Sync ទៅ Google Sheets)' : ' (រក្សាទុកក្នុងម៉ាស៊ីន)'));
 }
 
 function editProduct(id) {
@@ -1723,11 +1186,9 @@ window.addEventListener('online', async () => { await syncPendingOrders(true); a
 window.addEventListener('load', async () => { if (navigator.onLine) { await syncPendingOrders(true); await pullFromBackend(true); } });
 setInterval(async () => {
   if (!navigator.onLine) return;
-  if (state.orders.some(o => !o.synced)) { await syncPendingOrders(true); return; }
+  if (state.orders.some(o => !o.synced) || catalogDirty) { await syncPendingOrders(true); return; }
   const inSettings = document.getElementById('view-settings') && document.getElementById('view-settings').classList.contains('active');
   const inMenu = document.getElementById('view-menu') && document.getElementById('view-menu').classList.contains('active');
   if (!inSettings && !inMenu) await pullFromBackend(true);
 }, 20000);
 </script>
-</body>
-</html>
