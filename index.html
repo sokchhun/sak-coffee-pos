@@ -535,7 +535,7 @@
 <div id="receipt-print"></div>
 
 <script>
-const FIXED_API_URL = 'https://script.google.com/macros/s/AKfycbxSuY0pxzYKN9E7qt22uO6EOWq3pQCdYkS-aYRByeItuHlB5_-ebTF4kF9oqsW6bDOx/exec';
+const FIXED_API_URL = 'https://script.google.com/macros/s/AKfycbyKb-JDPQ-UPZJncjuMaRFsvNrm4sfSXf_cXKbjgl9XVAv6euVMz-U1ZIUjNDk-rwJC/exec';
 function getFixedApiUrl() {
   if (state && state.settings) {
     state.settings.apiUrl = FIXED_API_URL;
@@ -1466,11 +1466,12 @@ function saveSettings() {
   state.settings.shopName = document.getElementById('setShopName').value;
   state.settings.shopAddress = document.getElementById('setShopAddress').value;
   state.settings.exchangeRate = Number(document.getElementById('setRate').value || 4100);
-  state.settings.apiUrl = (document.getElementById('setApiUrl').value || '').trim() || FIXED_API_URL;
+  state.settings.apiUrl = FIXED_API_URL;
   state.settings.loginPin = document.getElementById('setLoginPin').value.trim();
   state.settings.adminPin = document.getElementById('setAdminPin').value.trim();
   state.settings.apiKey = '';
   saveState();
+  renderSettings();
   alert('បានរក្សាទុកការកំណត់ក្នុងម៉ាស៊ីនរួចរាល់!');
 }
 
