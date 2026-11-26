@@ -1,11 +1,12 @@
-const STORAGE_KEY = 'sak_coffee_pos_clean_v2';
+const FIXED_API_URL = 'https://script.google.com/macros/s/AKfycbyKb-JDPQ-UPZJncjuMaRFsvNrm4sfSXf_cXKbjgl9XVAv6euVMz-U1ZIUjNDk-rwJC/exec';
+const STORAGE_KEY = 'sak_coffee_pos_legacy_v1';
 
 const DEFAULT_DATA = {
   settings: {
     shopName: 'ស័ក្តិ កាហ្វេ (Sak Coffee)',
     shopAddress: 'ព្រែកលៀប ភ្នំពេញ | Tel: 012 796 756',
     exchangeRate: 4100,
-    apiUrl: 'https://script.google.com/macros/s/AKfycbxSuY0pxzYKN9E7qt22uO6EOWq3pQCdYkS-aYRByeItuHlB5_-ebTF4kF9oqsW6bDOx/exec',
+    apiUrl: FIXED_API_URL,
     khqrImage: '',
     loginPin: '',
     adminPin: '',
@@ -39,29 +40,25 @@ const DEFAULT_DATA = {
 
 function loadInitialState() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('sak_coffee_pos_clean_v1') || localStorage.getItem('sak_coffee_pos_v3');
-    if (!raw) return structuredClone(DEFAULT_DATA);
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return JSON.parse(JSON.stringify(DEFAULT_DATA));
     const parsed = JSON.parse(raw);
     const merged = {
-      ...structuredClone(DEFAULT_DATA),
+      ...JSON.parse(JSON.stringify(DEFAULT_DATA)),
       ...parsed,
       settings: {
         ...DEFAULT_DATA.settings,
         ...(parsed.settings || {}),
-        apiUrl: DEFAULT_DATA.settings.apiUrl,
-        apiKey: ''
+        apiUrl: ((parsed.settings && parsed.settings.apiUrl) || '').trim() || FIXED_API_URL
       }
     };
-    if (!merged.settings.shopAddress || merged.settings.shopAddress.includes('011 244 259')) {
-      merged.settings.shopAddress = DEFAULT_DATA.settings.shopAddress;
-    }
     if (!Array.isArray(merged.orders)) merged.orders = [];
     if (!Array.isArray(merged.heldOrders)) merged.heldOrders = [];
     if (!Array.isArray(merged.deletedOrderCodes)) merged.deletedOrderCodes = [];
     if (!Array.isArray(merged.deletedOrderIds)) merged.deletedOrderIds = [];
     return merged;
   } catch (e) {
-    return structuredClone(DEFAULT_DATA);
+    return JSON.parse(JSON.stringify(DEFAULT_DATA));
   }
 }
 
@@ -72,6 +69,18 @@ let expandedCartIdx = -1;
 let selectedPay = 'Cash';
 let receivedStr = '0';
 let coCurrency = 'USD';
+let catalogDirty = false;
+let adminUnlocked = false;
+let sessionLoggedIn = false;
+let editingOrder = null;
+
+function getApiUrl() {
+  return ((state && state.settings && state.settings.apiUrl) || '').trim() || FIXED_API_URL;
+}
+
+function getApiKey() {
+  return ((state && state.settings && state.settings.apiKey) || '').trim();
+}
 
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
@@ -86,23 +95,25 @@ function toLocalDateStr(d) {
   if (!d) return '';
   if (d instanceof Date) {
     if (isNaN(d.getTime())) return '';
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
   }
   const s = String(d).trim();
   const dmy = s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/);
-  if (dmy) return `${dmy[3]}-${String(dmy[2]).padStart(2, '0')}-${String(dmy[1]).padStart(2, '0')}`;
+  if (dmy) return dmy[3] + '-' + String(dmy[2]).padStart(2, '0') + '-' + String(dmy[1]).padStart(2, '0');
   const dt = new Date(s);
   if (isNaN(dt.getTime())) return '';
-  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+  return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
 }
 
 function extractOrderItems(o) {
   if (!o) return [];
   if (Array.isArray(o.items) && o.items.length) return o.items;
-  for (const field of [o.items, o.items_json, o.items_JSON]) {
-    if (typeof field === 'string' && field.trim().startsWith('[')) {
+  const fields = [o.items, o.items_json, o.items_JSON];
+  for (let i = 0; i < fields.length; i++) {
+    const f = fields[i];
+    if (typeof f === 'string' && f.trim().startsWith('[')) {
       try {
-        const arr = JSON.parse(field);
+        const arr = JSON.parse(f);
         if (Array.isArray(arr) && arr.length) return arr;
       } catch (e) {}
     }
@@ -110,11 +121,10 @@ function extractOrderItems(o) {
   return [];
 }
 
-let adminUnlocked = false;
-function verifyAdminPin(actionLabel = 'ចូលប្រើមុខងារនេះ') {
-  const pin = String(state.settings?.adminPin || '').trim();
+function verifyAdminPin(actionLabel) {
+  const pin = String((state.settings && state.settings.adminPin) || '').trim();
   if (!pin || adminUnlocked) return true;
-  const entered = prompt(`🔐 សូមបញ្ចូលលេខកូដសម្ងាត់អ្នកគ្រប់គ្រង (Admin PIN) ដើម្បី${actionLabel}៖`);
+  const entered = prompt('🔐 សូមបញ្ចូលលេខកូដសម្ងាត់អ្នកគ្រប់គ្រង (Admin PIN) ដើម្បី' + (actionLabel || 'ចូលប្រើ') + '៖');
   if (entered === null) return false;
   if (String(entered).trim() === pin) {
     adminUnlocked = true;
@@ -126,77 +136,78 @@ function verifyAdminPin(actionLabel = 'ចូលប្រើមុខងារ�
 
 function switchView(name, btn) {
   if (name === 'menu' || name === 'reports' || name === 'settings') {
-    const labels = { menu: 'មើលម៉ឺនុយ', reports: 'មើលរបាយការណ៍', settings: 'ចូលកំណត់ប្រព័ន្ធ' };
+    const labels = { menu: 'គ្រប់គ្រងម៉ឺនុយ', reports: 'មើលរបាយការណ៍', settings: 'ចូលកំណត់ប្រព័ន្ធ' };
     if (!verifyAdminPin(labels[name])) return;
   }
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.getElementById('view-' + name).classList.add('active');
+  const targetView = document.getElementById('view-' + name);
+  if (targetView) targetView.classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
   if (name === 'orders') renderOrders();
-  if (name === 'menu') renderMenuTable();
+  if (name === 'menu') { renderCategories(); renderMenuTable(); }
   if (name === 'reports') renderReports();
   if (name === 'settings') renderSettings();
 }
 
 function renderCategories() {
   const bar = document.getElementById('catBar');
-  let html = `<button class="cat-btn ${activeCat === 'all' ? 'active' : ''}" onclick="setCat('all')">ទាំងអស់</button>`;
+  if (!bar) return;
+  let html = '<button class="cat-btn ' + (activeCat === 'all' ? 'active' : '') + '" onclick="setCat(\'all\')">ទាំងអស់</button>';
   state.categories.forEach(c => {
-    html += `<button class="cat-btn ${activeCat === c.id ? 'active' : ''}" onclick="setCat(${c.id})">${c.icon || ''} ${c.name}</button>`;
+    const cidStr = String(c.id).replace(/'/g, "\\'");
+    html += '<button class="cat-btn ' + (String(activeCat) === String(c.id) ? 'active' : '') + '" onclick="setCat(\'' + cidStr + '\')">' + (c.icon || '') + ' ' + c.name + '</button>';
   });
   bar.innerHTML = html;
+  const pCat = document.getElementById('pCat');
+  if (pCat) {
+    pCat.innerHTML = state.categories.map(c => '<option value="' + c.id + '">' + c.name + '</option>').join('');
+  }
 }
 
 function setCat(id) { activeCat = id; renderCategories(); renderProducts(); }
 
 function renderProducts() {
-  const q = document.getElementById('searchInput').value.toLowerCase();
   const grid = document.getElementById('productGrid');
-  const filtered = state.products.filter(p => (activeCat === 'all' || p.category_id == activeCat) && p.name.toLowerCase().includes(q));
+  if (!grid) return;
+  const q = (document.getElementById('searchInput')?.value || '').toLowerCase();
+  const filtered = state.products.filter(p => (activeCat === 'all' || String(p.category_id) === String(activeCat)) && String(p.name || '').toLowerCase().includes(q));
   grid.innerHTML = filtered.map(p => {
-    const qtyInCart = cart.filter(c => c.product_id === p.id).reduce((s, c) => s + c.qty, 0);
+    const pidStr = String(p.id).replace(/'/g, "\\'");
+    const qtyInCart = cart.filter(c => String(c.product_id) === String(p.id)).reduce((s, c) => s + c.qty, 0);
     const imgSrc = p.image_url || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=300&q=80';
-    return `<div class="prod-card ${p.is_available === false ? 'soldout' : ''}" onclick="addToCart(${p.id})">
-      ${qtyInCart ? `<span class="prod-badge">${qtyInCart}</span>` : ''}
-      <img class="prod-img" src="${imgSrc}" onerror="this.onerror=null;this.src='https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=300&q=80';">
-      <div class="prod-name">${p.name}</div>
-      <div class="prod-price">${fmtUsd(p.price_usd)}</div>
-    </div>`;
+    return '<div class="prod-card ' + (p.is_available === false ? 'soldout' : '') + '" onclick="addToCart(\'' + pidStr + '\')">' +
+      (qtyInCart ? '<span class="prod-badge">' + qtyInCart + '</span>' : '') +
+      '<img class="prod-img" src="' + imgSrc + '" onerror="this.onerror=null;this.src=\'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=300&q=80\';">' +
+      '<div class="prod-name">' + p.name + '</div>' +
+      '<div class="prod-price">' + fmtUsd(p.price_usd) + '</div>' +
+    '</div>';
   }).join('');
 }
 
 function isDrinkProduct(p) {
   if (!p) return true;
-  const prod = state.products.find(x => Number(x.id) === Number(p.product_id ?? p.id)) || p;
-  if (prod.has_sweet_ice === false || prod.has_sweet_ice === 0 || String(prod.has_sweet_ice).toUpperCase() === 'FALSE') {
-    return false;
-  }
-  if (prod.has_sweet_ice === true || prod.has_sweet_ice === 1 || String(prod.has_sweet_ice).toUpperCase() === 'TRUE') {
-    return true;
-  }
+  const pid = p.product_id !== undefined ? p.product_id : p.id;
+  const prod = state.products.find(x => String(x.id) === String(pid)) || p;
+  if (prod.has_sweet_ice === false || prod.has_sweet_ice === 0 || String(prod.has_sweet_ice).toUpperCase() === 'FALSE') return false;
+  if (prod.has_sweet_ice === true || prod.has_sweet_ice === 1 || String(prod.has_sweet_ice).toUpperCase() === 'TRUE') return true;
   if (p.is_drink === false) return false;
   const catId = Number(prod.category_id);
-  const cat = (state.categories || []).find(c => Number(c.id) === catId);
-  const text = `${cat?.name || ''} ${prod.name || ''}`.toLowerCase();
-  const nonDrinkKeywords = [
-    'នំ', 'អាហារ', 'សម្រន់', 'បាយ', 'គុយទាវ', 'សាំងវិច', 'ខេក',
-    'គ្រឿងអលង្ការ', 'ក្រវិល', 'ចិញ្ចៀន', 'ខ្សែក', 'កងដៃ', 'កងជើង',
-    'food', 'snack', 'cake', 'bread', 'croissant', 'sandwich', 'jewelry', 'ring', 'necklace'
-  ];
-  if (nonDrinkKeywords.some(kw => text.includes(kw))) return false;
-  if (catId === 4) return false;
+  const cat = (state.categories || []).find(c => String(c.id) === String(prod.category_id));
+  const text = ((cat && cat.name ? cat.name : '') + ' ' + (prod.name || '')).toLowerCase();
+  const nonDrinkKeywords = ['នំ', 'អាហារ', 'សម្រន់', 'បាយ', 'គុយទាវ', 'សាំងវិច', 'ខេក', 'food', 'snack', 'cake', 'bread', 'croissant', 'sandwich'];
+  if (nonDrinkKeywords.some(kw => text.includes(kw)) || catId === 4) return false;
   return true;
 }
 
 function addToCart(prodId) {
-  const p = state.products.find(x => x.id === prodId);
+  const p = state.products.find(x => String(x.id) === String(prodId));
   if (!p) return;
   const drink = isDrinkProduct(p);
   const defSize = drink ? 'M' : '';
   const defSugar = drink ? '50%' : '';
   const defIce = drink ? 'ធម្មតា' : '';
-  const idx = cart.findIndex(c => c.product_id === prodId && (c.size || '') === defSize && (c.sugar_level || '') === defSugar && (c.ice_level || '') === defIce && !c.note);
+  const idx = cart.findIndex(c => String(c.product_id) === String(prodId) && (c.size || '') === defSize && (c.sugar_level || '') === defSugar && (c.ice_level || '') === defIce && !c.note);
   if (idx > -1) cart[idx].qty++;
   else cart.push({
     product_id: p.id, name: p.name, base_price: Number(p.price_usd), unit_price: Number(p.price_usd),
@@ -208,21 +219,22 @@ function addToCart(prodId) {
 
 function renderDiscountOptions() {
   const sel = document.getElementById('discountSelect');
+  if (!sel) return;
   const cur = sel.value;
-  sel.innerHTML = `<option value="none">គ្មានបញ្ចុះតម្លៃ</option>` +
-    state.discounts.map(d => `<option value="d_${d.id}">${d.name}</option>`).join('') +
-    `<option value="custom">បញ្ចុះផ្ទាល់ដៃ ($)</option>`;
+  sel.innerHTML = '<option value="none">គ្មានបញ្ចុះតម្លៃ</option>' +
+    state.discounts.map(d => '<option value="d_' + d.id + '">' + d.name + '</option>').join('') +
+    '<option value="custom">បញ្ចុះផ្ទាល់ដៃ ($)</option>';
   if (cur && Array.from(sel.options).some(o => o.value === cur)) sel.value = cur;
 }
 
 function calcTotals() {
   const subtotal = cart.reduce((s, i) => s + i.unit_price * i.qty, 0);
-  const sel = document.getElementById('discountSelect').value;
+  const sel = document.getElementById('discountSelect')?.value || 'none';
   const customInput = document.getElementById('customDiscount');
-  customInput.style.display = sel === 'custom' ? 'block' : 'none';
+  if (customInput) customInput.style.display = sel === 'custom' ? 'block' : 'none';
   let discount = 0, discountName = '';
   if (sel === 'custom') {
-    discount = Math.min(subtotal, Math.max(0, Number(customInput.value || 0)));
+    discount = Math.min(subtotal, Math.max(0, Number(customInput?.value || 0)));
     discountName = 'Custom';
   } else if (sel.startsWith('d_')) {
     const d = state.discounts.find(x => 'd_' + x.id === sel);
@@ -237,64 +249,42 @@ function calcTotals() {
 
 function renderCart() {
   const list = document.getElementById('cartList');
+  if (!list) return;
   if (!cart.length) {
-    list.innerHTML = `<div class="cart-empty">ចុចលើទំនិញខាងស្តាំដើម្បីបញ្ចូលក្នុងកន្ត្រក</div>`;
+    list.innerHTML = '<div class="cart-empty">ចុចលើទំនិញខាងស្តាំដើម្បីបញ្ចូលក្នុងកន្ត្រក</div>';
   } else {
     list.innerHTML = cart.map((item, idx) => {
       const showDrinkMods = isDrinkProduct(item);
-      const sizeLabel = (showDrinkMods && item.size) ? ` (${item.size})` : '';
+      const sizeLabel = (showDrinkMods && item.size) ? ' (' + item.size + ')' : '';
       const metaParts = [fmtUsd(item.unit_price)];
       if (showDrinkMods) {
-        if (item.sugar_level) metaParts.push(`ផ្អែម ${item.sugar_level}`);
-        if (item.ice_level) metaParts.push(`ទឹកកក ${item.ice_level}`);
+        if (item.sugar_level) metaParts.push('ផ្អែម ' + item.sugar_level);
+        if (item.ice_level) metaParts.push('ទឹកកក ' + item.ice_level);
       }
       if (item.note) metaParts.push(item.note);
-
-      return `
-      <div class="cart-row ${expandedCartIdx === idx ? 'expanded' : ''}">
-        <div class="cart-row-main" onclick="toggleExpand(${idx})">
-          <div>
-            <div class="cart-item-name">${item.name}${sizeLabel}</div>
-            <div class="cart-item-meta">${metaParts.join(' • ')}</div>
-          </div>
-          <div class="inline-qty" onclick="event.stopPropagation()">
-            <button onclick="changeQty(${idx}, -1)">−</button>
-            <strong style="min-width:20px; text-align:center;">${item.qty}</strong>
-            <button onclick="changeQty(${idx}, 1)">+</button>
-          </div>
-          <div style="text-align:right; font-weight:700;">${fmtUsd(item.unit_price * item.qty)}</div>
-          <div style="text-align:center;" onclick="event.stopPropagation()">
-            <button class="btn-x" onclick="removeCartItem(${idx})">✖</button>
-          </div>
-        </div>
-        <div class="cart-mod">
-          <div class="mod-line">
-            <span class="mod-label">ចំនួន</span>
-            <button class="qty-btn" onclick="changeQty(${idx}, -1)">-</button>
-            <strong style="padding:0 6px;">${item.qty}</strong>
-            <button class="qty-btn" onclick="changeQty(${idx}, 1)">+</button>
-            <span style="margin-left:auto;"></span>
-            <button class="btn btn-danger btn-sm" onclick="removeCartItem(${idx})">លុប</button>
-          </div>
-          ${showDrinkMods ? `
-          <div class="mod-line">
-            <span class="mod-label">ទំហំ</span>
-            ${['M','L'].map(sz => `<button class="chip ${(item.size || 'M')===sz?'active':''}" onclick="setMod(${idx},'size','${sz}')">${sz==='L'?'L (+$0.50)':'M'}</button>`).join('')}
-          </div>
-          <div class="mod-line">
-            <span class="mod-label">ផ្អែម</span>
-            ${['0%','25%','50%','75%','100%'].map(s => `<button class="chip ${(item.sugar_level || '50%')===s?'active':''}" onclick="setMod(${idx},'sugar_level','${s}')">${s}</button>`).join('')}
-          </div>
-          <div class="mod-line">
-            <span class="mod-label">ទឹកកក</span>
-            ${['ធម្មតា','តិច','គ្មាន'].map(ic => `<button class="chip ${(item.ice_level || 'ធម្មតា')===ic?'active':''}" onclick="setMod(${idx},'ice_level','${ic}')">${ic}</button>`).join('')}
-          </div>` : ''}
-          <div class="mod-line">
-            <span class="mod-label">ចំណាំ</span>
-            <input value="${item.note || ''}" placeholder="បន្ថែមកំណត់ចំណាំ..." style="flex:1; padding:4px 8px; border:1px solid var(--border); border-radius:6px; font-size:12px; background:#0f172a; color:#fff;" onchange="setMod(${idx},'note',this.value)">
-          </div>
-        </div>
-      </div>`;
+      const drinkHtml = showDrinkMods ? (
+        '<div class="mod-line"><span class="mod-label">ទំហំ</span>' +
+          ['M','L'].map(sz => '<button class="chip ' + ((item.size || 'M')===sz?'active':'') + '" onclick="setMod(' + idx + ',\'size\',\'' + sz + '\')">' + (sz==='L'?'L (+$0.50)':'M') + '</button>').join('') +
+        '</div>' +
+        '<div class="mod-line"><span class="mod-label">ផ្អែម</span>' +
+          ['0%','25%','50%','75%','100%'].map(s => '<button class="chip ' + ((item.sugar_level || '50%')===s?'active':'') + '" onclick="setMod(' + idx + ',\'sugar_level\',\'' + s + '\')">' + s + '</button>').join('') +
+        '</div>' +
+        '<div class="mod-line"><span class="mod-label">ទឹកកក</span>' +
+          ['ធម្មតា','តិច','គ្មាន'].map(ic => '<button class="chip ' + ((item.ice_level || 'ធម្មតា')===ic?'active':'') + '" onclick="setMod(' + idx + ',\'ice_level\',\'' + ic + '\')">' + ic + '</button>').join('') +
+        '</div>'
+      ) : '';
+      return '<div class="cart-row ' + (expandedCartIdx === idx ? 'expanded' : '') + '">' +
+        '<div class="cart-row-main" onclick="toggleExpand(' + idx + ')">' +
+          '<div><div class="cart-item-name">' + item.name + sizeLabel + '</div><div class="cart-item-meta">' + metaParts.join(' • ') + '</div></div>' +
+          '<div class="inline-qty" onclick="event.stopPropagation()"><button onclick="changeQty(' + idx + ', -1)">−</button><strong style="min-width:20px; text-align:center;">' + item.qty + '</strong><button onclick="changeQty(' + idx + ', 1)">+</button></div>' +
+          '<div style="text-align:right; font-weight:700;">' + fmtUsd(item.unit_price * item.qty) + '</div>' +
+          '<div style="text-align:center;" onclick="event.stopPropagation()"><button class="btn-x" onclick="removeCartItem(' + idx + ')">✖</button></div>' +
+        '</div>' +
+        '<div class="cart-mod">' +
+          '<div class="mod-line"><span class="mod-label">ចំនួន</span><button class="qty-btn" onclick="changeQty(' + idx + ', -1)">-</button><strong style="padding:0 6px;">' + item.qty + '</strong><button class="qty-btn" onclick="changeQty(' + idx + ', 1)">+</button><span style="margin-left:auto;"></span><button class="btn btn-danger btn-sm" onclick="removeCartItem(' + idx + ')">លុប</button></div>' +
+          drinkHtml +
+          '<div class="mod-line"><span class="mod-label">ចំណាំ</span><input value="' + (item.note || '') + '" placeholder="បន្ថែមកំណត់ចំណាំ..." style="flex:1; padding:4px 8px; border:1px solid var(--border); border-radius:6px; font-size:12px;" onchange="setMod(' + idx + ',\'note\',this.value)"></div>' +
+        '</div></div>';
     }).join('');
   }
   const t = calcTotals();
@@ -312,23 +302,23 @@ function setMod(idx, key, val) {
   if (key === 'size') cart[idx].unit_price = cart[idx].base_price + (val === 'L' ? 0.5 : 0);
   renderCart();
 }
-function clearCart() { cart = []; expandedCartIdx = -1; document.getElementById('discountSelect').value = 'none'; renderCart(); renderProducts(); }
+function clearCart() { cart = []; expandedCartIdx = -1; const ds = document.getElementById('discountSelect'); if (ds) ds.value = 'none'; renderCart(); renderProducts(); }
 
 function setCoCurrency(curr) {
   const rate = Number(state.settings.exchangeRate || 4100);
   const currentNum = Number(receivedStr || 0);
   if (curr !== coCurrency) {
-    if (curr === 'KHR') {
-      receivedStr = String(Math.round((currentNum * rate) / 100) * 100 || 0);
-    } else {
+    if (curr === 'KHR') receivedStr = String(Math.round((currentNum * rate) / 100) * 100 || 0);
+    else {
       const usdVal = currentNum / rate;
       receivedStr = usdVal > 0 ? usdVal.toFixed(2) : '0';
     }
     coCurrency = curr;
   }
-  document.getElementById('btnCurrUsd').classList.toggle('active', curr === 'USD');
-  document.getElementById('btnCurrKhr').classList.toggle('active', curr === 'KHR');
-  document.getElementById('coRecLabel').textContent = curr === 'USD' ? 'ប្រាក់ទទួល (USD $)' : 'ប្រាក់ទទួល (KHR ៛)';
+  document.getElementById('btnCurrUsd')?.classList.toggle('active', curr === 'USD');
+  document.getElementById('btnCurrKhr')?.classList.toggle('active', curr === 'KHR');
+  const lbl = document.getElementById('coRecLabel');
+  if (lbl) lbl.textContent = curr === 'USD' ? 'ប្រាក់ទទួល (USD $)' : 'ប្រាក់ទទួល (KHR ៛)';
   updateCheckoutCalc(true);
   const inp = document.getElementById('coReceived');
   if (inp) { inp.focus(); inp.select(); }
@@ -341,25 +331,27 @@ function openCheckout() {
   document.getElementById('coTotalKhr').textContent = fmtKhr(t.total);
   coCurrency = 'USD';
   receivedStr = t.total.toFixed(2);
-  document.getElementById('btnCurrUsd').classList.add('active');
-  document.getElementById('btnCurrKhr').classList.remove('active');
-  document.getElementById('coRecLabel').textContent = 'ប្រាក់ទទួល (USD $)';
+  document.getElementById('btnCurrUsd')?.classList.add('active');
+  document.getElementById('btnCurrKhr')?.classList.remove('active');
+  const lbl = document.getElementById('coRecLabel');
+  if (lbl) lbl.textContent = 'ប្រាក់ទទួល (USD $)';
   updateCheckoutCalc(true);
-  document.getElementById('checkoutModal').classList.add('open');
+  document.getElementById('checkoutModal')?.classList.add('open');
   setTimeout(() => { const el = document.getElementById('coReceived'); if (el) { el.focus(); el.select(); } }, 50);
 }
-function closeCheckout() { document.getElementById('checkoutModal').classList.remove('open'); }
+function closeCheckout() { document.getElementById('checkoutModal')?.classList.remove('open'); }
 function selectPay(method, btn) {
   selectedPay = method;
   document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  if (btn) btn.classList.add('active');
   const box = document.getElementById('khqrBox');
   const img = document.getElementById('khqrPreview');
   const ph = document.getElementById('khqrPlaceholder');
+  if (!box) return;
   if (method !== 'Cash') {
     box.style.display = 'block';
-    if (state.settings.khqrImage) { img.src = state.settings.khqrImage; img.style.display = 'block'; ph.style.display = 'none'; }
-    else { img.style.display = 'none'; ph.style.display = 'block'; }
+    if (state.settings.khqrImage && img) { img.src = state.settings.khqrImage; img.style.display = 'block'; if (ph) ph.style.display = 'none'; }
+    else { if (img) img.style.display = 'none'; if (ph) ph.style.display = 'block'; }
   } else box.style.display = 'none';
 }
 function numKey(k) {
@@ -398,22 +390,23 @@ function onCoReceivedInput(val) {
   receivedStr = raw === '' ? '0' : raw;
   updateCheckoutCalc(false);
 }
-function updateCheckoutCalc(syncInput = true) {
+function updateCheckoutCalc(syncInput) {
   const t = calcTotals();
   const rate = Number(state.settings.exchangeRate || 4100);
   const rawNum = Number(receivedStr || 0);
   const recUsd = coCurrency === 'KHR' ? (rawNum / rate) : rawNum;
   const chgUsd = Math.max(0, recUsd - t.total);
   const inpUsd = document.getElementById('coReceived');
-  if (inpUsd && syncInput) inpUsd.value = receivedStr;
-  document.getElementById('coChange').textContent = `${fmtUsd(chgUsd)} (${fmtKhr(chgUsd)})`;
+  if (inpUsd && syncInput !== false) inpUsd.value = receivedStr;
+  const chgEl = document.getElementById('coChange');
+  if (chgEl) chgEl.textContent = fmtUsd(chgUsd) + ' (' + fmtKhr(chgUsd) + ')';
 }
 
 async function completeOrder(doPrint) {
   const t = calcTotals();
   const now = new Date();
   const code = 'SC-' + now.toISOString().slice(2,10).replace(/-/g,'') + '-' + String(state.orders.length + 1).padStart(3, '0') + '-' + String(now.getTime()).slice(-4);
-  const itemsCopy = structuredClone(cart);
+  const itemsCopy = JSON.parse(JSON.stringify(cart));
   const order = {
     id: Date.now(),
     order_code: code,
@@ -424,7 +417,7 @@ async function completeOrder(doPrint) {
     exchange_rate: Number(state.settings.exchangeRate || 4100),
     total_khr: Math.round(t.total * Number(state.settings.exchangeRate || 4100)),
     payment_method: selectedPay,
-    order_type: document.getElementById('orderTypeSelect').value,
+    order_type: document.getElementById('orderTypeSelect')?.value || 'Takeaway',
     created_at: now.toISOString(),
     synced: false,
     items: itemsCopy,
@@ -435,7 +428,7 @@ async function completeOrder(doPrint) {
   closeCheckout();
   clearCart();
   if (doPrint) printReceipt(order);
-  if (state.settings.apiUrl && navigator.onLine) {
+  if (getApiUrl() && navigator.onLine) {
     await pushOrderToBackend(order, 'create');
     renderOrders();
   }
@@ -444,35 +437,63 @@ async function completeOrder(doPrint) {
 function printReceipt(o) {
   const items = extractOrderItems(o);
   const el = document.getElementById('receipt-print');
-  el.innerHTML = `
-    <div style="text-align:center; border-bottom:1px dashed #000; padding-bottom:6px; margin-bottom:6px;">
-      <div style="font-size:16px; font-weight:700;">${state.settings.shopName}</div>
-      <div style="font-size:11px;">${state.settings.shopAddress}</div>
-      <div style="font-size:11px; margin-top:4px;">${o.order_code} • ${new Date(o.created_at).toLocaleString()}</div>
-    </div>
-    <table style="width:100%; font-size:12px; border-collapse:collapse;">
-      ${items.map(i => {
-        const drink = isDrinkProduct(i);
-        const sizeLabel = (drink && i.size) ? ` (${i.size})` : '';
-        const subTxt = (drink && (i.sugar_level || i.ice_level))
-          ? `<div style="font-size:10px;">ផ្អែម ${i.sugar_level || '-'}, ទឹកកក ${i.ice_level || '-'}${i.note ? ' • ' + i.note : ''}</div>`
-          : (i.note ? `<div style="font-size:10px;">${i.note}</div>` : '');
-        return `<tr><td>${i.name}${sizeLabel} x${i.qty}${subTxt}</td><td style="text-align:right; vertical-align:top;">${fmtUsd(i.unit_price * i.qty)}</td></tr>`;
-      }).join('')}
-    </table>
-    <div style="border-top:1px dashed #000; margin-top:6px; padding-top:6px; font-size:12px;">
-      <div style="display:flex; justify-content:space-between;"><span>សរុបរង:</span><span>${fmtUsd(o.subtotal)}</span></div>
-      ${o.discount > 0 ? `<div style="display:flex; justify-content:space-between;"><span>បញ្ចុះតម្លៃ (${o.discount_name}):</span><span>-${fmtUsd(o.discount)}</span></div>` : ''}
-      <div style="display:flex; justify-content:space-between; font-weight:700; font-size:14px;"><span>ត្រូវបង់:</span><span>${fmtUsd(o.total_usd)}</span></div>
-      <div style="display:flex; justify-content:space-between;"><span>ប្រាក់រៀល:</span><span>${Number(o.total_khr || 0).toLocaleString()} ៛</span></div>
-      <div style="display:flex; justify-content:space-between;"><span>ទូទាត់:</span><span>${o.payment_method} (${o.order_type})</span></div>
-    </div>
-    <div style="text-align:center; margin-top:10px; font-size:11px;">សូមអរគុណ! សង្ឃឹមថាបានជួបគ្នាម្តងទៀត ☕</div>`;
+  if (!el) return;
+  el.innerHTML = '<div style="text-align:center; border-bottom:1px dashed #000; padding-bottom:6px; margin-bottom:6px;">' +
+    '<div style="font-size:16px; font-weight:700;">' + state.settings.shopName + '</div>' +
+    '<div style="font-size:11px;">' + state.settings.shopAddress + '</div>' +
+    '<div style="font-size:11px; margin-top:4px;">' + o.order_code + ' • ' + new Date(o.created_at).toLocaleString() + '</div></div>' +
+    '<table style="width:100%; font-size:12px; border-collapse:collapse;">' +
+    items.map(i => {
+      const drink = isDrinkProduct(i);
+      const sizeLabel = (drink && i.size) ? ' (' + i.size + ')' : '';
+      const subTxt = (drink && (i.sugar_level || i.ice_level))
+        ? '<div style="font-size:10px;">ផ្អែម ' + (i.sugar_level || '-') + ', ទឹកកក ' + (i.ice_level || '-') + (i.note ? ' • ' + i.note : '') + '</div>'
+        : (i.note ? '<div style="font-size:10px;">' + i.note + '</div>' : '');
+      return '<tr><td>' + i.name + sizeLabel + ' x' + i.qty + subTxt + '</td><td style="text-align:right; vertical-align:top;">' + fmtUsd(i.unit_price * i.qty) + '</td></tr>';
+    }).join('') +
+    '</table><div style="border-top:1px dashed #000; margin-top:6px; padding-top:6px; font-size:12px;">' +
+    '<div style="display:flex; justify-content:space-between;"><span>សរុបរង:</span><span>' + fmtUsd(o.subtotal) + '</span></div>' +
+    (o.discount > 0 ? '<div style="display:flex; justify-content:space-between;"><span>បញ្ចុះតម្លៃ (' + o.discount_name + '):</span><span>-' + fmtUsd(o.discount) + '</span></div>' : '') +
+    '<div style="display:flex; justify-content:space-between; font-weight:700; font-size:14px;"><span>ត្រូវបង់:</span><span>' + fmtUsd(o.total_usd) + '</span></div>' +
+    '<div style="display:flex; justify-content:space-between;"><span>ប្រាក់រៀល:</span><span>' + Number(o.total_khr || 0).toLocaleString() + ' ៛</span></div>' +
+    '<div style="display:flex; justify-content:space-between;"><span>ទូទាត់:</span><span>' + o.payment_method + ' (' + o.order_type + ')</span></div></div>' +
+    '<div style="text-align:center; margin-top:10px; font-size:11px;">សូមអរគុណ! សង្ឃឹមថាបានជួបគ្នាម្តងទៀត ☕</div>';
   window.print();
 }
 
-async function pushOrderToBackend(order, action = 'create') {
-  const url = (state.settings.apiUrl || '').trim();
+async function syncCatalogToBackend(showToast) {
+  const url = getApiUrl();
+  if (!url) return false;
+  catalogDirty = true;
+  updateSyncIndicator();
+  if (!navigator.onLine) return false;
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'sync_catalog',
+        categories: state.categories,
+        products: state.products,
+        discounts: state.discounts,
+        apiKey: getApiKey()
+      })
+    });
+    const data = await res.json();
+    if (data.status === 'success') {
+      catalogDirty = false;
+      updateSyncIndicator();
+      if (showToast) alert('✅ បាន Sync ម៉ឺនុយទៅ Google Sheets រួចរាល់!');
+      return true;
+    }
+  } catch (e) {
+    console.warn('Catalog sync failed:', e);
+  }
+  return false;
+}
+
+async function pushOrderToBackend(order, action) {
+  const url = getApiUrl();
   if (!url) return false;
   try {
     const itemsArr = extractOrderItems(order);
@@ -485,16 +506,13 @@ async function pushOrderToBackend(order, action = 'create') {
         items_json: JSON.stringify(itemsArr),
         subtotal_usd: order.subtotal,
         discount_usd: order.discount,
-        action,
-        apiKey: ''
+        action: action || 'create',
+        apiKey: getApiKey()
       })
     });
     const data = await res.json();
     if (data.status === 'success') {
-      if (action !== 'delete') {
-        order.synced = true;
-        saveState();
-      }
+      if (action !== 'delete') { order.synced = true; saveState(); }
       return true;
     }
   } catch (e) { console.warn('Sync offline:', e); }
@@ -502,71 +520,63 @@ async function pushOrderToBackend(order, action = 'create') {
 }
 
 let isSyncing = false;
-async function syncPendingOrders(silent = false) {
+async function syncPendingOrders() {
   if (isSyncing) return;
-  const url = (state.settings.apiUrl || '').trim();
-  if (!url) {
-    if (!silent) alert('សូមបញ្ចូល Google Apps Script URL ក្នុងផ្ទាំង «⚙️ កំណត់» ជាមុនសិន!');
-    return;
-  }
-  if (!navigator.onLine) {
-    if (!silent) alert('មិនមានអ៊ីនធឺណិតទេ! ប្រព័ន្ធនឹង Sync ស្វ័យប្រវត្តិពេលភ្ជាប់អ៊ីនធឺណិតវិញ។');
-    return;
-  }
+  const url = getApiUrl();
+  if (!url || !navigator.onLine) return;
   const pending = state.orders.filter(o => !o.synced);
-  if (!pending.length) return;
+  if (!pending.length && !catalogDirty) return;
   isSyncing = true;
   try {
-    for (const o of pending) {
-      if (await pushOrderToBackend(o, o._syncAction || 'create')) {
-        delete o._syncAction;
-      }
+    if (catalogDirty) await syncCatalogToBackend(false);
+    for (let i = 0; i < pending.length; i++) {
+      const o = pending[i];
+      if (await pushOrderToBackend(o, o._syncAction || 'create')) delete o._syncAction;
     }
     saveState();
     renderOrders();
-  } finally {
-    isSyncing = false;
-  }
+  } finally { isSyncing = false; }
 }
 
 async function syncAllNow() {
-  if (!state.settings.apiUrl) return alert('សូមបញ្ចូល Google Apps Script URL ក្នុងផ្ទាំង «⚙️ កំណត់» ជាមុនសិន!');
+  if (!getApiUrl()) return alert('សូមបញ្ចូល Google Apps Script URL ក្នុងផ្ទាំង «⚙️ កំណត់» ជាមុនសិន!');
   if (!navigator.onLine) return alert('មិនមានអ៊ីនធឺណិតទេ! ប្រព័ន្ធកំពុងរក្សាទុកក្នុងម៉ាស៊ីន (Offline)។');
-  await syncPendingOrders(true);
+  await syncPendingOrders();
   await pullFromBackend(false);
 }
 
 let isPulling = false;
-async function pullFromBackend(silent = false) {
+async function pullFromBackend(silent) {
   if (isPulling) return;
-  const url = (document.getElementById('setApiUrl')?.value || state.settings.apiUrl || '').trim();
+  const url = getApiUrl();
   if (!url || !navigator.onLine) return;
+  if (catalogDirty) await syncCatalogToBackend(false);
   isPulling = true;
   try {
     const sep = url.includes('?') ? '&' : '?';
-    const res = await fetch(url + sep + '_t=' + Date.now(), { cache: 'no-store' });
+    const keyParam = getApiKey() ? ('&apiKey=' + encodeURIComponent(getApiKey())) : '';
+    const res = await fetch(url + sep + '_t=' + Date.now() + keyParam, { cache: 'no-store' });
     const data = await res.json();
     if (data.status !== 'success') {
       if (!silent) alert('មិនអាចទាញទិន្នន័យពី Google Sheets បានទេ៖ ' + (data.message || ''));
       return;
     }
-
     if (Array.isArray(data.categories) && data.categories.length) {
-      state.categories = data.categories.map(c => ({ id: Number(c.id), name: String(c.name || '').trim(), icon: String(c.icon || '☕') }));
+      state.categories = data.categories.map(c => ({ id: c.id, name: String(c.name || '').trim(), icon: String(c.icon || '☕') }));
     }
     if (Array.isArray(data.products) && data.products.length) {
-      const defMap = new Map(DEFAULT_DATA.products.map(dp => [Number(dp.id), dp.image_url]));
+      const defMap = new Map(DEFAULT_DATA.products.map(dp => [String(dp.id), dp.image_url]));
       state.products = data.products.filter(p => p && p.name).map((p, idx) => {
-        const pid = Number(p.id) || (1000 + idx);
+        const pid = (p.id !== undefined && p.id !== '') ? p.id : (1000 + idx);
         return {
           ...p,
           id: pid,
-          category_id: Number(p.category_id || 1),
+          category_id: p.category_id || 1,
           name: String(p.name).trim(),
           price_usd: Number(p.price_usd || 0),
           cost_usd: Number(p.cost_usd || 0),
           icon: String(p.icon || '☕'),
-          image_url: p.image_url || defMap.get(pid) || '',
+          image_url: p.image_url || defMap.get(String(pid)) || '',
           has_sweet_ice: p.has_sweet_ice === undefined || p.has_sweet_ice === '' ? undefined : (p.has_sweet_ice !== false && p.has_sweet_ice !== 0 && String(p.has_sweet_ice).toUpperCase() !== 'FALSE'),
           is_available: p.is_available !== false && p.is_available !== 'FALSE'
         };
@@ -575,13 +585,12 @@ async function pullFromBackend(silent = false) {
     if (Array.isArray(data.discounts)) {
       state.discounts = data.discounts
         .filter(d => d && d.name && d.is_active !== false && d.is_active !== 'FALSE')
-        .map((d, idx) => ({ id: Number(d.id) || (1000 + idx), name: String(d.name).trim(), type: d.type === 'fixed' ? 'fixed' : 'percent', value: Number(d.value || 0) }));
+        .map((d, idx) => ({ id: d.id || (1000 + idx), name: String(d.name).trim(), type: d.type === 'fixed' ? 'fixed' : 'percent', value: Number(d.value || 0) }));
     }
     if (Array.isArray(data.orders)) {
       const deletedCodes = new Set((state.deletedOrderCodes || []).map(String));
       const deletedIds = new Set((state.deletedOrderIds || []).map(String));
       const existingByCode = new Map((state.orders || []).map(ex => [String(ex.order_code || ''), ex]));
-
       const itemsByOrderKey = new Map();
       if (Array.isArray(data.order_items)) {
         data.order_items.forEach(row => {
@@ -591,8 +600,8 @@ async function pullFromBackend(silent = false) {
             product_id: row.product_id || '',
             name: String(row.product_name || row.name || '').trim(),
             qty: Number(row.qty || 1),
-            unit_price: Number(row.unit_price_usd ?? row.unit_price ?? 0),
-            unit_cost: Number(row.unit_cost_usd ?? row.unit_cost ?? 0),
+            unit_price: Number(row.unit_price_usd !== undefined ? row.unit_price_usd : (row.unit_price || 0)),
+            unit_cost: Number(row.unit_cost_usd !== undefined ? row.unit_cost_usd : (row.unit_cost || 0)),
             size: String(row.size || ''),
             sugar_level: String(row.sugar_level || ''),
             ice_level: String(row.ice_level || '')
@@ -604,7 +613,6 @@ async function pullFromBackend(silent = false) {
           });
         });
       }
-
       const merged = new Map();
       data.orders.forEach((o, idx) => {
         const code = String(o.order_code || o.id || ('ROW-' + (idx + 1))).trim();
@@ -613,15 +621,13 @@ async function pullFromBackend(silent = false) {
         const pulledItems = extractOrderItems(o);
         const sheetOrderItems = itemsByOrderKey.get(code) || (oid ? itemsByOrderKey.get(oid) : null) || [];
         const prev = existingByCode.get(code);
-        const finalItems = pulledItems.length
-          ? pulledItems
-          : (sheetOrderItems.length ? sheetOrderItems : (prev ? extractOrderItems(prev) : []));
-        const sub = Number(o.subtotal ?? o.subtotal_usd ?? o.total_usd ?? 0);
-        const disc = Number(o.discount ?? o.discount_usd ?? 0);
-        const tot = Number(o.total_usd ?? Math.max(0, sub - disc));
+        const finalItems = pulledItems.length ? pulledItems : (sheetOrderItems.length ? sheetOrderItems : (prev ? extractOrderItems(prev) : []));
+        const sub = Number(o.subtotal !== undefined ? o.subtotal : (o.subtotal_usd !== undefined ? o.subtotal_usd : (o.total_usd || 0)));
+        const disc = Number(o.discount !== undefined ? o.discount : (o.discount_usd || 0));
+        const tot = Number(o.total_usd !== undefined ? o.total_usd : Math.max(0, sub - disc));
         merged.set(code, {
           ...o,
-          id: Number(o.id) || (Date.now() + idx),
+          id: o.id || (Date.now() + idx),
           order_code: code,
           subtotal: sub,
           discount: disc,
@@ -636,17 +642,12 @@ async function pullFromBackend(silent = false) {
           synced: true
         });
       });
-
       (state.orders || []).forEach(localO => {
         const code = String(localO.order_code || '');
-        if (!localO.synced && code && !deletedCodes.has(code)) {
-          merged.set(code, localO);
-        }
+        if (!localO.synced && code && !deletedCodes.has(code)) merged.set(code, localO);
       });
-
       state.orders = Array.from(merged.values()).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
     }
-
     saveState();
     renderCategories();
     renderProducts();
@@ -656,49 +657,52 @@ async function pullFromBackend(silent = false) {
     renderMenuTable();
     renderReports();
     renderSettings();
-    if (!silent) alert('បានទាញទិន្នន័យពី Google Sheets រួចរាល់!');
+    if (!silent) alert('✅ បានទាញទិន្នន័យពី Google Sheets រួចរាល់!');
   } catch (e) {
-    if (!silent) alert('មិនអាចភ្ជាប់ Google Sheets បានទេ៖ ' + e.message);
-  } finally {
-    isPulling = false;
-  }
+    if (!silent) alert('❌ មិនអាចភ្ជាប់ Google Sheets បានទេ៖ ' + e.message);
+  } finally { isPulling = false; }
 }
 
 function updateSyncIndicator() {
   const dot = document.getElementById('syncDot');
   const txt = document.getElementById('syncText');
-  const pending = state.orders.filter(o => !o.synced).length;
-  if (!state.settings.apiUrl) { dot.className = 'dot'; txt.textContent = 'Offline Only'; }
-  else if (!navigator.onLine) { dot.className = 'dot pending'; txt.textContent = pending > 0 ? `Offline (${pending})` : 'Offline'; }
-  else if (pending > 0) { dot.className = 'dot pending'; txt.textContent = `រង់ចាំ Sync (${pending})`; }
+  if (!dot || !txt) return;
+  const pending = state.orders.filter(o => !o.synced).length + (catalogDirty ? 1 : 0);
+  if (!getApiUrl()) { dot.className = 'dot'; txt.textContent = 'Offline Only'; }
+  else if (!navigator.onLine) { dot.className = 'dot pending'; txt.textContent = pending > 0 ? 'Offline (' + pending + ')' : 'Offline'; }
+  else if (pending > 0) { dot.className = 'dot pending'; txt.textContent = 'រង់ចាំ Sync (' + pending + ')'; }
   else { dot.className = 'dot online'; txt.textContent = 'Cloud Synced'; }
 }
 window.addEventListener('offline', updateSyncIndicator);
 
 function renderOrders() {
+  const tbody = document.getElementById('ordersTable');
+  if (!tbody) return;
   const todayStr = toLocalDateStr(new Date());
   const todayOrders = (state.orders || []).filter(o => o && toLocalDateStr(o.created_at) === todayStr);
-  document.getElementById('ordersTable').innerHTML = todayOrders.map(o => {
+  tbody.innerHTML = todayOrders.map(o => {
+    const oidStr = String(o.id).replace(/'/g, "\\'");
     const arr = extractOrderItems(o);
-    const itemsHtml = arr.length
-      ? arr.map(i => `${i.name || i.product_name || 'Item'} x${i.qty || 1}`).join(', ')
-      : `<span style="color:var(--muted);">មិនមានបញ្ជីមុខទំនិញ</span>`;
-    return `
-      <tr>
-        <td><strong>${o.order_code}</strong></td>
-        <td>${new Date(o.created_at).toLocaleString()}</td>
-        <td>${itemsHtml}</td>
-        <td>${o.discount > 0 ? '-' + fmtUsd(o.discount) : '-'}</td>
-        <td><strong>${fmtUsd(o.total_usd)}</strong></td>
-        <td>${o.payment_method}</td>
-        <td>${o.synced ? '✅' : '⏳'}</td>
-        <td style="white-space:nowrap;">
-          <button class="btn btn-primary btn-sm" onclick="openEditOrder(${o.id})">✏️ កែ</button>
-          <button class="btn btn-light btn-sm" onclick='printReceipt(${JSON.stringify(o).replace(/'/g,"&#39;")})'>🖨️</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteOrder(${o.id})">លុប</button>
-        </td>
-      </tr>`;
+    const itemsHtml = arr.length ? arr.map(i => (i.name || i.product_name || 'Item') + ' x' + (i.qty || 1)).join(', ') : '<span style="color:var(--muted);">មិនមានបញ្ជីមុខទំនិញ</span>';
+    return '<tr>' +
+      '<td><strong>' + o.order_code + '</strong></td>' +
+      '<td>' + new Date(o.created_at).toLocaleString() + '</td>' +
+      '<td>' + itemsHtml + '</td>' +
+      '<td>' + (o.discount > 0 ? '-' + fmtUsd(o.discount) : '-') + '</td>' +
+      '<td><strong>' + fmtUsd(o.total_usd) + '</strong></td>' +
+      '<td>' + o.payment_method + '</td>' +
+      '<td>' + (o.synced ? '✅' : '⏳') + '</td>' +
+      '<td style="white-space:nowrap;">' +
+        '<button class="btn btn-primary btn-sm" onclick="openEditOrder(\'' + oidStr + '\')">✏️ កែ</button> ' +
+        '<button class="btn btn-light btn-sm" onclick="printOrderById(\'' + oidStr + '\')">🖨️</button> ' +
+        '<button class="btn btn-danger btn-sm" onclick="deleteOrder(\'' + oidStr + '\')">លុប</button>' +
+      '</td></tr>';
   }).join('') || '<tr><td colspan="8" style="text-align:center; color:var(--muted);">មិនទាន់មានប្រវត្តិលក់ថ្ងៃនេះនៅឡើយ</td></tr>';
+}
+
+function printOrderById(id) {
+  const o = state.orders.find(x => String(x.id) === String(id));
+  if (o) printReceipt(o);
 }
 
 function resizeImage(file, maxSize, cb) {
@@ -719,40 +723,148 @@ function resizeImage(file, maxSize, cb) {
   reader.readAsDataURL(file);
 }
 
+function handleProdImage(e) {
+  const f = e.target.files[0]; if (!f) return;
+  resizeImage(f, 240, dataUrl => {
+    document.getElementById('pImgData').value = dataUrl;
+    const thumb = document.getElementById('pImgThumb');
+    if (thumb) { thumb.src = dataUrl; thumb.style.display = 'inline-block'; }
+    const st = document.getElementById('imgPreviewStatus');
+    if (st) st.textContent = '✅ រូបភាពរួចរាល់!';
+  });
+}
+
+async function saveProduct() {
+  if (!verifyAdminPin('រក្សាទុក/កែប្រែម៉ឺនុយ')) return;
+  const idVal = document.getElementById('editProdId').value;
+  const existing = idVal ? state.products.find(p => String(p.id) === String(idVal)) : null;
+  const sweetIceSel = document.getElementById('pHasSweetIce');
+  const hasSweetIce = sweetIceSel ? (sweetIceSel.value !== '0') : true;
+  const catVal = document.getElementById('pCat').value;
+  const obj = {
+    id: existing ? existing.id : Date.now(),
+    name: document.getElementById('pName').value.trim(),
+    category_id: isNaN(Number(catVal)) ? catVal : Number(catVal),
+    price_usd: Number(document.getElementById('pPrice').value || 0),
+    cost_usd: Number(document.getElementById('pCost').value || 0),
+    icon: document.getElementById('pIcon')?.value || '☕',
+    image_url: document.getElementById('pImgData').value,
+    has_sweet_ice: hasSweetIce,
+    is_available: existing ? (existing.is_available !== false) : true
+  };
+  if (!obj.name || obj.price_usd <= 0) return alert('សូមបញ្ចូលឈ្មោះ និងតម្លៃលក់!');
+  const idx = existing ? state.products.findIndex(p => String(p.id) === String(existing.id)) : -1;
+  if (idx > -1) state.products[idx] = obj; else state.products.push(obj);
+  saveState(); resetProductForm(); renderMenuTable(); renderProducts();
+  const synced = await syncCatalogToBackend(false);
+  alert((idx > -1 ? 'បានកែប្រែទំនិញរួចរាល់!' : 'បានបន្ថែមទំនិញថ្មីរួចរាល់!') + (synced ? ' (បាន Sync ទៅ Google Sheets)' : ' (រក្សាទុកក្នុងម៉ាស៊ីន)'));
+}
+
+function editProduct(id) {
+  const p = state.products.find(x => String(x.id) === String(id));
+  if (!p) return alert('រកមិនឃើញទំនិញនេះទេ!');
+  renderCategories();
+  document.getElementById('editProdId').value = String(p.id);
+  document.getElementById('pName').value = p.name || '';
+  document.getElementById('pCat').value = String(p.category_id);
+  document.getElementById('pPrice').value = p.price_usd || '';
+  document.getElementById('pCost').value = p.cost_usd || 0;
+  document.getElementById('pImgData').value = p.image_url || '';
+  const sweetIceSel = document.getElementById('pHasSweetIce');
+  if (sweetIceSel) sweetIceSel.value = isDrinkProduct(p) ? '1' : '0';
+  const thumb = document.getElementById('pImgThumb');
+  if (thumb) {
+    if (p.image_url) { thumb.src = p.image_url; thumb.style.display = 'inline-block'; }
+    else { thumb.src = ''; thumb.style.display = 'none'; }
+  }
+  const titleEl = document.getElementById('menuFormTitle');
+  if (titleEl) titleEl.textContent = '✏️ កែប្រែទំនិញ (' + p.name + ')';
+  const wrap = document.querySelector('#view-menu .page-wrap');
+  if (wrap) wrap.scrollTo({ top: 0, behavior: 'smooth' });
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  setTimeout(() => { const inp = document.getElementById('pName'); if (inp) { inp.focus(); inp.select(); } }, 200);
+}
+
+function resetProductForm() {
+  ['editProdId','pName','pPrice','pCost','pImgData','pImgFile'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  const thumb = document.getElementById('pImgThumb');
+  if (thumb) { thumb.src = ''; thumb.style.display = 'none'; }
+  const st = document.getElementById('imgPreviewStatus');
+  if (st) st.textContent = '';
+  const titleEl = document.getElementById('menuFormTitle');
+  if (titleEl) titleEl.textContent = '➕ បន្ថែមភេសជ្ជៈថ្មី';
+}
+
+async function toggleStock(id) {
+  if (!verifyAdminPin('ប្តូរស្ថានភាពស្តុកម៉ឺនុយ')) return;
+  const p = state.products.find(x => String(x.id) === String(id));
+  if (p) {
+    p.is_available = p.is_available === false ? true : false;
+    saveState(); renderMenuTable(); renderProducts();
+    await syncCatalogToBackend(false);
+  }
+}
+
+async function deleteProduct(id) {
+  if (!verifyAdminPin('លុបម៉ឺនុយ')) return;
+  if (!confirm('លុបទំនិញនេះចេញពីម៉ឺនុយ និង Google Sheets?')) return;
+  state.products = state.products.filter(x => String(x.id) !== String(id));
+  saveState(); renderMenuTable(); renderProducts();
+  await syncCatalogToBackend(false);
+}
+
 function renderMenuTable() {
-  document.getElementById('menuTable').innerHTML = state.products.map(p => {
-    const cat = state.categories.find(c => c.id == p.category_id)?.name || '-';
-    return `<tr>
-      <td><img src="${p.image_url || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=300&q=80'}" style="width:42px;height:42px;border-radius:8px;object-fit:cover;"></td>
-      <td><strong>${p.name}</strong></td>
-      <td>${cat}</td>
-      <td>${fmtUsd(p.price_usd)}</td>
-      <td>${fmtUsd(p.cost_usd)}</td>
-      <td>${isDrinkProduct(p) ? '🧊 មានស្ករ & ទឹកកក' : '🚫 គ្មានស្ករ & ទឹកកក'}</td>
-      <td><span style="padding:4px 10px;border-radius:99px;font-size:12px;font-weight:700;background:${p.is_available===false?'#334155':'rgba(34,197,94,0.2)'};color:${p.is_available===false?'#cbd5e1':'#4ade80'};">${p.is_available===false?'អស់ស្តុក':'មានលក់'}</span></td>
-    </tr>`;
+  const tbody = document.getElementById('menuTable');
+  if (!tbody) return;
+  tbody.innerHTML = state.products.map(p => {
+    const pidStr = String(p.id).replace(/'/g, "\\'");
+    const catObj = state.categories.find(c => String(c.id) === String(p.category_id));
+    const cat = catObj ? catObj.name : '-';
+    return '<tr>' +
+      '<td><img src="' + (p.image_url || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=300&q=80') + '" style="width:42px;height:42px;border-radius:8px;object-fit:cover;"></td>' +
+      '<td><strong>' + p.name + '</strong><div style="font-size:11px;color:var(--muted);">' + (isDrinkProduct(p) ? '🧊 មានស្ករ & ទឹកកក' : '🚫 គ្មានស្ករ & ទឹកកក') + '</div></td>' +
+      '<td>' + cat + '</td>' +
+      '<td>' + fmtUsd(p.price_usd) + '</td>' +
+      '<td>' + fmtUsd(p.cost_usd) + '</td>' +
+      '<td><button type="button" class="btn btn-sm ' + (p.is_available===false?'btn-light':'btn-success') + '" onclick="toggleStock(\'' + pidStr + '\')">' + (p.is_available===false?'អស់ស្តុក':'មានលក់') + '</button></td>' +
+      '<td style="white-space:nowrap;">' +
+        '<button type="button" class="btn btn-light btn-sm" onclick="editProduct(\'' + pidStr + '\')">កែ</button> ' +
+        '<button type="button" class="btn btn-danger btn-sm" onclick="deleteProduct(\'' + pidStr + '\')">លុប</button>' +
+      '</td></tr>';
   }).join('');
 }
 
 function initReportFilters() {
   const now = new Date();
   const todayLocal = toLocalDateStr(now);
-  document.getElementById('repDate').value = todayLocal;
-  document.getElementById('repMonth').value = todayLocal.slice(0, 7);
-  const curY = now.getFullYear();
-  document.getElementById('repYear').innerHTML = [curY - 1, curY, curY + 1].map(y => `<option value="${y}" ${y===curY?'selected':''}>ឆ្នាំ ${y}</option>`).join('');
+  const rd = document.getElementById('repDate');
+  const rm = document.getElementById('repMonth');
+  const ry = document.getElementById('repYear');
+  if (rd) rd.value = todayLocal;
+  if (rm) rm.value = todayLocal.slice(0, 7);
+  if (ry) {
+    const curY = now.getFullYear();
+    ry.innerHTML = [curY - 1, curY, curY + 1].map(y => '<option value="' + y + '" ' + (y===curY?'selected':'') + '>ឆ្នាំ ' + y + '</option>').join('');
+  }
 }
 
 function renderReports() {
-  const mode = document.getElementById('repMode').value;
-  document.getElementById('repDate').style.display = mode === 'daily' ? 'inline-block' : 'none';
-  document.getElementById('repMonth').style.display = mode === 'monthly' ? 'inline-block' : 'none';
-  document.getElementById('repYear').style.display = mode === 'yearly' ? 'inline-block' : 'none';
-  document.getElementById('yearlyChartCard').style.display = mode === 'yearly' ? 'block' : 'none';
+  const mode = document.getElementById('repMode')?.value || 'daily';
+  const rd = document.getElementById('repDate');
+  const rm = document.getElementById('repMonth');
+  const ry = document.getElementById('repYear');
+  const yc = document.getElementById('yearlyChartCard');
+  if (rd) rd.style.display = mode === 'daily' ? 'inline-block' : 'none';
+  if (rm) rm.style.display = mode === 'monthly' ? 'inline-block' : 'none';
+  if (ry) ry.style.display = mode === 'yearly' ? 'inline-block' : 'none';
+  if (yc) yc.style.display = mode === 'yearly' ? 'block' : 'none';
 
-  const dVal = document.getElementById('repDate').value;
-  const mVal = document.getElementById('repMonth').value;
-  const yVal = document.getElementById('repYear').value;
+  const dVal = rd?.value || '';
+  const mVal = rm?.value || '';
+  const yVal = ry?.value || '';
 
   const filtered = state.orders.filter(o => {
     const dt = toLocalDateStr(o.created_at);
@@ -781,41 +893,31 @@ function renderReports() {
     byPay[o.payment_method].sum += Number(o.total_usd || 0);
   });
   document.getElementById('repPayTable').innerHTML = Object.entries(byPay).map(([k, v]) =>
-    `<tr><td><strong>${k}</strong></td><td style="text-align:center;">${v.count}</td><td style="text-align:right;">${fmtUsd(v.sum)}</td></tr>`
+    '<tr><td><strong>' + k + '</strong></td><td style="text-align:center;">' + v.count + '</td><td style="text-align:right;">' + fmtUsd(v.sum) + '</td></tr>'
   ).join('') || '<tr><td colspan="3" style="text-align:center; color:var(--muted);">គ្មានទិន្នន័យ</td></tr>';
 
   const byItem = {};
   filtered.forEach(o => {
     const arr = extractOrderItems(o);
-    if (arr.length) {
-      arr.forEach(i => {
-        const k = i.name || 'Unknown';
-        byItem[k] = byItem[k] || { qty: 0, rev: 0, isMissing: false };
-        byItem[k].qty += Number(i.qty || 1);
-        byItem[k].rev += Number(i.unit_price || 0) * Number(i.qty || 1);
-      });
-    } else if (Number(o.total_usd || 0) > 0) {
-      const k = 'មិនមានបញ្ជីមុខទំនិញ';
-      byItem[k] = byItem[k] || { qty: 0, rev: 0, isMissing: true };
-      byItem[k].qty += 1;
-      byItem[k].rev += Number(o.subtotal ?? o.total_usd ?? 0);
-    }
+    arr.forEach(i => {
+      const k = i.name || 'Unknown';
+      byItem[k] = byItem[k] || { qty: 0, rev: 0 };
+      byItem[k].qty += Number(i.qty || 1);
+      byItem[k].rev += Number(i.unit_price || 0) * Number(i.qty || 1);
+    });
   });
-  const topList = Object.entries(byItem).sort((a, b) => (a[1].isMissing === b[1].isMissing ? b[1].qty - a[1].qty : (a[1].isMissing ? 1 : -1))).slice(0, 10);
+  const topList = Object.entries(byItem).sort((a, b) => b[1].qty - a[1].qty).slice(0, 10);
   document.getElementById('repTopItemsTable').innerHTML = topList.map(([name, v]) =>
-    `<tr><td><strong style="${v.isMissing ? 'color:var(--muted);font-style:italic;' : ''}">${name}</strong></td><td style="text-align:center;">${v.isMissing ? '-' : v.qty}</td><td style="text-align:right;">${fmtUsd(v.rev)}</td></tr>`
+    '<tr><td><strong>' + name + '</strong></td><td style="text-align:center;">' + v.qty + '</td><td style="text-align:right;">' + fmtUsd(v.rev) + '</td></tr>'
   ).join('') || '<tr><td colspan="3" style="text-align:center; color:var(--muted);">គ្មានទិន្នន័យ</td></tr>';
 
   if (mode === 'yearly') {
     const months = Array(12).fill(0);
     filtered.forEach(o => { const m = new Date(o.created_at).getMonth(); months[m] += Number(o.total_usd || 0); });
     const maxV = Math.max(...months, 1);
-    document.getElementById('yearlyChart').innerHTML = months.map((v, i) => `
-      <div class="bar-col">
-        <div class="bar-val">${v > 0 ? '$' + v.toFixed(0) : ''}</div>
-        <div class="bar-fill" style="height:${(v / maxV) * 100}%;"></div>
-        <div class="bar-lbl">ខែ ${i + 1}</div>
-      </div>`).join('');
+    document.getElementById('yearlyChart').innerHTML = months.map((v, i) =>
+      '<div class="bar-col"><div class="bar-val">' + (v > 0 ? '$' + v.toFixed(0) : '') + '</div><div class="bar-fill" style="height:' + ((v / maxV) * 100) + '%;"></div><div class="bar-lbl">ខែ ' + (i + 1) + '</div></div>'
+    ).join('');
   }
 }
 
@@ -823,15 +925,20 @@ function renderSettings() {
   document.getElementById('setShopName').value = state.settings.shopName;
   document.getElementById('setShopAddress').value = state.settings.shopAddress;
   document.getElementById('setRate').value = state.settings.exchangeRate;
-  document.getElementById('setApiUrl').value = state.settings.apiUrl || '';
+  document.getElementById('setApiUrl').value = getApiUrl();
   document.getElementById('setLoginPin').value = state.settings.loginPin || '';
   document.getElementById('setAdminPin').value = state.settings.adminPin || '';
-  document.getElementById('categoriesTable').innerHTML = state.categories.map(c => `
-    <tr><td>${c.icon || '☕'}</td><td><strong>${c.name}</strong></td></tr>`
-  ).join('');
-  document.getElementById('discountsTable').innerHTML = state.discounts.map(d => `
-    <tr><td>${d.name}</td><td>${d.type === 'percent' ? '%' : '$'}</td><td>${d.value}</td></tr>`
-  ).join('');
+  const apiKeyInp = document.getElementById('setApiKey');
+  if (apiKeyInp) apiKeyInp.value = state.settings.apiKey || '';
+
+  document.getElementById('categoriesTable').innerHTML = state.categories.map(c => {
+    const cidStr = String(c.id).replace(/'/g, "\\'");
+    return '<tr><td>' + (c.icon || '☕') + '</td><td><strong>' + c.name + '</strong></td><td><button type="button" class="btn btn-danger btn-sm" onclick="delCategory(\'' + cidStr + '\')">លុប</button></td></tr>';
+  }).join('');
+  document.getElementById('discountsTable').innerHTML = state.discounts.map(d => {
+    const didStr = String(d.id).replace(/'/g, "\\'");
+    return '<tr><td>' + d.name + '</td><td>' + (d.type === 'percent' ? '%' : '$') + '</td><td>' + d.value + '</td><td><button type="button" class="btn btn-danger btn-sm" onclick="delDiscount(\'' + didStr + '\')">លុប</button></td></tr>';
+  }).join('');
 }
 
 function handleKhqrImage(e) {
@@ -843,57 +950,95 @@ function saveSettings() {
   state.settings.shopName = document.getElementById('setShopName').value;
   state.settings.shopAddress = document.getElementById('setShopAddress').value;
   state.settings.exchangeRate = Number(document.getElementById('setRate').value || 4100);
-  state.settings.apiUrl = document.getElementById('setApiUrl').value.trim();
+  state.settings.apiUrl = (document.getElementById('setApiUrl').value || '').trim() || FIXED_API_URL;
   state.settings.loginPin = document.getElementById('setLoginPin').value.trim();
   state.settings.adminPin = document.getElementById('setAdminPin').value.trim();
-  state.settings.apiKey = '';
+  const apiKeyInp = document.getElementById('setApiKey');
+  if (apiKeyInp) state.settings.apiKey = apiKeyInp.value.trim();
   saveState();
-  alert('បានរក្សាទុកការកំណត់រួចរាល់!');
+  alert('បានរក្សាទុកការកំណត់ក្នុងម៉ាស៊ីនរួចរាល់!');
+}
+
+async function addDiscount() {
+  if (!verifyAdminPin('បន្ថែមបញ្ចុះតម្លៃ')) return;
+  const name = document.getElementById('dName').value.trim();
+  const type = document.getElementById('dType').value;
+  const value = Number(document.getElementById('dVal').value || 0);
+  if (!name || value <= 0) return alert('សូមបញ្ចូលឈ្មោះ និងចំនួនបញ្ចុះតម្លៃ!');
+  state.discounts.push({ id: Date.now(), name, type, value });
+  saveState(); renderSettings(); renderDiscountOptions();
+  document.getElementById('dName').value = ''; document.getElementById('dVal').value = '';
+  await syncCatalogToBackend(false);
+}
+
+async function delDiscount(id) {
+  if (!verifyAdminPin('លុបបញ្ចុះតម្លៃ')) return;
+  if (!confirm('លុបប្រភេទបញ្ចុះតម្លៃនេះ?')) return;
+  state.discounts = state.discounts.filter(d => String(d.id) !== String(id));
+  saveState(); renderSettings(); renderDiscountOptions(); renderCart();
+  await syncCatalogToBackend(false);
+}
+
+async function addCategory() {
+  if (!verifyAdminPin('បន្ថែមប្រភេទម៉ឺនុយ')) return;
+  const name = document.getElementById('cName').value.trim();
+  const icon = document.getElementById('cIcon').value.trim() || '☕';
+  if (!name) return alert('សូមបញ្ចូលឈ្មោះប្រភេទម៉ឺនុយ!');
+  state.categories.push({ id: Date.now(), name, icon });
+  saveState(); renderCategories(); renderSettings();
+  document.getElementById('cName').value = '';
+  await syncCatalogToBackend(false);
+}
+
+async function delCategory(id) {
+  if (!verifyAdminPin('លុបប្រភេទម៉ឺនុយ')) return;
+  if (state.products.some(p => String(p.category_id) === String(id))) return alert('មិនអាចលុបប្រភេទនេះបានទេ ព្រោះមានមុខទំនិញកំពុងប្រើប្រាស់វា!');
+  if (!confirm('លុបប្រភេទម៉ឺនុយនេះ?')) return;
+  state.categories = state.categories.filter(c => String(c.id) !== String(id));
+  saveState(); renderCategories(); renderSettings();
+  await syncCatalogToBackend(false);
 }
 
 function exportOrdersCSV() {
   const rows = [['Order Code','Date','Subtotal','Discount Name','Discount','Total USD','Total KHR','Payment','Type']];
   state.orders.forEach(o => rows.push([o.order_code, o.created_at, o.subtotal, o.discount_name || '', o.discount, o.total_usd, o.total_khr, o.payment_method, o.order_type]));
-  const csv = '\uFEFF' + rows.map(r => r.map(x => `"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const csv = '\uFEFF' + rows.map(r => r.map(x => '"' + String(x).replace(/"/g,'""') + '"').join(',')).join('\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
   a.download = 'sak_coffee_sales.csv';
   a.click();
 }
 
-let editingOrder = null;
 function openEditOrder(id) {
   if (!verifyAdminPin('កែប្រែ ឬលុបទំនិញក្នុងវិក្កយបត្រ')) return;
-  const o = state.orders.find(x => x.id === id);
+  const o = state.orders.find(x => String(x.id) === String(id));
   if (!o) return;
-  editingOrder = structuredClone(o);
-  editingOrder.items = structuredClone(extractOrderItems(o));
+  editingOrder = JSON.parse(JSON.stringify(o));
+  editingOrder.items = JSON.parse(JSON.stringify(extractOrderItems(o)));
   editingOrder._origSubtotal = Number(o.subtotal || 0);
   editingOrder._origDiscount = Number(o.discount || 0);
   document.getElementById('editOrderTitle').textContent = '✏️ កែប្រែវិក្កយបត្រ ' + o.order_code;
   renderEditOrderModal();
-  document.getElementById('editOrderModal').classList.add('open');
+  document.getElementById('editOrderModal')?.classList.add('open');
 }
-function closeEditOrder() { editingOrder = null; document.getElementById('editOrderModal').classList.remove('open'); }
+function closeEditOrder() { editingOrder = null; document.getElementById('editOrderModal')?.classList.remove('open'); }
 function renderEditOrderModal() {
   if (!editingOrder) return;
   const tbody = document.getElementById('editOrderItems');
+  if (!tbody) return;
   if (!editingOrder.items.length) {
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#f87171;">អស់ទំនិញហើយ! ចុច «រក្សាទុក» ដើម្បីលុបវិក្កយបត្រនេះទាំងមូល។</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--danger);">អស់ទំនិញហើយ! ចុច «រក្សាទុក» ដើម្បីលុបវិក្កយបត្រនេះទាំងមូល។</td></tr>';
   } else {
     tbody.innerHTML = editingOrder.items.map((i, idx) => {
       const drink = isDrinkProduct(i);
-      const sizeLabel = (drink && i.size) ? ` (${i.size})` : '';
-      const subMeta = (drink && (i.sugar_level || i.ice_level))
-        ? `${fmtUsd(i.unit_price)} • ផ្អែម ${i.sugar_level || '50%'}`
-        : fmtUsd(i.unit_price);
-      return `
-      <tr>
-        <td><strong>${i.name}${sizeLabel}</strong><div style="font-size:11px; color:var(--muted);">${subMeta}</div></td>
-        <td style="text-align:center;"><div class="inline-qty"><button onclick="editOrderQty(${idx}, -1)">−</button><strong style="min-width:20px; text-align:center;">${i.qty}</strong><button onclick="editOrderQty(${idx}, 1)">+</button></div></td>
-        <td style="text-align:right; font-weight:700;">${fmtUsd(i.unit_price * i.qty)}</td>
-        <td style="text-align:center;"><button class="btn btn-danger btn-sm" onclick="editOrderRemove(${idx})">✖ លុប</button></td>
-      </tr>`;
+      const sizeLabel = (drink && i.size) ? ' (' + i.size + ')' : '';
+      const subMeta = (drink && (i.sugar_level || i.ice_level)) ? fmtUsd(i.unit_price) + ' • ផ្អែម ' + (i.sugar_level || '50%') : fmtUsd(i.unit_price);
+      return '<tr>' +
+        '<td><strong>' + i.name + sizeLabel + '</strong><div style="font-size:11px; color:var(--muted);">' + subMeta + '</div></td>' +
+        '<td style="text-align:center;"><div class="inline-qty"><button onclick="editOrderQty(' + idx + ', -1)">−</button><strong style="min-width:20px; text-align:center;">' + i.qty + '</strong><button onclick="editOrderQty(' + idx + ', 1)">+</button></div></td>' +
+        '<td style="text-align:right; font-weight:700;">' + fmtUsd(i.unit_price * i.qty) + '</td>' +
+        '<td style="text-align:center;"><button class="btn btn-danger btn-sm" onclick="editOrderRemove(' + idx + ')">✖ លុប</button></td>' +
+      '</tr>';
     }).join('');
   }
   const sub = editingOrder.items.reduce((s, i) => s + i.unit_price * i.qty, 0);
@@ -919,14 +1064,14 @@ function editOrderQty(idx, delta) { editingOrder.items[idx].qty += delta; if (ed
 function editOrderRemove(idx) { editingOrder.items.splice(idx, 1); renderEditOrderModal(); }
 async function saveEditedOrder(doPrint) {
   if (!editingOrder) return;
-  const idx = state.orders.findIndex(x => x.id === editingOrder.id);
+  const idx = state.orders.findIndex(x => String(x.id) === String(editingOrder.id));
   if (idx === -1) return closeEditOrder();
   if (!editingOrder.items.length) {
     if (!confirm('លុបវិក្កយបត្រនេះចោលតែម្តងទេ?')) return;
     const removed = state.orders[idx];
     state.orders.splice(idx, 1);
     saveState(); closeEditOrder(); renderOrders(); renderReports();
-    if (state.settings.apiUrl && removed.synced) await pushOrderToBackend(removed, 'delete');
+    if (getApiUrl() && removed.synced) await pushOrderToBackend(removed, 'delete');
     return;
   }
   delete editingOrder._origSubtotal;
@@ -941,7 +1086,7 @@ async function saveEditedOrder(doPrint) {
   if (doPrint) printReceipt(updated);
   updated._syncAction = wasSynced ? 'update' : 'create';
   saveState();
-  if (state.settings.apiUrl && navigator.onLine) {
+  if (getApiUrl() && navigator.onLine) {
     if (await pushOrderToBackend(updated, updated._syncAction)) { delete updated._syncAction; saveState(); }
     renderOrders();
   }
@@ -955,7 +1100,7 @@ async function deleteOrder(id) {
   if (target && target.order_code) state.deletedOrderCodes.push(String(target.order_code));
   state.orders = state.orders.filter(o => String(o.id) !== String(id));
   saveState(); renderOrders(); renderReports();
-  if (target && state.settings.apiUrl && navigator.onLine) await pushOrderToBackend(target, 'delete');
+  if (target && getApiUrl() && navigator.onLine) await pushOrderToBackend(target, 'delete');
 }
 
 async function resetSalesHistory() {
@@ -963,12 +1108,12 @@ async function resetSalesHistory() {
   if (!confirm('តើអ្នកពិតជាចង់ Reset លុបប្រវត្តិវិក្កយបត្រលក់ និងរបាយការណ៍ទាំងអស់មែនទេ?')) return;
   state.orders = [];
   saveState(); renderOrders(); renderReports();
-  if (state.settings.apiUrl && navigator.onLine) {
+  if (getApiUrl() && navigator.onLine) {
     try {
-      await fetch(state.settings.apiUrl, {
+      await fetch(getApiUrl(), {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'reset', apiKey: '' })
+        body: JSON.stringify({ action: 'reset', apiKey: getApiKey() })
       });
     } catch (e) {}
   }
@@ -996,20 +1141,22 @@ function holdCurrentOrder() {
   state.heldOrders.push({
     id: Date.now(),
     label: label.trim() || ('ភ្ញៀវ #' + (state.heldOrders.length + 1)),
-    orderType: document.getElementById('orderTypeSelect').value,
-    discountVal: document.getElementById('discountSelect').value,
-    items: structuredClone(cart)
+    orderType: document.getElementById('orderTypeSelect')?.value || 'Takeaway',
+    discountVal: document.getElementById('discountSelect')?.value || 'none',
+    items: JSON.parse(JSON.stringify(cart))
   });
   saveState(); clearCart(); renderHeldOrders();
 }
 function resumeHeldOrder(id) {
-  const idx = state.heldOrders.findIndex(h => h.id === id);
+  const idx = state.heldOrders.findIndex(h => String(h.id) === String(id));
   if (idx === -1) return;
   if (cart.length && !confirm('ជំនួសកន្ត្រកបច្ចុប្បន្នដោយវិក្កយបត្រដែលផ្អាកនេះ?')) return;
   const held = state.heldOrders.splice(idx, 1)[0];
   cart = held.items || [];
-  document.getElementById('orderTypeSelect').value = held.orderType || 'Takeaway';
-  document.getElementById('discountSelect').value = held.discountVal || 'none';
+  const ot = document.getElementById('orderTypeSelect');
+  const ds = document.getElementById('discountSelect');
+  if (ot) ot.value = held.orderType || 'Takeaway';
+  if (ds) ds.value = held.discountVal || 'none';
   saveState(); renderCart(); renderProducts(); renderHeldOrders();
 }
 function renderHeldOrders() {
@@ -1017,25 +1164,22 @@ function renderHeldOrders() {
   if (!bar) return;
   if (!state.heldOrders || !state.heldOrders.length) { bar.style.display = 'none'; bar.innerHTML = ''; return; }
   bar.style.display = 'flex';
-  bar.innerHTML = state.heldOrders.map(h => `<button class="chip" style="background:#fef3c7; border-color:#f59e0b; color:#92400e; font-weight:600;" onclick="resumeHeldOrder(${h.id})">⏸️ ${h.label} (${h.items.reduce((s,i)=>s+i.qty,0)})</button>`).join('');
+  bar.innerHTML = state.heldOrders.map(h => '<button class="chip" style="background:#fef3c7; border-color:#f59e0b; color:#92400e; font-weight:600;" onclick="resumeHeldOrder(\'' + String(h.id).replace(/'/g, "\\'") + '\')">⏸️ ' + h.label + ' (' + h.items.reduce((s,i)=>s+i.qty,0) + ')</button>').join('');
 }
 
-let sessionLoggedIn = false;
 function showLoginModal() {
-  const lpin = String(state.settings?.loginPin || '').trim();
+  const lpin = String((state.settings && state.settings.loginPin) || '').trim();
   if (!lpin || sessionLoggedIn) { sessionLoggedIn = true; return; }
   const overlay = document.createElement('div');
   overlay.id = 'loginPinOverlay';
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.92);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;';
-  overlay.innerHTML = `
-    <div style="background:#1e293b;color:#f1f5f9;border:1px solid #334155;width:100%;max-width:380px;border-radius:16px;padding:24px;box-shadow:0 20px 45px rgba(0,0,0,0.45);text-align:center;">
-      <div style="font-size:38px;margin-bottom:6px;">🔐</div>
-      <h2 style="font-size:20px;font-weight:700;">ចូលប្រើប្រព័ន្ធ POS</h2>
-      <p style="font-size:13px;color:#94a3b8;margin:4px 0 16px;">ស័ក្តិ កាហ្វេ (Sak Coffee) — សូមបញ្ចូល Login PIN</p>
-      <input id="loginPinInput" type="password" inputmode="numeric" placeholder="បញ្ចូលលេខកូដ PIN..." style="width:100%;padding:12px;font-size:20px;font-weight:700;text-align:center;letter-spacing:6px;border:2px solid #475569;border-radius:10px;margin-bottom:10px;background:#0f172a;color:#fff;">
-      <div id="loginPinError" style="color:#f87171;font-size:12px;font-weight:600;min-height:18px;margin-bottom:10px;"></div>
-      <button id="loginPinSubmit" type="button" style="width:100%;padding:12px;font-size:15px;font-weight:700;border:none;border-radius:10px;background:#3b82f6;color:#fff;cursor:pointer;">🔓 ចូលប្រើ (Login)</button>
-    </div>`;
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.88);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;';
+  overlay.innerHTML = '<div style="background:#fff;color:#111827;width:100%;max-width:380px;border-radius:16px;padding:24px;box-shadow:0 20px 45px rgba(0,0,0,0.35);text-align:center;">' +
+    '<div style="font-size:38px;margin-bottom:6px;">🔐</div>' +
+    '<h2 style="font-size:20px;font-weight:700;">ចូលប្រើប្រព័ន្ធ POS</h2>' +
+    '<p style="font-size:13px;color:#6b7280;margin:4px 0 16px;">ស័ក្តិ កាហ្វេ (Sak Coffee) — សូមបញ្ចូល Login PIN</p>' +
+    '<input id="loginPinInput" type="password" inputmode="numeric" placeholder="បញ្ចូលលេខកូដ PIN..." style="width:100%;padding:12px;font-size:20px;font-weight:700;text-align:center;letter-spacing:6px;border:2px solid #cbd5e1;border-radius:10px;margin-bottom:10px;">' +
+    '<div id="loginPinError" style="color:#dc2626;font-size:12px;font-weight:600;min-height:18px;margin-bottom:10px;"></div>' +
+    '<button id="loginPinSubmit" type="button" style="width:100%;padding:12px;font-size:15px;font-weight:700;border:none;border-radius:10px;background:#2563eb;color:#fff;cursor:pointer;">🔓 ចូលប្រើ (Login)</button></div>';
   document.body.appendChild(overlay);
   const inp = document.getElementById('loginPinInput');
   const err = document.getElementById('loginPinError');
@@ -1049,7 +1193,7 @@ function showLoginModal() {
 }
 function lockPosSession() {
   sessionLoggedIn = false; adminUnlocked = false;
-  if (!String(state.settings?.loginPin || '').trim()) return alert('សូមកំណត់ Login PIN ក្នុងផ្ទាំង «⚙️ កំណត់» ជាមុនសិន!');
+  if (!String((state.settings && state.settings.loginPin) || '').trim()) return alert('សូមកំណត់ Login PIN ក្នុងផ្ទាំង «⚙️ កំណត់» ជាមុនសិន!');
   showLoginModal();
 }
 
@@ -1062,11 +1206,11 @@ initReportFilters();
 updateSyncIndicator();
 renderHeldOrders();
 
-window.addEventListener('online', async () => { await syncPendingOrders(true); await pullFromBackend(true); });
-window.addEventListener('load', async () => { if (navigator.onLine) { await syncPendingOrders(true); await pullFromBackend(true); } });
+window.addEventListener('online', async () => { await syncPendingOrders(); await pullFromBackend(true); });
+window.addEventListener('load', async () => { if (navigator.onLine) { await syncPendingOrders(); await pullFromBackend(true); } });
 setInterval(async () => {
   if (!navigator.onLine) return;
-  if (state.orders.some(o => !o.synced)) { await syncPendingOrders(true); return; }
+  if (state.orders.some(o => !o.synced) || catalogDirty) { await syncPendingOrders(); return; }
   const inSettings = document.getElementById('view-settings')?.classList.contains('active');
   const inMenu = document.getElementById('view-menu')?.classList.contains('active');
   if (!inSettings && !inMenu) await pullFromBackend(true);
