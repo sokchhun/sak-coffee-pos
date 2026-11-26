@@ -38,6 +38,23 @@ const DEFAULT_DATA = {
   deletedOrderIds: []
 };
 
+function injectSelectOptionStyles() {
+  if (document.getElementById('sakSelectFixStyle')) return;
+  const st = document.createElement('style');
+  st.id = 'sakSelectFixStyle';
+  st.textContent = `
+    select, select option {
+      background-color: #ffffff;
+      color: #1f2937;
+    }
+    .view.active select {
+      pointer-events: auto;
+      opacity: 1;
+    }
+  `;
+  document.head.appendChild(st);
+}
+
 function loadInitialState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
@@ -50,7 +67,16 @@ function loadInitialState() {
         ...DEFAULT_DATA.settings,
         ...(parsed.settings || {}),
         apiUrl: ((parsed.settings && parsed.settings.apiUrl) || '').trim() || FIXED_API_URL
-      }
+      },
+      categories: (Array.isArray(parsed.categories) && parsed.categories.length)
+        ? parsed.categories
+        : JSON.parse(JSON.stringify(DEFAULT_DATA.categories)),
+      products: (Array.isArray(parsed.products) && parsed.products.length)
+        ? parsed.products
+        : JSON.parse(JSON.stringify(DEFAULT_DATA.products)),
+      discounts: (Array.isArray(parsed.discounts) && parsed.discounts.length)
+        ? parsed.discounts
+        : JSON.parse(JSON.stringify(DEFAULT_DATA.discounts))
     };
     if (!Array.isArray(merged.orders)) merged.orders = [];
     if (!Array.isArray(merged.heldOrders)) merged.heldOrders = [];
@@ -121,6 +147,21 @@ function extractOrderItems(o) {
   return [];
 }
 
+function sanitizeItemsForPayload(items) {
+  if (!Array.isArray(items)) return [];
+  return items.map(item => ({
+    product_id: item.product_id || '',
+    name: String(item.name || item.product_name || '').trim(),
+    qty: Number(item.qty || 1),
+    unit_price: Number(item.unit_price ?? item.unit_price_usd ?? 0),
+    unit_cost: Number(item.unit_cost ?? item.unit_cost_usd ?? 0),
+    size: String(item.size || ''),
+    sugar_level: String(item.sugar_level || ''),
+    ice_level: String(item.ice_level || ''),
+    note: String(item.note || '')
+  }));
+}
+
 function verifyAdminPin(actionLabel) {
   const pin = String((state.settings && state.settings.adminPin) || '').trim();
   if (!pin || adminUnlocked) return true;
@@ -144,25 +185,47 @@ function switchView(name, btn) {
   if (targetView) targetView.classList.add('active');
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
-  if (name === 'orders') renderOrders();
-  if (name === 'menu') { renderCategories(); renderMenuTable(); }
+  if (name === 'orders') {
+    renderOrders();
+    if (navigator.onLine) pullFromBackend(true);
+  }
+  if (name === 'menu') {
+    renderCategories();
+    renderMenuTable();
+  }
   if (name === 'reports') renderReports();
   if (name === 'settings') renderSettings();
 }
 
+function populateCategorySelect(prevValOverride) {
+  const pCat = document.getElementById('pCat');
+  if (!pCat) return;
+  const cats = (Array.isArray(state.categories) && state.categories.length)
+    ? state.categories
+    : DEFAULT_DATA.categories;
+  const prevVal = prevValOverride !== undefined ? String(prevValOverride) : String(pCat.value || '');
+  pCat.disabled = false;
+  pCat.innerHTML = cats
+    .map(c => '<option value="' + String(c.id).replace(/"/g, '&quot;') + '">' + (c.icon || '') + ' ' + String(c.name || '') + '</option>')
+    .join('');
+  if (prevVal && cats.some(c => String(c.id) === prevVal)) {
+    pCat.value = prevVal;
+  } else if (cats.length) {
+    pCat.value = String(cats[0].id);
+  }
+}
+
 function renderCategories() {
   const bar = document.getElementById('catBar');
-  if (!bar) return;
-  let html = '<button class="cat-btn ' + (activeCat === 'all' ? 'active' : '') + '" onclick="setCat(\'all\')">ទាំងអស់</button>';
-  state.categories.forEach(c => {
-    const cidStr = String(c.id).replace(/'/g, "\\'");
-    html += '<button class="cat-btn ' + (String(activeCat) === String(c.id) ? 'active' : '') + '" onclick="setCat(\'' + cidStr + '\')">' + (c.icon || '') + ' ' + c.name + '</button>';
-  });
-  bar.innerHTML = html;
-  const pCat = document.getElementById('pCat');
-  if (pCat) {
-    pCat.innerHTML = state.categories.map(c => '<option value="' + c.id + '">' + c.name + '</option>').join('');
+  if (bar) {
+    let html = '<button class="cat-btn ' + (activeCat === 'all' ? 'active' : '') + '" onclick="setCat(\'all\')">ទាំងអស់</button>';
+    state.categories.forEach(c => {
+      const cidStr = String(c.id).replace(/'/g, "\\'");
+      html += '<button class="cat-btn ' + (String(activeCat) === String(c.id) ? 'active' : '') + '" onclick="setCat(\'' + cidStr + '\')">' + (c.icon || '') + ' ' + c.name + '</button>';
+    });
+    bar.innerHTML = html;
   }
+  populateCategorySelect();
 }
 
 function setCat(id) { activeCat = id; renderCategories(); renderProducts(); }
@@ -406,7 +469,7 @@ async function completeOrder(doPrint) {
   const t = calcTotals();
   const now = new Date();
   const code = 'SC-' + now.toISOString().slice(2,10).replace(/-/g,'') + '-' + String(state.orders.length + 1).padStart(3, '0') + '-' + String(now.getTime()).slice(-4);
-  const itemsCopy = JSON.parse(JSON.stringify(cart));
+  const itemsCopy = sanitizeItemsForPayload(cart);
   const order = {
     id: Date.now(),
     order_code: code,
@@ -496,19 +559,33 @@ async function pushOrderToBackend(order, action) {
   const url = getApiUrl();
   if (!url) return false;
   try {
-    const itemsArr = extractOrderItems(order);
+    const cleanItems = sanitizeItemsForPayload(extractOrderItems(order));
+    const subVal = Number(order.subtotal ?? order.subtotal_usd ?? 0);
+    const discVal = Number(order.discount ?? order.discount_usd ?? 0);
+    const totVal = Number(order.total_usd ?? Math.max(0, subVal - discVal));
+    const lightweightPayload = {
+      action: action || 'create',
+      id: order.id || '',
+      order_code: String(order.order_code || '').trim(),
+      subtotal: subVal,
+      subtotal_usd: subVal,
+      discount_name: String(order.discount_name || ''),
+      discount: discVal,
+      discount_usd: discVal,
+      total_usd: totVal,
+      exchange_rate: Number(order.exchange_rate || state.settings.exchangeRate || 4100),
+      total_khr: Number(order.total_khr || Math.round(totVal * Number(order.exchange_rate || state.settings.exchangeRate || 4100))),
+      payment_method: String(order.payment_method || 'Cash'),
+      order_type: String(order.order_type || 'Takeaway'),
+      created_at: String(order.created_at || new Date().toISOString()),
+      items: cleanItems,
+      items_json: JSON.stringify(cleanItems),
+      apiKey: getApiKey()
+    };
     const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        ...order,
-        items: itemsArr,
-        items_json: JSON.stringify(itemsArr),
-        subtotal_usd: order.subtotal,
-        discount_usd: order.discount,
-        action: action || 'create',
-        apiKey: getApiKey()
-      })
+      body: JSON.stringify(lightweightPayload)
     });
     const data = await res.json();
     if (data.status === 'success') {
@@ -562,7 +639,11 @@ async function pullFromBackend(silent) {
       return;
     }
     if (Array.isArray(data.categories) && data.categories.length) {
-      state.categories = data.categories.map(c => ({ id: c.id, name: String(c.name || '').trim(), icon: String(c.icon || '☕') }));
+      state.categories = data.categories.map((c, idx) => ({
+        id: (c.id !== undefined && c.id !== '') ? c.id : (idx + 1),
+        name: String(c.name || '').trim(),
+        icon: String(c.icon || '☕')
+      })).filter(c => c.name);
     }
     if (Array.isArray(data.products) && data.products.length) {
       const defMap = new Map(DEFAULT_DATA.products.map(dp => [String(dp.id), dp.image_url]));
@@ -571,7 +652,7 @@ async function pullFromBackend(silent) {
         return {
           ...p,
           id: pid,
-          category_id: p.category_id || 1,
+          category_id: p.category_id || (state.categories[0] ? state.categories[0].id : 1),
           name: String(p.name).trim(),
           price_usd: Number(p.price_usd || 0),
           cost_usd: Number(p.cost_usd || 0),
@@ -740,7 +821,7 @@ async function saveProduct() {
   const existing = idVal ? state.products.find(p => String(p.id) === String(idVal)) : null;
   const sweetIceSel = document.getElementById('pHasSweetIce');
   const hasSweetIce = sweetIceSel ? (sweetIceSel.value !== '0') : true;
-  const catVal = document.getElementById('pCat').value;
+  const catVal = document.getElementById('pCat')?.value || (state.categories[0] ? state.categories[0].id : 1);
   const obj = {
     id: existing ? existing.id : Date.now(),
     name: document.getElementById('pName').value.trim(),
@@ -763,10 +844,11 @@ async function saveProduct() {
 function editProduct(id) {
   const p = state.products.find(x => String(x.id) === String(id));
   if (!p) return alert('រកមិនឃើញទំនិញនេះទេ!');
-  renderCategories();
+  populateCategorySelect(p.category_id);
   document.getElementById('editProdId').value = String(p.id);
   document.getElementById('pName').value = p.name || '';
-  document.getElementById('pCat').value = String(p.category_id);
+  const catSel = document.getElementById('pCat');
+  if (catSel) catSel.value = String(p.category_id);
   document.getElementById('pPrice').value = p.price_usd || '';
   document.getElementById('pCost').value = p.cost_usd || 0;
   document.getElementById('pImgData').value = p.image_url || '';
@@ -796,6 +878,7 @@ function resetProductForm() {
   if (st) st.textContent = '';
   const titleEl = document.getElementById('menuFormTitle');
   if (titleEl) titleEl.textContent = '➕ បន្ថែមភេសជ្ជៈថ្មី';
+  populateCategorySelect();
 }
 
 async function toggleStock(id) {
@@ -817,6 +900,7 @@ async function deleteProduct(id) {
 }
 
 function renderMenuTable() {
+  populateCategorySelect();
   const tbody = document.getElementById('menuTable');
   if (!tbody) return;
   tbody.innerHTML = state.products.map(p => {
@@ -984,8 +1068,11 @@ async function addCategory() {
   const name = document.getElementById('cName').value.trim();
   const icon = document.getElementById('cIcon').value.trim() || '☕';
   if (!name) return alert('សូមបញ្ចូលឈ្មោះប្រភេទម៉ឺនុយ!');
-  state.categories.push({ id: Date.now(), name, icon });
+  const newCat = { id: Date.now(), name, icon };
+  state.categories.push(newCat);
   saveState(); renderCategories(); renderSettings();
+  const pCat = document.getElementById('pCat');
+  if (pCat) pCat.value = String(newCat.id);
   document.getElementById('cName').value = '';
   await syncCatalogToBackend(false);
 }
@@ -1014,7 +1101,7 @@ function openEditOrder(id) {
   const o = state.orders.find(x => String(x.id) === String(id));
   if (!o) return;
   editingOrder = JSON.parse(JSON.stringify(o));
-  editingOrder.items = JSON.parse(JSON.stringify(extractOrderItems(o)));
+  editingOrder.items = sanitizeItemsForPayload(extractOrderItems(o));
   editingOrder._origSubtotal = Number(o.subtotal || 0);
   editingOrder._origDiscount = Number(o.discount || 0);
   document.getElementById('editOrderTitle').textContent = '✏️ កែប្រែវិក្កយបត្រ ' + o.order_code;
@@ -1076,6 +1163,7 @@ async function saveEditedOrder(doPrint) {
   }
   delete editingOrder._origSubtotal;
   delete editingOrder._origDiscount;
+  editingOrder.items = sanitizeItemsForPayload(editingOrder.items);
   editingOrder.items_json = JSON.stringify(editingOrder.items);
   const wasSynced = editingOrder.synced;
   editingOrder.synced = false;
@@ -1143,7 +1231,7 @@ function holdCurrentOrder() {
     label: label.trim() || ('ភ្ញៀវ #' + (state.heldOrders.length + 1)),
     orderType: document.getElementById('orderTypeSelect')?.value || 'Takeaway',
     discountVal: document.getElementById('discountSelect')?.value || 'none',
-    items: JSON.parse(JSON.stringify(cart))
+    items: sanitizeItemsForPayload(cart)
   });
   saveState(); clearCart(); renderHeldOrders();
 }
@@ -1197,6 +1285,7 @@ function lockPosSession() {
   showLoginModal();
 }
 
+injectSelectOptionStyles();
 showLoginModal();
 renderCategories();
 renderProducts();
