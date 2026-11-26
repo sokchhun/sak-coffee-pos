@@ -530,17 +530,19 @@ async function syncCatalogToBackend(showToast) {
   catalogDirty = true;
   updateSyncIndicator();
   if (!navigator.onLine) return false;
+  const payload = JSON.stringify({
+    action: 'sync_catalog',
+    categories: state.categories,
+    products: state.products,
+    discounts: state.discounts,
+    apiKey: getApiKey()
+  });
   try {
     const res = await fetch(url, {
       method: 'POST',
+      redirect: 'follow',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        action: 'sync_catalog',
-        categories: state.categories,
-        products: state.products,
-        discounts: state.discounts,
-        apiKey: getApiKey()
-      })
+      body: payload
     });
     const data = await res.json();
     if (data.status === 'success') {
@@ -550,7 +552,20 @@ async function syncCatalogToBackend(showToast) {
       return true;
     }
   } catch (e) {
-    console.warn('Catalog sync failed:', e);
+    try {
+      await fetch(url, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: payload
+      });
+      catalogDirty = false;
+      updateSyncIndicator();
+      if (showToast) alert('✅ បានបញ្ជូនម៉ឺនុយទៅ Google Sheets រួចរាល់!');
+      return true;
+    } catch (e2) {
+      console.warn('Catalog sync failed:', e2);
+    }
   }
   return false;
 }
@@ -558,41 +573,60 @@ async function syncCatalogToBackend(showToast) {
 async function pushOrderToBackend(order, action) {
   const url = getApiUrl();
   if (!url) return false;
+  const cleanItems = sanitizeItemsForPayload(extractOrderItems(order));
+  const subVal = Number(order.subtotal ?? order.subtotal_usd ?? 0);
+  const discVal = Number(order.discount ?? order.discount_usd ?? 0);
+  const totVal = Number(order.total_usd ?? Math.max(0, subVal - discVal));
+  const lightweightPayload = {
+    action: action || 'create',
+    id: order.id || '',
+    order_code: String(order.order_code || '').trim(),
+    subtotal: subVal,
+    subtotal_usd: subVal,
+    discount_name: String(order.discount_name || ''),
+    discount: discVal,
+    discount_usd: discVal,
+    total_usd: totVal,
+    exchange_rate: Number(order.exchange_rate || state.settings.exchangeRate || 4100),
+    total_khr: Number(order.total_khr || Math.round(totVal * Number(order.exchange_rate || state.settings.exchangeRate || 4100))),
+    payment_method: String(order.payment_method || 'Cash'),
+    order_type: String(order.order_type || 'Takeaway'),
+    created_at: String(order.created_at || new Date().toISOString()),
+    items: cleanItems,
+    items_json: JSON.stringify(cleanItems),
+    apiKey: getApiKey()
+  };
+  const bodyStr = JSON.stringify(lightweightPayload);
   try {
-    const cleanItems = sanitizeItemsForPayload(extractOrderItems(order));
-    const subVal = Number(order.subtotal ?? order.subtotal_usd ?? 0);
-    const discVal = Number(order.discount ?? order.discount_usd ?? 0);
-    const totVal = Number(order.total_usd ?? Math.max(0, subVal - discVal));
-    const lightweightPayload = {
-      action: action || 'create',
-      id: order.id || '',
-      order_code: String(order.order_code || '').trim(),
-      subtotal: subVal,
-      subtotal_usd: subVal,
-      discount_name: String(order.discount_name || ''),
-      discount: discVal,
-      discount_usd: discVal,
-      total_usd: totVal,
-      exchange_rate: Number(order.exchange_rate || state.settings.exchangeRate || 4100),
-      total_khr: Number(order.total_khr || Math.round(totVal * Number(order.exchange_rate || state.settings.exchangeRate || 4100))),
-      payment_method: String(order.payment_method || 'Cash'),
-      order_type: String(order.order_type || 'Takeaway'),
-      created_at: String(order.created_at || new Date().toISOString()),
-      items: cleanItems,
-      items_json: JSON.stringify(cleanItems),
-      apiKey: getApiKey()
-    };
     const res = await fetch(url, {
       method: 'POST',
+      redirect: 'follow',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(lightweightPayload)
+      body: bodyStr
     });
     const data = await res.json();
     if (data.status === 'success') {
       if (action !== 'delete') { order.synced = true; saveState(); }
       return true;
     }
-  } catch (e) { console.warn('Sync offline:', e); }
+  } catch (e) {
+    try {
+      await fetch(url, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: bodyStr
+      });
+      await new Promise(r => setTimeout(r, 900));
+      if (action !== 'delete') {
+        order.synced = true;
+        saveState();
+      }
+      return true;
+    } catch (e2) {
+      console.warn('Sync offline:', e2);
+    }
+  }
   return false;
 }
 
