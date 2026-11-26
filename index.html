@@ -7,101 +7,105 @@
 <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --nav-bg: #1e293b;
-    --primary: #3b82f6;
-    --primary-dark: #2563eb;
-    --success: #22c55e;
-    --danger: #ef4444;
-    --warning: #f59e0b;
-    --bg: #0f172a;
-    --card: #1e293b;
-    --text: #f1f5f9;
-    --muted: #94a3b8;
-    --border: #334155;
+    --nav-bg: #2c3e50;
+    --primary: #4a89dc;
+    --primary-dark: #3b73c4;
+    --success: #27ae60;
+    --danger: #e74c3c;
+    --warning: #f39c12;
+    --bg: #f1f4f8;
+    --card: #ffffff;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --border: #e5e7eb;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Kantumruy Pro', system-ui, sans-serif; }
   body { background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
   .topbar {
     background: var(--nav-bg); color: #fff; min-height: 56px; padding: 6px 16px; gap: 8px; flex-wrap: wrap;
     display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
-    border-bottom: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
   }
   .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; }
   .brand-badge { background: var(--warning); color: #111; font-size: 11px; padding: 2px 8px; border-radius: 99px; font-weight: 700; }
-  .nav-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+  .nav-tabs { display: flex; gap: 6px; }
   .nav-btn {
     background: transparent; color: #cbd5e1; border: none; padding: 8px 14px;
     border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: .15s;
   }
-  .nav-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
+  .nav-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
   .nav-btn.active { background: var(--primary); color: #fff; }
   .sync-pill {
-    font-size: 12px; padding: 5px 12px; border-radius: 99px; background: rgba(255,255,255,0.08);
-    border: 1px solid var(--border); display: flex; align-items: center; gap: 6px; cursor: pointer;
+    font-size: 12px; padding: 5px 10px; border-radius: 99px; background: rgba(255,255,255,0.12);
+    display: flex; align-items: center; gap: 6px; cursor: pointer;
   }
   .dot { width: 8px; height: 8px; border-radius: 50%; background: #9ca3af; }
-  .dot.online { background: #22c55e; }
-  .dot.pending { background: #f59e0b; }
+  .dot.online { background: #2ecc71; }
+  .dot.pending { background: #f1c40f; }
 
   .view { display: none; flex: 1; overflow: hidden; }
   .view.active { display: flex; }
+
   .pos-left {
     width: 42%; min-width: 360px; max-width: 520px; background: var(--card);
     border-right: 1px solid var(--border); display: flex; flex-direction: column;
   }
-  .pos-right { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 12px; gap: 10px; background: var(--bg); }
+  .pos-right { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 12px; gap: 10px; }
+
   .cart-header {
     background: var(--primary); color: #fff; padding: 10px 14px;
     display: grid; grid-template-columns: 1fr 86px 68px 34px; font-size: 13px; font-weight: 600;
   }
-  .cart-list { flex: 1; overflow-y: auto; background: #111827; }
+  .cart-list { flex: 1; overflow-y: auto; }
   .cart-empty { text-align: center; padding: 48px 16px; color: var(--muted); font-size: 14px; }
-  .cart-row { border-bottom: 1px solid var(--border); background: var(--card); }
+  .cart-row { border-bottom: 1px solid var(--border); }
   .cart-row-main {
     display: grid; grid-template-columns: 1fr 86px 68px 34px; align-items: center;
     padding: 10px 14px; cursor: pointer; transition: background .12s; gap: 4px;
   }
-  .cart-row-main:hover { background: #263347; }
   .inline-qty { display: flex; align-items: center; justify-content: center; gap: 4px; }
   .inline-qty button {
     width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--border);
-    background: #0f172a; color: #fff; font-weight: 700; cursor: pointer; font-size: 14px; line-height: 1;
+    background: #f8fafc; font-weight: 700; cursor: pointer; font-size: 14px; line-height: 1;
   }
-  .inline-qty button:hover { background: var(--primary); border-color: var(--primary); }
+  .inline-qty button:hover { background: #e2e8f0; }
   .btn-x {
-    width: 26px; height: 26px; border-radius: 6px; border: none; background: rgba(239,68,68,0.18);
-    color: #f87171; font-weight: 700; cursor: pointer; font-size: 13px;
+    width: 26px; height: 26px; border-radius: 6px; border: none; background: #fee2e2;
+    color: var(--danger); font-weight: 700; cursor: pointer; font-size: 13px;
     display: inline-flex; align-items: center; justify-content: center;
   }
   .btn-x:hover { background: var(--danger); color: #fff; }
-  .cart-item-name { font-weight: 600; font-size: 14px; color: #f8fafc; }
+  .cart-row-main:hover { background: #f8fafc; }
+  .cart-item-name { font-weight: 600; font-size: 14px; }
   .cart-item-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
   .cart-mod {
-    background: #162032; padding: 10px 14px; border-top: 1px dashed var(--border);
+    background: #f8fafc; padding: 10px 14px; border-top: 1px dashed var(--border);
     display: none; flex-direction: column; gap: 8px;
   }
   .cart-row.expanded .cart-mod { display: flex; }
   .mod-line { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12px; }
   .mod-label { width: 58px; font-weight: 600; color: var(--muted); }
   .chip {
-    border: 1px solid var(--border); background: #0f172a; color: var(--text); padding: 4px 10px;
+    border: 1px solid var(--border); background: #fff; padding: 4px 10px;
     border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500;
   }
   .chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
   .qty-btn {
     width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border);
-    background: #0f172a; color: #fff; font-weight: 700; cursor: pointer;
+    background: #fff; font-weight: 700; cursor: pointer;
   }
-  .cart-footer { border-top: 2px solid var(--border); padding: 12px 14px; background: var(--card); display: flex; flex-direction: column; gap: 8px; }
+
+  .cart-footer { border-top: 2px solid var(--border); padding: 12px 14px; background: #fafbfc; display: flex; flex-direction: column; gap: 8px; }
   .discount-bar { display: flex; gap: 8px; align-items: center; }
   .discount-bar select, .discount-bar input {
-    padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; background: #0f172a; color: var(--text);
+    padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; background: #fff;
   }
   .discount-bar select { flex: 1; }
   .totals-line { display: flex; justify-content: space-between; font-size: 14px; color: var(--muted); }
-  .totals-grand { display: flex; justify-content: space-between; font-size: 20px; font-weight: 700; color: #fff; }
-  .totals-khr { text-align: right; font-size: 13px; font-weight: 600; color: #60a5fa; }
-  .cart-actions { display: grid; grid-template-columns: 1fr 1fr 1.6fr; gap: 8px; margin-top: 4px; }
+  .totals-grand { display: flex; justify-content: space-between; font-size: 20px; font-weight: 700; color: var(--nav-bg); }
+  .totals-khr { text-align: right; font-size: 13px; font-weight: 600; color: var(--primary-dark); }
+  .cart-actions { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; margin-top: 4px; }
 
   .btn {
     border: none; border-radius: 8px; padding: 10px 14px; font-size: 14px; font-weight: 600;
@@ -112,53 +116,53 @@
   .btn-success { background: var(--success); color: #fff; }
   .btn-success:hover { filter: brightness(0.95); }
   .btn-danger { background: var(--danger); color: #fff; }
-  .btn-light { background: #334155; color: #f1f5f9; }
-  .btn-light:hover { background: #475569; }
+  .btn-light { background: #e5e7eb; color: var(--text); }
   .btn-sm { padding: 6px 10px; font-size: 12px; }
 
   .search-cats { display: flex; flex-direction: column; gap: 8px; }
   .search-input {
     width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px;
-    font-size: 14px; background: var(--card); color: var(--text);
+    font-size: 14px; background: #fff;
   }
   .cat-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
   .cat-btn {
-    border: 1px solid var(--border); padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 600;
-    cursor: pointer; white-space: nowrap; background: var(--card); color: var(--text);
+    border: none; padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 600;
+    cursor: pointer; white-space: nowrap; background: #fff; color: var(--text);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
   }
-  .cat-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+  .cat-btn.active { background: var(--nav-bg); color: #fff; }
   .product-grid {
     flex: 1; overflow-y: auto; display: grid;
     grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
     gap: 10px; align-content: start; padding-bottom: 16px;
   }
   .prod-card {
-    background: var(--card); border-radius: 12px; padding: 12px 10px; cursor: pointer;
+    background: #fff; border-radius: 12px; padding: 12px 10px; cursor: pointer;
     border: 1px solid var(--border); position: relative; transition: transform .1s, box-shadow .1s;
     display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px;
   }
   .prod-card:active { transform: scale(0.97); }
-  .prod-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.35); border-color: var(--primary); }
+  .prod-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--primary); }
   .prod-card.soldout { opacity: 0.45; pointer-events: none; }
-  .prod-img { width: 88px; height: 88px; border-radius: 12px; object-fit: cover; background: #0f172a; }
-  .prod-name { font-size: 13px; font-weight: 600; line-height: 1.3; color: #f8fafc; }
-  .prod-price { font-size: 14px; font-weight: 700; color: #60a5fa; }
+  .prod-img { width: 88px; height: 88px; border-radius: 12px; object-fit: cover; background: #f3f4f6; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
+  .prod-name { font-size: 13px; font-weight: 600; line-height: 1.3; }
+  .prod-price { font-size: 14px; font-weight: 700; color: var(--primary-dark); }
   .prod-badge {
     position: absolute; top: 8px; right: 8px; background: var(--danger); color: #fff;
     width: 24px; height: 24px; border-radius: 50%; font-size: 12px; font-weight: 700;
     display: flex; align-items: center; justify-content: center;
   }
 
-  .page-wrap { flex: 1; overflow-y: auto; padding: 18px; max-width: 1280px; width: 100%; margin: 0 auto; scroll-behavior: smooth; }
-  .card { background: var(--card); border-radius: 12px; padding: 16px; border: 1px solid var(--border); margin-bottom: 16px; transition: box-shadow .25s, border-color .25s; }
-  .card-title { font-size: 16px; font-weight: 700; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .page-wrap { flex: 1; overflow-y: auto; padding: 18px; max-width: 1280px; width: 100%; margin: 0 auto; }
+  .card { background: #fff; border-radius: 12px; padding: 16px; border: 1px solid var(--border); margin-bottom: 16px; }
+  .card-title { font-size: 16px; font-weight: 700; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
   table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
   table.tbl th, table.tbl td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; }
-  table.tbl th { background: #162032; font-weight: 700; color: var(--muted); }
+  table.tbl th { background: #f8fafc; font-weight: 700; color: var(--muted); }
   .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-bottom: 16px; }
-  .kpi { background: var(--card); border-radius: 12px; padding: 14px; border: 1px solid var(--border); }
+  .kpi { background: #fff; border-radius: 12px; padding: 14px; border: 1px solid var(--border); }
   .kpi-label { font-size: 12px; color: var(--muted); }
-  .kpi-val { font-size: 22px; font-weight: 700; color: #fff; margin-top: 4px; }
+  .kpi-val { font-size: 22px; font-weight: 700; color: var(--nav-bg); margin-top: 4px; }
   .kpi-sub { font-size: 12px; color: var(--success); margin-top: 2px; }
 
   .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
@@ -166,32 +170,26 @@
   .field label { font-size: 12px; font-weight: 600; color: var(--muted); }
   .field input, .field select, .field textarea {
     padding: 9px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px;
-    background: #0f172a; color: var(--text);
-  }
-  .notice-banner {
-    background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.4);
-    color: #bbf7d0; padding: 10px 14px; border-radius: 10px; font-size: 13px; margin-bottom: 14px;
-    display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
   }
 
   .modal-bg {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none;
+    position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: none;
     align-items: center; justify-content: center; z-index: 100; padding: 16px;
   }
   .modal-bg.open { display: flex; }
-  .modal { background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 14px; width: 100%; max-width: 880px; max-height: 92vh; overflow-y: auto; padding: 20px; }
+  .modal { background: #fff; border-radius: 14px; width: 100%; max-width: 880px; max-height: 92vh; overflow-y: auto; padding: 20px; }
   .checkout-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
   .pay-btn {
-    border: 2px solid var(--border); background: #0f172a; color: var(--text); border-radius: 10px; padding: 12px 8px;
+    border: 2px solid var(--border); background: #fff; border-radius: 10px; padding: 12px 8px;
     cursor: pointer; font-weight: 700; font-size: 13px; text-align: center;
   }
-  .pay-btn.active { border-color: var(--primary); background: rgba(59,130,246,0.2); color: #93c5fd; }
+  .pay-btn.active { border-color: var(--primary); background: #eff6ff; color: var(--primary-dark); }
   .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .num-btn {
     padding: 14px; font-size: 18px; font-weight: 700; border: 1px solid var(--border);
-    background: #334155; color: #fff; border-radius: 10px; cursor: pointer;
+    background: #f8fafc; border-radius: 10px; cursor: pointer;
   }
-  .num-btn:active { background: #475569; }
+  .num-btn:active { background: #e2e8f0; }
   .quick-cash { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 8px; }
   .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 180px; padding-top: 20px; }
   .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
@@ -205,7 +203,7 @@
     #receipt-print, #receipt-print * { visibility: visible; }
     #receipt-print {
       display: block !important; position: fixed; left: 0; top: 0; width: 76mm;
-      font-family: 'Kantumruy Pro', monospace; font-size: 12px; color: #000; padding: 4mm; background: #fff;
+      font-family: 'Kantumruy Pro', monospace; font-size: 12px; color: #000; padding: 4mm;
     }
   }
   @media (max-width: 900px) {
@@ -219,7 +217,7 @@
 <header class="topbar">
   <div class="brand">
     <span>☕ ស័ក្តិ កាហ្វេ (Sak Coffee)</span>
-    <span class="brand-badge">SKOY POS</span>
+    <span class="brand-badge">SKOY</span>
   </div>
   <nav class="nav-tabs">
     <button class="nav-btn active" onclick="switchView('pos', this)">🛒 លក់ (POS)</button>
@@ -230,13 +228,14 @@
   </nav>
   <div style="display:flex;align-items:center;gap:8px;">
     <button type="button" class="nav-btn" style="padding:6px 12px;font-size:13px;background:#f59e0b;color:#111;font-weight:700;" onclick="lockPosSession()" title="ចាក់សោ Login ភ្លាមៗ">🔒 ចាក់សោ</button>
-    <div class="sync-pill" onclick="syncAllNow()" title="ចុចដើម្បី Sync ជាមួយ Google Sheets">
+    <div class="sync-pill" onclick="syncAllNow()" title="ចុចដើម្បី Sync ទៅ Google Sheets">
       <span class="dot" id="syncDot"></span>
       <span id="syncText">Offline</span>
     </div>
   </div>
 </header>
 
+<!-- VIEW 1: POS -->
 <section id="view-pos" class="view active">
   <div class="pos-left">
     <div class="cart-header">
@@ -256,11 +255,11 @@
         </select>
       </div>
       <div class="totals-line"><span>សរុបរង (Subtotal)</span><span id="sumSubtotal">$0.00</span></div>
-      <div class="totals-line"><span>បញ្ចុះតម្លៃ (Discount)</span><span id="sumDiscount" style="color:#f87171;">-$0.00</span></div>
+      <div class="totals-line"><span>បញ្ចុះតម្លៃ (Discount)</span><span id="sumDiscount" style="color:var(--danger);">-$0.00</span></div>
       <div class="totals-grand"><span>ត្រូវបង់ (Total)</span><span id="sumTotal">$0.00</span></div>
       <div class="totals-khr" id="sumKhr">0 ៛</div>
       <div id="heldOrdersBar" style="display:none; gap:6px; flex-wrap:wrap; padding-top:2px;"></div>
-      <div class="cart-actions">
+      <div class="cart-actions" style="grid-template-columns: 1fr 1fr 1.6fr;">
         <button class="btn btn-light" onclick="clearCart()">🗑️ សម្អាត</button>
         <button class="btn" style="background:#f59e0b; color:#111;" onclick="holdCurrentOrder()">⏸️ ផ្អាកទុក</button>
         <button class="btn btn-success" onclick="openCheckout()">💳 គិតលុយ</button>
@@ -270,19 +269,20 @@
 
   <div class="pos-right">
     <div class="search-cats">
-      <input class="search-input" id="searchInput" placeholder="🔍 ស្វែងរកទំនិញ ឬភេសជ្ជៈ..." oninput="renderProducts()">
+      <input class="search-input" id="searchInput" placeholder="🔍 ស្វែងរកភេសជ្ជៈ..." oninput="renderProducts()">
       <div class="cat-bar" id="catBar"></div>
     </div>
     <div class="product-grid" id="productGrid"></div>
   </div>
 </section>
 
+<!-- VIEW 2: ORDERS -->
 <section id="view-orders" class="view">
   <div class="page-wrap">
     <div class="card">
       <div class="card-title">
         <span>🧾 ប្រវត្តិវិក្កយបត្រលក់ (ថ្ងៃនេះ)</span>
-        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+        <div style="display:flex; gap:8px;">
           <button class="btn btn-primary btn-sm" onclick="syncAllNow()">☁️ Sync ជាមួយ Google Sheets</button>
           <button class="btn btn-light btn-sm" onclick="exportOrdersCSV()">⬇️ Export CSV</button>
           <button class="btn btn-danger btn-sm" onclick="resetSalesHistory()">🗑️ សម្អាតប្រវត្តិលក់</button>
@@ -298,30 +298,26 @@
   </div>
 </section>
 
+<!-- VIEW 3: MENU -->
 <section id="view-menu" class="view">
-  <div class="page-wrap" id="menuPageWrap">
-    <div class="notice-banner">
-      <span>☁️ <strong>ភ្ជាប់ Google Sheets ស្វ័យប្រវត្តិ:</strong> ការបន្ថែម កែ ឬលុបទំនិញ នឹងរក្សាទុកក្នុងម៉ាស៊ីន និងបញ្ជូនទៅ Google Sheet <code>sak_coffee_database-v2</code> ដោយស្វ័យប្រវត្តិ។</span>
-      <button class="btn btn-success btn-sm" onclick="pullFromBackend(false)">☁️ ទាញម៉ឺនុយពី Sheets</button>
-    </div>
-
-    <div class="card" id="menuFormCard" style="scroll-margin-top: 20px;">
+  <div class="page-wrap">
+    <div class="card">
       <div class="card-title">
-        <span id="menuFormTitle">➕ បន្ថែម / កែទំនិញ</span>
+        <span id="menuFormTitle">➕ បន្ថែមភេសជ្ជៈថ្មី</span>
         <button class="btn btn-light btn-sm" onclick="resetProductForm()">សម្អាតទម្រង់</button>
       </div>
       <input type="hidden" id="editProdId">
       <div class="form-grid">
-        <div class="field"><label>ឈ្មោះទំនិញ ឬភេសជ្ជៈ</label><input id="pName" placeholder="ឧ. Iced Latte ឬ ក្រវិល"></div>
+        <div class="field"><label>ឈ្មោះភេសជ្ជៈ</label><input id="pName" placeholder="ឧ. Iced Latte"></div>
         <div class="field"><label>ប្រភេទ (Category)</label><select id="pCat"></select></div>
         <div class="field"><label>តម្លៃលក់ ($)</label><input id="pPrice" type="number" step="0.05" placeholder="2.00"></div>
         <div class="field"><label>តម្លៃដើម ($)</label><input id="pCost" type="number" step="0.05" placeholder="0.80"></div>
         <input type="hidden" id="pIcon" value="☕">
-        <div class="field"><label>Upload រូបភាព (បង្រួមស្វ័យប្រវត្តិ)</label><input id="pImgFile" type="file" accept="image/*" onchange="handleProdImage(event)"></div>
+        <div class="field"><label>Upload រូបភាពពិត (បង្រួមស្វ័យប្រវត្តិ)</label><input id="pImgFile" type="file" accept="image/*" onchange="handleProdImage(event)"></div>
         <div class="field"><label>ជម្រើសភេសជ្ជៈ</label><select id="pHasSweetIce"><option value="1" selected>🧊 ត្រូវការកម្រិតស្ករ &amp; ទឹកកក</option><option value="0">🚫 មិនត្រូវការស្ករ &amp; ទឹកកក</option></select></div>
       </div>
       <input type="hidden" id="pImgData">
-      <div style="margin-top:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+      <div style="margin-top:12px; display:flex; gap:10px; align-items:center;">
         <button class="btn btn-primary" onclick="saveProduct()">💾 រក្សាទុកទំនិញ</button>
         <img id="pImgThumb" style="display:none; width:44px; height:44px; border-radius:8px; object-fit:cover; border:1px solid var(--border);">
         <span id="imgPreviewStatus" style="font-size:12px; color:var(--muted);"></span>
@@ -331,7 +327,10 @@
     <div class="card">
       <div class="card-title">
         <span>📋 បញ្ជីម៉ឺនុយទាំងអស់</span>
-        <button class="btn btn-success btn-sm" onclick="pullFromBackend(false)">☁️ ទាញម៉ឺនុយពី Sheets</button>
+        <div style="display:flex; gap:8px;">
+          <button class="btn btn-success btn-sm" onclick="pullFromBackend(false)">☁️ ទាញម៉ឺនុយពី Sheets</button>
+          <button class="btn btn-primary btn-sm" onclick="syncCatalogToBackend(false)">☁️ Sync ម៉ឺនុយទៅ Sheets</button>
+        </div>
       </div>
       <table class="tbl">
         <thead><tr><th>រូប</th><th>ឈ្មោះ</th><th>ប្រភេទ</th><th>តម្លៃលក់</th><th>តម្លៃដើម</th><th>ស្ថានភាព</th><th>សកម្មភាព</th></tr></thead>
@@ -341,18 +340,19 @@
   </div>
 </section>
 
+<!-- VIEW 4: REPORTS -->
 <section id="view-reports" class="view">
   <div class="page-wrap">
     <div class="card" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
       <strong>តម្រងរបាយការណ៍៖</strong>
-      <select id="repMode" onchange="renderReports()" style="padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:#0f172a; color:var(--text);">
+      <select id="repMode" onchange="renderReports()" style="padding:8px 12px; border-radius:8px; border:1px solid var(--border);">
         <option value="daily">ប្រចាំថ្ងៃ (Daily)</option>
         <option value="monthly">ប្រចាំខែ (Monthly)</option>
         <option value="yearly">ប្រចាំឆ្នាំ (Yearly)</option>
       </select>
-      <input type="date" id="repDate" onchange="renderReports()" style="padding:8px; border-radius:8px; border:1px solid var(--border); background:#0f172a; color:var(--text);">
-      <input type="month" id="repMonth" onchange="renderReports()" style="padding:8px; border-radius:8px; border:1px solid var(--border); background:#0f172a; color:var(--text); display:none;">
-      <select id="repYear" onchange="renderReports()" style="padding:8px; border-radius:8px; border:1px solid var(--border); background:#0f172a; color:var(--text); display:none;"></select>
+      <input type="date" id="repDate" onchange="renderReports()" style="padding:8px; border-radius:8px; border:1px solid var(--border);">
+      <input type="month" id="repMonth" onchange="renderReports()" style="padding:8px; border-radius:8px; border:1px solid var(--border); display:none;">
+      <select id="repYear" onchange="renderReports()" style="padding:8px; border-radius:8px; border:1px solid var(--border); display:none;"></select>
       <button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="exportOrdersCSV()">⬇️ Export CSV</button>
     </div>
 
@@ -370,8 +370,8 @@
 
     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
       <div class="card" style="margin-bottom:0;">
-        <div class="card-title"><span>🏆 ទំនិញលក់ដាច់បំផុត (Top Items)</span></div>
-        <table class="tbl"><thead><tr><th>មុខទំនិញ</th><th style="text-align:center;">ចំនួន</th><th style="text-align:right;">សរុប ($)</th></tr></thead><tbody id="repTopItemsTable"></tbody></table>
+        <div class="card-title"><span>🏆 ភេសជ្ជៈលក់ដាច់បំផុត (Top Items)</span></div>
+        <table class="tbl"><thead><tr><th>មុខទំនិញ</th><th style="text-align:center;">ចំនួនកែវ</th><th style="text-align:right;">សរុប ($)</th></tr></thead><tbody id="repTopItemsTable"></tbody></table>
       </div>
       <div class="card" style="margin-bottom:0;">
         <div class="card-title"><span>💳 ចំណូលតាមវិធីទូទាត់</span></div>
@@ -381,6 +381,7 @@
   </div>
 </section>
 
+<!-- VIEW 5: SETTINGS -->
 <section id="view-settings" class="view">
   <div class="page-wrap">
     <div class="card">
@@ -389,10 +390,11 @@
         <div class="field"><label>ឈ្មោះហាង</label><input id="setShopName"></div>
         <div class="field"><label>អាសយដ្ឋាន / ទូរស័ព្ទ</label><input id="setShopAddress"></div>
         <div class="field"><label>អត្រាប្តូរប្រាក់ (1$ = ? ៛)</label><input id="setRate" type="number"></div>
-        <div class="field"><label>Google Apps Script Web App URL (Backend API)</label><input id="setApiUrl"></div>
+        <div class="field"><label>Google Apps Script Web App URL (Backend API)</label><input id="setApiUrl" placeholder="https://script.google.com/macros/s/.../exec"></div>
         <div class="field"><label>Upload រូបភាព KHQR ហាង (ABA / ACLEDA)</label><input type="file" accept="image/*" onchange="handleKhqrImage(event)"></div>
         <div class="field"><label>លេខកូដសម្ងាត់ចូលប្រើដំបូង (Login PIN - ទុកទទេបើមិនប្រើ)</label><input id="setLoginPin" type="password" placeholder="ឧ. 0000"></div>
         <div class="field"><label>លេខកូដសម្ងាត់អ្នកគ្រប់គ្រង (Admin PIN - ទុកទទេបើមិនប្រើ)</label><input id="setAdminPin" type="password" placeholder="ឧ. 1234"></div>
+        <div class="field"><label>លេខសម្ងាត់ភ្ជាប់ API ពីចម្ងាយ (Remote API Key - ជម្រើស)</label><input id="setApiKey" type="password" placeholder="ឧ. SAK-SECRET-2026"></div>
       </div>
       <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
         <button class="btn btn-primary" onclick="saveSettings()">💾 រក្សាទុកការកំណត់</button>
@@ -406,8 +408,8 @@
     <div class="card">
       <div class="card-title"><span>📂 គ្រប់គ្រងប្រភេទម៉ឺនុយ (Categories)</span></div>
       <div class="form-grid" style="margin-bottom:12px;">
-        <div class="field"><label>ឈ្មោះប្រភេទថ្មី</label><input id="cName" placeholder="ឧ. គ្រឿងអលង្ការ"></div>
-        <div class="field"><label>Icon / Emoji</label><input id="cIcon" placeholder="💍" value="💍"></div>
+        <div class="field"><label>ឈ្មោះប្រភេទថ្មី</label><input id="cName" placeholder="ឧ. ភេសជ្ជៈក្រឡុក (Frappe)"></div>
+        <div class="field"><label>Icon / Emoji</label><input id="cIcon" placeholder="🥤" value="🥤"></div>
         <div class="field" style="justify-content:flex-end;"><button class="btn btn-primary" onclick="addCategory()">➕ បន្ថែមប្រភេទ</button></div>
       </div>
       <table class="tbl"><thead><tr><th>Icon</th><th>ឈ្មោះប្រភេទ</th><th>សកម្មភាព</th></tr></thead><tbody id="categoriesTable"></tbody></table>
@@ -426,6 +428,7 @@
   </div>
 </section>
 
+<!-- CHECKOUT MODAL -->
 <div class="modal-bg" id="checkoutModal">
   <div class="modal" style="max-width:960px;">
     <div class="card-title">
@@ -434,33 +437,38 @@
     </div>
     <div class="checkout-grid" style="grid-template-columns: 1.1fr 1.15fr 0.85fr; gap:18px; align-items:start;">
       <div>
-        <div style="background:#0f172a; padding:12px; border-radius:10px; margin-bottom:10px; border:1px solid var(--border);">
+        <div style="background:#f8fafc; padding:12px; border-radius:10px; margin-bottom:10px; border:1px solid var(--border);">
           <div style="font-size:12px; color:var(--muted);">ត្រូវបង់សរុប (Total)</div>
           <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:4px;">
-            <span style="font-size:24px; font-weight:700; color:#fff;" id="coTotalUsd">$0.00</span>
-            <span style="font-size:16px; font-weight:700; color:#60a5fa;" id="coTotalKhr">0 ៛</span>
+            <span style="font-size:24px; font-weight:700; color:var(--nav-bg);" id="coTotalUsd">$0.00</span>
+            <span style="font-size:16px; font-weight:700; color:var(--primary-dark);" id="coTotalKhr">0 ៛</span>
           </div>
         </div>
+
         <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">
           <button type="button" class="pay-btn active" style="padding:7px 10px; font-size:12px;" onclick="selectPay('Cash', this)">Cash</button>
           <button type="button" class="pay-btn" style="padding:7px 10px; font-size:12px;" onclick="selectPay('ABA', this)">ABA</button>
           <button type="button" class="pay-btn" style="padding:7px 10px; font-size:12px;" onclick="selectPay('ACLEDA', this)">ACLEDA</button>
         </div>
+
         <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:6px;">
           <span style="font-size:12px; font-weight:700; color:var(--muted);">ប្រអប់បញ្ចូលសកម្ម៖</span>
-          <div style="display:inline-flex; gap:4px; background:#0f172a; padding:3px; border-radius:8px; border:1px solid var(--border);">
+          <div style="display:inline-flex; gap:4px; background:#f1f5f9; padding:3px; border-radius:8px; border:1px solid var(--border);">
             <button type="button" id="btnCurrUsd" class="chip active" style="padding:3px 10px; font-weight:700;" onclick="setCoCurrency('USD')">💵 ដុល្លា ($)</button>
             <button type="button" id="btnCurrKhr" class="chip" style="padding:3px 10px; font-weight:700;" onclick="setCoCurrency('KHR')">🇰🇭 រៀល (៛)</button>
           </div>
         </div>
+
         <div style="margin-bottom:10px;">
           <div style="font-size:12px; font-weight:600; color:var(--muted); margin-bottom:4px;" id="coRecLabel">ប្រាក់ទទួល (USD $)</div>
-          <input id="coReceived" type="text" inputmode="decimal" autocomplete="off" value="0" onclick="this.select()" oninput="onCoReceivedInput(this.value)" style="width:100%; font-size:24px; font-weight:700; padding:10px 12px; text-align:right; border:2px solid var(--primary); border-radius:10px; background:#0f172a; color:#fff;">
+          <input id="coReceived" type="text" inputmode="decimal" autocomplete="off" value="0" onclick="this.select()" oninput="onCoReceivedInput(this.value)" style="width:100%; font-size:24px; font-weight:700; padding:10px 12px; text-align:right; border:2px solid var(--primary); border-radius:10px; background:#fff; color:#111;">
         </div>
-        <div style="background:rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.4); border-radius:8px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center; font-size:14px; font-weight:700;">
-          <span style="color:#86efac;">ប្រាក់អាប់ (Change):</span>
-          <span id="coChange" style="color:#4ade80;">$0.00 (0 ៛)</span>
+
+        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center; font-size:14px; font-weight:700;">
+          <span style="color:#166534;">ប្រាក់អាប់ (Change):</span>
+          <span id="coChange" style="color:var(--success);">$0.00 (0 ៛)</span>
         </div>
+
         <div id="khqrBox" style="display:none; text-align:center; margin-top:10px; padding:8px; border:1px dashed var(--border); border-radius:10px;">
           <img id="khqrPreview" style="max-width:160px; border-radius:8px; display:none; margin:0 auto;">
           <div id="khqrPlaceholder" style="font-size:12px; color:var(--muted);">សូម Upload រូប KHQR ក្នុងផ្ទាំង «កំណត់»</div>
@@ -469,20 +477,20 @@
 
       <div>
         <div class="numpad" style="grid-template-columns: repeat(3, 1fr); gap:6px;">
-          <button type="button" class="num-btn" onclick="numKey('C')" style="background:#475569;">C</button>
-          <button type="button" class="num-btn" onclick="numKey('7')">7</button>
-          <button type="button" class="num-btn" onclick="numKey('8')">8</button>
-          <button type="button" class="num-btn" onclick="numKey('9')">9</button>
-          <button type="button" class="num-btn" onclick="numKey('4')">4</button>
-          <button type="button" class="num-btn" onclick="numKey('5')">5</button>
-          <button type="button" class="num-btn" onclick="numKey('6')">6</button>
-          <button type="button" class="num-btn" onclick="numKey('1')">1</button>
-          <button type="button" class="num-btn" onclick="numKey('2')">2</button>
-          <button type="button" class="num-btn" onclick="numKey('3')">3</button>
-          <button type="button" class="num-btn" onclick="numKey('0')">0</button>
-          <button type="button" class="num-btn" onclick="numKey('00')">00</button>
-          <button type="button" class="num-btn" onclick="numKey('.')">.</button>
-          <button type="button" class="num-btn" onclick="numKey('BKSP')" style="background:#64748b; grid-column: span 2;">⌫ លុប</button>
+          <button type="button" class="num-btn" onclick="numKey('C')" style="background:#475569; color:#fff; border-color:#475569;">C</button>
+          <button type="button" class="num-btn" onclick="numKey('7')" style="background:#334155; color:#fff; border-color:#334155;">7</button>
+          <button type="button" class="num-btn" onclick="numKey('8')" style="background:#334155; color:#fff; border-color:#334155;">8</button>
+          <button type="button" class="num-btn" onclick="numKey('9')" style="background:#334155; color:#fff; border-color:#334155;">9</button>
+          <button type="button" class="num-btn" onclick="numKey('4')" style="background:#334155; color:#fff; border-color:#334155;">4</button>
+          <button type="button" class="num-btn" onclick="numKey('5')" style="background:#334155; color:#fff; border-color:#334155;">5</button>
+          <button type="button" class="num-btn" onclick="numKey('6')" style="background:#334155; color:#fff; border-color:#334155;">6</button>
+          <button type="button" class="num-btn" onclick="numKey('1')" style="background:#334155; color:#fff; border-color:#334155;">1</button>
+          <button type="button" class="num-btn" onclick="numKey('2')" style="background:#334155; color:#fff; border-color:#334155;">2</button>
+          <button type="button" class="num-btn" onclick="numKey('3')" style="background:#334155; color:#fff; border-color:#334155;">3</button>
+          <button type="button" class="num-btn" onclick="numKey('0')" style="background:#334155; color:#fff; border-color:#334155;">0</button>
+          <button type="button" class="num-btn" onclick="numKey('00')" style="background:#334155; color:#fff; border-color:#334155;">00</button>
+          <button type="button" class="num-btn" onclick="numKey('.')" style="background:#334155; color:#fff; border-color:#334155;">.</button>
+          <button type="button" class="num-btn" onclick="numKey('BKSP')" style="background:#64748b; color:#fff; border-color:#64748b; grid-column: span 2;">⌫ លុប</button>
         </div>
       </div>
 
@@ -503,6 +511,7 @@
   </div>
 </div>
 
+<!-- EDIT ORDER MODAL -->
 <div class="modal-bg" id="editOrderModal">
   <div class="modal" style="max-width:620px;">
     <div class="card-title">
@@ -518,10 +527,10 @@
       </thead>
       <tbody id="editOrderItems"></tbody>
     </table>
-    <div style="margin-top:14px; padding:12px; background:#0f172a; border-radius:10px; display:flex; flex-direction:column; gap:6px; font-size:14px;">
+    <div style="margin-top:14px; padding:12px; background:#f8fafc; border-radius:10px; display:flex; flex-direction:column; gap:6px; font-size:14px;">
       <div style="display:flex; justify-content:space-between;"><span>សរុបរង (Subtotal):</span><strong id="eoSubtotal">$0.00</strong></div>
-      <div style="display:flex; justify-content:space-between;"><span>បញ្ចុះតម្លៃ (Discount):</span><strong id="eoDiscount" style="color:#f87171;">-$0.00</strong></div>
-      <div style="display:flex; justify-content:space-between; font-size:17px;"><span>ត្រូវបង់ថ្មី (Total):</span><strong id="eoTotal" style="color:#60a5fa;">$0.00</strong></div>
+      <div style="display:flex; justify-content:space-between;"><span>បញ្ចុះតម្លៃ (Discount):</span><strong id="eoDiscount" style="color:var(--danger);">-$0.00</strong></div>
+      <div style="display:flex; justify-content:space-between; font-size:17px;"><span>ត្រូវបង់ថ្មី (Total):</span><strong id="eoTotal" style="color:var(--primary-dark);">$0.00</strong></div>
       <div style="text-align:right; font-size:13px; color:var(--muted);" id="eoKhr">0 ៛</div>
     </div>
     <div style="margin-top:14px; display:flex; justify-content:flex-end; gap:8px;">
@@ -532,1202 +541,9 @@
   </div>
 </div>
 
+<!-- 80mm RECEIPT PRINT AREA -->
 <div id="receipt-print"></div>
 
-<script>
-const FIXED_API_URL = 'https://script.google.com/macros/s/AKfycbyKb-JDPQ-UPZJncjuMaRFsvNrm4sfSXf_cXKbjgl9XVAv6euVMz-U1ZIUjNDk-rwJC/exec';
-function getFixedApiUrl() {
-  if (state && state.settings) {
-    state.settings.apiUrl = FIXED_API_URL;
-    state.settings.apiKey = '';
-  }
-  return FIXED_API_URL;
-}
-
-const STORAGE_KEY = 'sak_coffee_pos_clean_v2';
-
-const DEFAULT_DATA = {
-  settings: {
-    shopName: 'ស័ក្តិ កាហ្វេ (Sak Coffee)',
-    shopAddress: 'ព្រែកលៀប ភ្នំពេញ | Tel: 012 796 756',
-    exchangeRate: 4100,
-    apiUrl: FIXED_API_URL,
-    khqrImage: '',
-    loginPin: '',
-    adminPin: '',
-    apiKey: ''
-  },
-  categories: [
-    { id: 1, name: 'កាហ្វេ (Coffee)', icon: '☕' },
-    { id: 2, name: 'តែ & តែបៃតង', icon: '🍵' },
-    { id: 3, name: 'ភេសជ្ជៈត្រជាក់/ផ្លែឈើ', icon: '🥤' },
-    { id: 4, name: 'នំ & អាហារសម្រន់', icon: '🥐' }
-  ],
-  products: [
-    { id: 1, category_id: 1, name: 'Iced Americano', price_usd: 1.50, cost_usd: 0.45, icon: '☕', image_url: 'https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?auto=format&fit=crop&w=300&q=80', has_sweet_ice: true, is_available: true },
-    { id: 2, category_id: 1, name: 'Iced Latte', price_usd: 2.00, cost_usd: 0.70, icon: '🥛', image_url: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=300&q=80', has_sweet_ice: true, is_available: true },
-    { id: 3, category_id: 1, name: 'កាហ្វេទឹកដោះគោខាប់', price_usd: 1.75, cost_usd: 0.60, icon: '🧋', image_url: 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?auto=format&fit=crop&w=300&q=80', has_sweet_ice: true, is_available: true },
-    { id: 4, category_id: 1, name: 'កាហ្វេពងមាន់ (Egg Coffee)', price_usd: 2.50, cost_usd: 0.90, icon: '🥚', image_url: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=300&q=80', has_sweet_ice: true, is_available: true },
-    { id: 5, category_id: 2, name: 'Matcha Latte', price_usd: 2.25, cost_usd: 0.85, icon: '🍵', image_url: 'https://images.unsplash.com/photo-1515823064-d6e0c04616a7?auto=format&fit=crop&w=300&q=80', has_sweet_ice: true, is_available: true },
-    { id: 6, category_id: 2, name: 'តែក្រូចឆ្មារ (Lemon Tea)', price_usd: 1.50, cost_usd: 0.40, icon: '🍋', image_url: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=300&q=80', has_sweet_ice: true, is_available: true },
-    { id: 7, category_id: 3, name: 'Passion Soda', price_usd: 1.75, cost_usd: 0.50, icon: '🥤', image_url: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=300&q=80', has_sweet_ice: true, is_available: true },
-    { id: 8, category_id: 4, name: 'Croissant ប័រ', price_usd: 1.75, cost_usd: 0.80, icon: '🥐', image_url: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=300&q=80', has_sweet_ice: false, is_available: true }
-  ],
-  discounts: [
-    { id: 1, name: 'និស្សិត CADT (10%)', type: 'percent', value: 10 },
-    { id: 2, name: 'យកកែវមកខ្លួនឯង (-$0.25)', type: 'fixed', value: 0.25 }
-  ],
-  orders: [],
-  heldOrders: [],
-  deletedOrderCodes: [],
-  deletedOrderIds: []
-};
-
-function loadInitialState() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('sak_coffee_pos_clean_v1') || localStorage.getItem('sak_coffee_pos_v3');
-    if (!raw) return JSON.parse(JSON.stringify(DEFAULT_DATA));
-    const parsed = JSON.parse(raw);
-    const merged = {
-      ...JSON.parse(JSON.stringify(DEFAULT_DATA)),
-      ...parsed,
-      settings: {
-        ...DEFAULT_DATA.settings,
-        ...(parsed.settings || {}),
-        apiUrl: FIXED_API_URL,
-        apiKey: ''
-      }
-    };
-    if (!Array.isArray(merged.orders)) merged.orders = [];
-    if (!Array.isArray(merged.heldOrders)) merged.heldOrders = [];
-    if (!Array.isArray(merged.deletedOrderCodes)) merged.deletedOrderCodes = [];
-    if (!Array.isArray(merged.deletedOrderIds)) merged.deletedOrderIds = [];
-    return merged;
-  } catch (e) {
-    return JSON.parse(JSON.stringify(DEFAULT_DATA));
-  }
-}
-
-let state = loadInitialState();
-let cart = [];
-let activeCat = 'all';
-let expandedCartIdx = -1;
-let selectedPay = 'Cash';
-let receivedStr = '0';
-let coCurrency = 'USD';
-let catalogDirty = false;
-
-function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  updateSyncIndicator();
-  renderHeldOrders();
-}
-
-function fmtUsd(n) { return '$' + Number(n || 0).toFixed(2); }
-function fmtKhr(usd) { return Math.round((usd || 0) * Number(state.settings.exchangeRate || 4100)).toLocaleString('en-US') + ' ៛'; }
-
-function toLocalDateStr(d) {
-  if (!d) return '';
-  if (d instanceof Date) {
-    if (isNaN(d.getTime())) return '';
-    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
-  }
-  const s = String(d).trim();
-  const dmy = s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/);
-  if (dmy) return dmy[3] + '-' + String(dmy[2]).padStart(2, '0') + '-' + String(dmy[1]).padStart(2, '0');
-  const dt = new Date(s);
-  if (isNaN(dt.getTime())) return '';
-  return dt.getFullYear() + '-' + String(dt.getMonth() + 1).padStart(2, '0') + '-' + String(dt.getDate()).padStart(2, '0');
-}
-
-function extractOrderItems(o) {
-  if (!o) return [];
-  if (Array.isArray(o.items) && o.items.length) return o.items;
-  const fields = [o.items, o.items_json, o.items_JSON];
-  for (let idx = 0; idx < fields.length; idx++) {
-    const field = fields[idx];
-    if (typeof field === 'string' && field.trim().startsWith('[')) {
-      try {
-        const arr = JSON.parse(field);
-        if (Array.isArray(arr) && arr.length) return arr;
-      } catch (e) {}
-    }
-  }
-  return [];
-}
-
-let adminUnlocked = false;
-function verifyAdminPin(actionLabel) {
-  const pin = String((state.settings && state.settings.adminPin) || '').trim();
-  if (!pin || adminUnlocked) return true;
-  const entered = prompt('🔐 សូមបញ្ចូលលេខកូដសម្ងាត់អ្នកគ្រប់គ្រង (Admin PIN) ដើម្បី' + (actionLabel || 'ចូលប្រើ') + '៖');
-  if (entered === null) return false;
-  if (String(entered).trim() === pin) {
-    adminUnlocked = true;
-    return true;
-  }
-  alert('❌ លេខកូដសម្ងាត់មិនត្រឹមត្រូវទេ!');
-  return false;
-}
-
-function switchView(name, btn) {
-  if (name === 'menu' || name === 'reports' || name === 'settings') {
-    const labels = { menu: 'គ្រប់គ្រងម៉ឺនុយ', reports: 'មើលរបាយការណ៍', settings: 'ចូលកំណត់ប្រព័ន្ធ' };
-    if (!verifyAdminPin(labels[name])) return;
-  }
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.getElementById('view-' + name).classList.add('active');
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  if (btn) btn.classList.add('active');
-  if (name === 'orders') renderOrders();
-  if (name === 'menu') { renderCategories(); renderMenuTable(); }
-  if (name === 'reports') renderReports();
-  if (name === 'settings') renderSettings();
-}
-
-function renderCategories() {
-  const bar = document.getElementById('catBar');
-  let html = '<button class="cat-btn ' + (activeCat === 'all' ? 'active' : '') + '" onclick="setCat(\'all\')">ទាំងអស់</button>';
-  state.categories.forEach(c => {
-    html += '<button class="cat-btn ' + (activeCat == c.id ? 'active' : '') + '" onclick="setCat(\'' + String(c.id).replace(/'/g, "\\'") + '\')">' + (c.icon || '') + ' ' + c.name + '</button>';
-  });
-  bar.innerHTML = html;
-  const pCat = document.getElementById('pCat');
-  if (pCat) {
-    pCat.innerHTML = state.categories.map(c => '<option value="' + c.id + '">' + c.name + '</option>').join('');
-  }
-}
-
-function setCat(id) { activeCat = id; renderCategories(); renderProducts(); }
-
-function renderProducts() {
-  const q = document.getElementById('searchInput').value.toLowerCase();
-  const grid = document.getElementById('productGrid');
-  const filtered = state.products.filter(p => (activeCat === 'all' || String(p.category_id) === String(activeCat)) && p.name.toLowerCase().includes(q));
-  grid.innerHTML = filtered.map(p => {
-    const pidStr = String(p.id).replace(/'/g, "\\'");
-    const qtyInCart = cart.filter(c => String(c.product_id) === String(p.id)).reduce((s, c) => s + c.qty, 0);
-    const imgSrc = p.image_url || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=300&q=80';
-    return '<div class="prod-card ' + (p.is_available === false ? 'soldout' : '') + '" onclick="addToCart(\'' + pidStr + '\')">' +
-      (qtyInCart ? '<span class="prod-badge">' + qtyInCart + '</span>' : '') +
-      '<img class="prod-img" src="' + imgSrc + '" onerror="this.onerror=null;this.src=\'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=300&q=80\';">' +
-      '<div class="prod-name">' + p.name + '</div>' +
-      '<div class="prod-price">' + fmtUsd(p.price_usd) + '</div>' +
-    '</div>';
-  }).join('');
-}
-
-function isDrinkProduct(p) {
-  if (!p) return true;
-  const pid = p.product_id !== undefined ? p.product_id : p.id;
-  const prod = state.products.find(x => String(x.id) === String(pid)) || p;
-  if (prod.has_sweet_ice === false || prod.has_sweet_ice === 0 || String(prod.has_sweet_ice).toUpperCase() === 'FALSE') return false;
-  if (prod.has_sweet_ice === true || prod.has_sweet_ice === 1 || String(prod.has_sweet_ice).toUpperCase() === 'TRUE') return true;
-  if (p.is_drink === false) return false;
-  const catId = Number(prod.category_id);
-  const cat = (state.categories || []).find(c => String(c.id) === String(prod.category_id));
-  const text = ((cat && cat.name ? cat.name : '') + ' ' + (prod.name || '')).toLowerCase();
-  const nonDrinkKeywords = ['នំ', 'អាហារ', 'សម្រន់', 'បាយ', 'គុយទាវ', 'សាំងវិច', 'ខេក', 'គ្រឿងអលង្ការ', 'ក្រវិល', 'ចិញ្ចៀន', 'ខ្សែក', 'កងដៃ', 'កងជើង', 'food', 'snack', 'cake', 'bread', 'croissant', 'sandwich', 'jewelry', 'ring', 'necklace'];
-  if (nonDrinkKeywords.some(kw => text.includes(kw))) return false;
-  if (catId === 4) return false;
-  return true;
-}
-
-function addToCart(prodId) {
-  const p = state.products.find(x => String(x.id) === String(prodId));
-  if (!p) return;
-  const drink = isDrinkProduct(p);
-  const defSize = drink ? 'M' : '';
-  const defSugar = drink ? '50%' : '';
-  const defIce = drink ? 'ធម្មតា' : '';
-  const idx = cart.findIndex(c => String(c.product_id) === String(prodId) && (c.size || '') === defSize && (c.sugar_level || '') === defSugar && (c.ice_level || '') === defIce && !c.note);
-  if (idx > -1) cart[idx].qty++;
-  else cart.push({
-    product_id: p.id, name: p.name, base_price: Number(p.price_usd), unit_price: Number(p.price_usd),
-    unit_cost: Number(p.cost_usd || 0), qty: 1, size: defSize, sugar_level: defSugar, ice_level: defIce, note: '', is_drink: drink
-  });
-  renderCart();
-  renderProducts();
-}
-
-function renderDiscountOptions() {
-  const sel = document.getElementById('discountSelect');
-  const cur = sel.value;
-  sel.innerHTML = '<option value="none">គ្មានបញ្ចុះតម្លៃ</option>' +
-    state.discounts.map(d => '<option value="d_' + d.id + '">' + d.name + '</option>').join('') +
-    '<option value="custom">បញ្ចុះផ្ទាល់ដៃ ($)</option>';
-  if (cur && Array.from(sel.options).some(o => o.value === cur)) sel.value = cur;
-}
-
-function calcTotals() {
-  const subtotal = cart.reduce((s, i) => s + i.unit_price * i.qty, 0);
-  const sel = document.getElementById('discountSelect').value;
-  const customInput = document.getElementById('customDiscount');
-  customInput.style.display = sel === 'custom' ? 'block' : 'none';
-  let discount = 0, discountName = '';
-  if (sel === 'custom') {
-    discount = Math.min(subtotal, Math.max(0, Number(customInput.value || 0)));
-    discountName = 'Custom';
-  } else if (sel.startsWith('d_')) {
-    const d = state.discounts.find(x => 'd_' + x.id === sel);
-    if (d) {
-      discountName = d.name;
-      discount = d.type === 'percent' ? subtotal * (d.value / 100) : Math.min(subtotal, d.value);
-    }
-  }
-  const total = Math.max(0, subtotal - discount);
-  return { subtotal, discount, discountName, total };
-}
-
-function renderCart() {
-  const list = document.getElementById('cartList');
-  if (!cart.length) {
-    list.innerHTML = '<div class="cart-empty">ចុចលើទំនិញខាងស្តាំដើម្បីបញ្ចូលក្នុងកន្ត្រក</div>';
-  } else {
-    list.innerHTML = cart.map((item, idx) => {
-      const showDrinkMods = isDrinkProduct(item);
-      const sizeLabel = (showDrinkMods && item.size) ? ' (' + item.size + ')' : '';
-      const metaParts = [fmtUsd(item.unit_price)];
-      if (showDrinkMods) {
-        if (item.sugar_level) metaParts.push('ផ្អែម ' + item.sugar_level);
-        if (item.ice_level) metaParts.push('ទឹកកក ' + item.ice_level);
-      }
-      if (item.note) metaParts.push(item.note);
-      const drinkHtml = showDrinkMods ? (
-        '<div class="mod-line"><span class="mod-label">ទំហំ</span>' +
-          ['M','L'].map(sz => '<button class="chip ' + ((item.size || 'M')===sz?'active':'') + '" onclick="setMod(' + idx + ',\'size\',\'' + sz + '\')">' + (sz==='L'?'L (+$0.50)':'M') + '</button>').join('') +
-        '</div>' +
-        '<div class="mod-line"><span class="mod-label">ផ្អែម</span>' +
-          ['0%','25%','50%','75%','100%'].map(s => '<button class="chip ' + ((item.sugar_level || '50%')===s?'active':'') + '" onclick="setMod(' + idx + ',\'sugar_level\',\'' + s + '\')">' + s + '</button>').join('') +
-        '</div>' +
-        '<div class="mod-line"><span class="mod-label">ទឹកកក</span>' +
-          ['ធម្មតា','តិច','គ្មាន'].map(ic => '<button class="chip ' + ((item.ice_level || 'ធម្មតា')===ic?'active':'') + '" onclick="setMod(' + idx + ',\'ice_level\',\'' + ic + '\')">' + ic + '</button>').join('') +
-        '</div>'
-      ) : '';
-      return '<div class="cart-row ' + (expandedCartIdx === idx ? 'expanded' : '') + '">' +
-        '<div class="cart-row-main" onclick="toggleExpand(' + idx + ')">' +
-          '<div><div class="cart-item-name">' + item.name + sizeLabel + '</div><div class="cart-item-meta">' + metaParts.join(' • ') + '</div></div>' +
-          '<div class="inline-qty" onclick="event.stopPropagation()"><button onclick="changeQty(' + idx + ', -1)">−</button><strong style="min-width:20px; text-align:center;">' + item.qty + '</strong><button onclick="changeQty(' + idx + ', 1)">+</button></div>' +
-          '<div style="text-align:right; font-weight:700;">' + fmtUsd(item.unit_price * item.qty) + '</div>' +
-          '<div style="text-align:center;" onclick="event.stopPropagation()"><button class="btn-x" onclick="removeCartItem(' + idx + ')">✖</button></div>' +
-        '</div>' +
-        '<div class="cart-mod">' +
-          '<div class="mod-line"><span class="mod-label">ចំនួន</span><button class="qty-btn" onclick="changeQty(' + idx + ', -1)">-</button><strong style="padding:0 6px;">' + item.qty + '</strong><button class="qty-btn" onclick="changeQty(' + idx + ', 1)">+</button><span style="margin-left:auto;"></span><button class="btn btn-danger btn-sm" onclick="removeCartItem(' + idx + ')">លុប</button></div>' +
-          drinkHtml +
-          '<div class="mod-line"><span class="mod-label">ចំណាំ</span><input value="' + (item.note || '') + '" placeholder="បន្ថែមកំណត់ចំណាំ..." style="flex:1; padding:4px 8px; border:1px solid var(--border); border-radius:6px; font-size:12px; background:#0f172a; color:#fff;" onchange="setMod(' + idx + ',\'note\',this.value)"></div>' +
-        '</div></div>';
-    }).join('');
-  }
-  const t = calcTotals();
-  document.getElementById('sumSubtotal').textContent = fmtUsd(t.subtotal);
-  document.getElementById('sumDiscount').textContent = '-' + fmtUsd(t.discount);
-  document.getElementById('sumTotal').textContent = fmtUsd(t.total);
-  document.getElementById('sumKhr').textContent = fmtKhr(t.total);
-}
-
-function toggleExpand(idx) { expandedCartIdx = expandedCartIdx === idx ? -1 : idx; renderCart(); }
-function changeQty(idx, delta) { cart[idx].qty += delta; if (cart[idx].qty <= 0) cart.splice(idx, 1); renderCart(); renderProducts(); }
-function removeCartItem(idx) { cart.splice(idx, 1); expandedCartIdx = -1; renderCart(); renderProducts(); }
-function setMod(idx, key, val) {
-  cart[idx][key] = val;
-  if (key === 'size') cart[idx].unit_price = cart[idx].base_price + (val === 'L' ? 0.5 : 0);
-  renderCart();
-}
-function clearCart() { cart = []; expandedCartIdx = -1; document.getElementById('discountSelect').value = 'none'; renderCart(); renderProducts(); }
-
-function setCoCurrency(curr) {
-  const rate = Number(state.settings.exchangeRate || 4100);
-  const currentNum = Number(receivedStr || 0);
-  if (curr !== coCurrency) {
-    if (curr === 'KHR') receivedStr = String(Math.round((currentNum * rate) / 100) * 100 || 0);
-    else {
-      const usdVal = currentNum / rate;
-      receivedStr = usdVal > 0 ? usdVal.toFixed(2) : '0';
-    }
-    coCurrency = curr;
-  }
-  document.getElementById('btnCurrUsd').classList.toggle('active', curr === 'USD');
-  document.getElementById('btnCurrKhr').classList.toggle('active', curr === 'KHR');
-  document.getElementById('coRecLabel').textContent = curr === 'USD' ? 'ប្រាក់ទទួល (USD $)' : 'ប្រាក់ទទួល (KHR ៛)';
-  updateCheckoutCalc(true);
-  const inp = document.getElementById('coReceived');
-  if (inp) { inp.focus(); inp.select(); }
-}
-
-function openCheckout() {
-  if (!cart.length) return alert('សូមជ្រើសរើសទំនិញជាមុនសិន!');
-  const t = calcTotals();
-  document.getElementById('coTotalUsd').textContent = fmtUsd(t.total);
-  document.getElementById('coTotalKhr').textContent = fmtKhr(t.total);
-  coCurrency = 'USD';
-  receivedStr = t.total.toFixed(2);
-  document.getElementById('btnCurrUsd').classList.add('active');
-  document.getElementById('btnCurrKhr').classList.remove('active');
-  document.getElementById('coRecLabel').textContent = 'ប្រាក់ទទួល (USD $)';
-  updateCheckoutCalc(true);
-  document.getElementById('checkoutModal').classList.add('open');
-  setTimeout(() => { const el = document.getElementById('coReceived'); if (el) { el.focus(); el.select(); } }, 50);
-}
-function closeCheckout() { document.getElementById('checkoutModal').classList.remove('open'); }
-function selectPay(method, btn) {
-  selectedPay = method;
-  document.querySelectorAll('.pay-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  const box = document.getElementById('khqrBox');
-  const img = document.getElementById('khqrPreview');
-  const ph = document.getElementById('khqrPlaceholder');
-  if (method !== 'Cash') {
-    box.style.display = 'block';
-    if (state.settings.khqrImage) { img.src = state.settings.khqrImage; img.style.display = 'block'; ph.style.display = 'none'; }
-    else { img.style.display = 'none'; ph.style.display = 'block'; }
-  } else box.style.display = 'none';
-}
-function numKey(k) {
-  if (k === 'C') receivedStr = '0';
-  else if (k === 'BKSP') receivedStr = receivedStr.length > 1 ? receivedStr.slice(0, -1) : '0';
-  else if (k === '.' && (coCurrency === 'KHR' || receivedStr.includes('.'))) return;
-  else receivedStr = receivedStr === '0' && k !== '.' ? k : receivedStr + k;
-  updateCheckoutCalc(true);
-}
-function setExactCash() {
-  const totalUsd = calcTotals().total;
-  const rate = Number(state.settings.exchangeRate || 4100);
-  receivedStr = coCurrency === 'KHR' ? String(Math.ceil((totalUsd * rate) / 100) * 100) : totalUsd.toFixed(2);
-  updateCheckoutCalc(true);
-}
-function addCash(amt) {
-  const rate = Number(state.settings.exchangeRate || 4100);
-  receivedStr = coCurrency === 'KHR' ? String(Number(receivedStr || 0) + Math.round(amt * rate)) : (Number(receivedStr || 0) + amt).toFixed(2);
-  updateCheckoutCalc(true);
-}
-function addCashKhr(khr) {
-  const rate = Number(state.settings.exchangeRate || 4100);
-  receivedStr = coCurrency === 'KHR' ? String(Number(receivedStr || 0) + khr) : (Number(receivedStr || 0) + (khr / rate)).toFixed(2);
-  updateCheckoutCalc(true);
-}
-function onCoReceivedInput(val) {
-  const inp = document.getElementById('coReceived');
-  const pattern = coCurrency === 'KHR' ? /[^0-9]/g : /[^0-9.]/g;
-  let raw = String(val || '').replace(pattern, '');
-  if (coCurrency !== 'KHR') {
-    const dotIdx = raw.indexOf('.');
-    if (dotIdx !== -1) raw = raw.slice(0, dotIdx + 1) + raw.slice(dotIdx + 1).replace(/\./g, '');
-  }
-  if (raw.length > 1 && raw[0] === '0' && raw[1] !== '.') raw = raw.replace(/^0+/, '');
-  if (inp && inp.value !== raw) inp.value = raw;
-  receivedStr = raw === '' ? '0' : raw;
-  updateCheckoutCalc(false);
-}
-function updateCheckoutCalc(syncInput) {
-  const t = calcTotals();
-  const rate = Number(state.settings.exchangeRate || 4100);
-  const rawNum = Number(receivedStr || 0);
-  const recUsd = coCurrency === 'KHR' ? (rawNum / rate) : rawNum;
-  const chgUsd = Math.max(0, recUsd - t.total);
-  const inpUsd = document.getElementById('coReceived');
-  if (inpUsd && syncInput !== false) inpUsd.value = receivedStr;
-  document.getElementById('coChange').textContent = fmtUsd(chgUsd) + ' (' + fmtKhr(chgUsd) + ')';
-}
-
-async function completeOrder(doPrint) {
-  const t = calcTotals();
-  const now = new Date();
-  const code = 'SC-' + now.toISOString().slice(2,10).replace(/-/g,'') + '-' + String(state.orders.length + 1).padStart(3, '0') + '-' + String(now.getTime()).slice(-4);
-  const itemsCopy = JSON.parse(JSON.stringify(cart));
-  const order = {
-    id: Date.now(),
-    order_code: code,
-    subtotal: Number(t.subtotal.toFixed(2)),
-    discount_name: t.discountName,
-    discount: Number(t.discount.toFixed(2)),
-    total_usd: Number(t.total.toFixed(2)),
-    exchange_rate: Number(state.settings.exchangeRate || 4100),
-    total_khr: Math.round(t.total * Number(state.settings.exchangeRate || 4100)),
-    payment_method: selectedPay,
-    order_type: document.getElementById('orderTypeSelect').value,
-    created_at: now.toISOString(),
-    synced: false,
-    items: itemsCopy,
-    items_json: JSON.stringify(itemsCopy)
-  };
-  state.orders.unshift(order);
-  saveState();
-  closeCheckout();
-  clearCart();
-  if (doPrint) printReceipt(order);
-  if (getFixedApiUrl() && navigator.onLine) {
-    await pushOrderToBackend(order, 'create');
-    renderOrders();
-  }
-}
-
-function printReceipt(o) {
-  const items = extractOrderItems(o);
-  const el = document.getElementById('receipt-print');
-  el.innerHTML = '<div style="text-align:center; border-bottom:1px dashed #000; padding-bottom:6px; margin-bottom:6px;">' +
-    '<div style="font-size:16px; font-weight:700;">' + state.settings.shopName + '</div>' +
-    '<div style="font-size:11px;">' + state.settings.shopAddress + '</div>' +
-    '<div style="font-size:11px; margin-top:4px;">' + o.order_code + ' • ' + new Date(o.created_at).toLocaleString() + '</div></div>' +
-    '<table style="width:100%; font-size:12px; border-collapse:collapse;">' +
-    items.map(i => {
-      const drink = isDrinkProduct(i);
-      const sizeLabel = (drink && i.size) ? ' (' + i.size + ')' : '';
-      const subTxt = (drink && (i.sugar_level || i.ice_level))
-        ? '<div style="font-size:10px;">ផ្អែម ' + (i.sugar_level || '-') + ', ទឹកកក ' + (i.ice_level || '-') + (i.note ? ' • ' + i.note : '') + '</div>'
-        : (i.note ? '<div style="font-size:10px;">' + i.note + '</div>' : '');
-      return '<tr><td>' + i.name + sizeLabel + ' x' + i.qty + subTxt + '</td><td style="text-align:right; vertical-align:top;">' + fmtUsd(i.unit_price * i.qty) + '</td></tr>';
-    }).join('') +
-    '</table><div style="border-top:1px dashed #000; margin-top:6px; padding-top:6px; font-size:12px;">' +
-    '<div style="display:flex; justify-content:space-between;"><span>សរុបរង:</span><span>' + fmtUsd(o.subtotal) + '</span></div>' +
-    (o.discount > 0 ? '<div style="display:flex; justify-content:space-between;"><span>បញ្ចុះតម្លៃ (' + o.discount_name + '):</span><span>-' + fmtUsd(o.discount) + '</span></div>' : '') +
-    '<div style="display:flex; justify-content:space-between; font-weight:700; font-size:14px;"><span>ត្រូវបង់:</span><span>' + fmtUsd(o.total_usd) + '</span></div>' +
-    '<div style="display:flex; justify-content:space-between;"><span>ប្រាក់រៀល:</span><span>' + Number(o.total_khr || 0).toLocaleString() + ' ៛</span></div>' +
-    '<div style="display:flex; justify-content:space-between;"><span>ទូទាត់:</span><span>' + o.payment_method + ' (' + o.order_type + ')</span></div></div>' +
-    '<div style="text-align:center; margin-top:10px; font-size:11px;">សូមអរគុណ! សង្ឃឹមថាបានជួបគ្នាម្តងទៀត ☕</div>';
-  window.print();
-}
-
-async function syncCatalogToBackend() {
-  const url = getFixedApiUrl();
-  if (!url) return false;
-  catalogDirty = true;
-  if (!navigator.onLine) return false;
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        action: 'sync_catalog',
-        categories: state.categories,
-        products: state.products,
-        discounts: state.discounts,
-        apiKey: ''
-      })
-    });
-    const data = await res.json();
-    if (data.status === 'success') {
-      catalogDirty = false;
-      return true;
-    }
-  } catch (e) {
-    console.warn('Catalog sync failed:', e);
-  }
-  return false;
-}
-
-async function pushOrderToBackend(order, action) {
-  const url = getFixedApiUrl();
-  if (!url) return false;
-  try {
-    const itemsArr = extractOrderItems(order);
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        ...order,
-        items: itemsArr,
-        items_json: JSON.stringify(itemsArr),
-        subtotal_usd: order.subtotal,
-        discount_usd: order.discount,
-        action: action || 'create',
-        apiKey: ''
-      })
-    });
-    const data = await res.json();
-    if (data.status === 'success') {
-      if (action !== 'delete') { order.synced = true; saveState(); }
-      return true;
-    }
-  } catch (e) { console.warn('Sync offline:', e); }
-  return false;
-}
-
-let isSyncing = false;
-async function syncPendingOrders(silent) {
-  if (isSyncing) return;
-  const url = getFixedApiUrl();
-  if (!url || !navigator.onLine) return;
-  const pending = state.orders.filter(o => !o.synced);
-  if (!pending.length && !catalogDirty) return;
-  isSyncing = true;
-  try {
-    if (catalogDirty) await syncCatalogToBackend();
-    for (let i = 0; i < pending.length; i++) {
-      const o = pending[i];
-      if (await pushOrderToBackend(o, o._syncAction || 'create')) delete o._syncAction;
-    }
-    saveState();
-    renderOrders();
-  } finally { isSyncing = false; }
-}
-
-async function syncAllNow() {
-  if (!getFixedApiUrl()) return alert('សូមបញ្ចូល Google Apps Script URL ក្នុងផ្ទាំង «⚙️ កំណត់» ជាមុនសិន!');
-  if (!navigator.onLine) return alert('មិនមានអ៊ីនធឺណិតទេ! ប្រព័ន្ធកំពុងរក្សាទុកក្នុងម៉ាស៊ីន (Offline)។');
-  await syncPendingOrders(true);
-  await pullFromBackend(false);
-}
-
-let isPulling = false;
-async function pullFromBackend(silent) {
-  if (isPulling) return;
-  const url = getFixedApiUrl();
-  if (!url || !navigator.onLine) return;
-  if (catalogDirty) await syncCatalogToBackend();
-  isPulling = true;
-  try {
-    const sep = url.includes('?') ? '&' : '?';
-    const res = await fetch(url + sep + '_t=' + Date.now(), { cache: 'no-store' });
-    const data = await res.json();
-    if (data.status !== 'success') {
-      if (!silent) alert('មិនអាចទាញទិន្នន័យពី Google Sheets បានទេ៖ ' + (data.message || ''));
-      return;
-    }
-    if (Array.isArray(data.categories) && data.categories.length) {
-      state.categories = data.categories.map(c => ({ id: c.id, name: String(c.name || '').trim(), icon: String(c.icon || '☕') }));
-    }
-    if (Array.isArray(data.products) && data.products.length) {
-      const defMap = new Map(DEFAULT_DATA.products.map(dp => [String(dp.id), dp.image_url]));
-      state.products = data.products.filter(p => p && p.name).map((p, idx) => {
-        const pid = (p.id !== undefined && p.id !== '') ? p.id : (1000 + idx);
-        return {
-          ...p,
-          id: pid,
-          category_id: p.category_id || 1,
-          name: String(p.name).trim(),
-          price_usd: Number(p.price_usd || 0),
-          cost_usd: Number(p.cost_usd || 0),
-          icon: String(p.icon || '☕'),
-          image_url: p.image_url || defMap.get(String(pid)) || '',
-          has_sweet_ice: p.has_sweet_ice === undefined || p.has_sweet_ice === '' ? undefined : (p.has_sweet_ice !== false && p.has_sweet_ice !== 0 && String(p.has_sweet_ice).toUpperCase() !== 'FALSE'),
-          is_available: p.is_available !== false && p.is_available !== 'FALSE'
-        };
-      });
-    }
-    if (Array.isArray(data.discounts)) {
-      state.discounts = data.discounts
-        .filter(d => d && d.name && d.is_active !== false && d.is_active !== 'FALSE')
-        .map((d, idx) => ({ id: d.id || (1000 + idx), name: String(d.name).trim(), type: d.type === 'fixed' ? 'fixed' : 'percent', value: Number(d.value || 0) }));
-    }
-    if (Array.isArray(data.orders)) {
-      const deletedCodes = new Set((state.deletedOrderCodes || []).map(String));
-      const deletedIds = new Set((state.deletedOrderIds || []).map(String));
-      const existingByCode = new Map((state.orders || []).map(ex => [String(ex.order_code || ''), ex]));
-      const itemsByOrderKey = new Map();
-      if (Array.isArray(data.order_items)) {
-        data.order_items.forEach(row => {
-          if (!row) return;
-          const keys = [String(row.order_code || '').trim(), String(row.order_id || '').trim()].filter(Boolean);
-          const itemObj = {
-            product_id: row.product_id || '',
-            name: String(row.product_name || row.name || '').trim(),
-            qty: Number(row.qty || 1),
-            unit_price: Number(row.unit_price_usd !== undefined ? row.unit_price_usd : (row.unit_price || 0)),
-            unit_cost: Number(row.unit_cost_usd !== undefined ? row.unit_cost_usd : (row.unit_cost || 0)),
-            size: String(row.size || ''),
-            sugar_level: String(row.sugar_level || ''),
-            ice_level: String(row.ice_level || '')
-          };
-          if (!itemObj.name) return;
-          keys.forEach(k => {
-            if (!itemsByOrderKey.has(k)) itemsByOrderKey.set(k, []);
-            itemsByOrderKey.get(k).push(itemObj);
-          });
-        });
-      }
-      const merged = new Map();
-      data.orders.forEach((o, idx) => {
-        const code = String(o.order_code || o.id || ('ROW-' + (idx + 1))).trim();
-        const oid = String(o.id || '');
-        if (!code || deletedCodes.has(code) || (oid && deletedIds.has(oid))) return;
-        const pulledItems = extractOrderItems(o);
-        const sheetOrderItems = itemsByOrderKey.get(code) || (oid ? itemsByOrderKey.get(oid) : null) || [];
-        const prev = existingByCode.get(code);
-        const finalItems = pulledItems.length ? pulledItems : (sheetOrderItems.length ? sheetOrderItems : (prev ? extractOrderItems(prev) : []));
-        const sub = Number(o.subtotal !== undefined ? o.subtotal : (o.subtotal_usd !== undefined ? o.subtotal_usd : (o.total_usd || 0)));
-        const disc = Number(o.discount !== undefined ? o.discount : (o.discount_usd || 0));
-        const tot = Number(o.total_usd !== undefined ? o.total_usd : Math.max(0, sub - disc));
-        merged.set(code, {
-          ...o,
-          id: o.id || (Date.now() + idx),
-          order_code: code,
-          subtotal: sub,
-          discount: disc,
-          total_usd: tot,
-          exchange_rate: Number(o.exchange_rate || state.settings.exchangeRate || 4100),
-          total_khr: Number(o.total_khr || Math.round(tot * Number(state.settings.exchangeRate || 4100))),
-          payment_method: String(o.payment_method || 'Cash'),
-          order_type: String(o.order_type || 'Takeaway'),
-          created_at: String(o.created_at || new Date().toISOString()),
-          items: finalItems,
-          items_json: JSON.stringify(finalItems),
-          synced: true
-        });
-      });
-      (state.orders || []).forEach(localO => {
-        const code = String(localO.order_code || '');
-        if (!localO.synced && code && !deletedCodes.has(code)) merged.set(code, localO);
-      });
-      state.orders = Array.from(merged.values()).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-    }
-    saveState();
-    renderCategories();
-    renderProducts();
-    renderDiscountOptions();
-    renderCart();
-    renderOrders();
-    renderMenuTable();
-    renderReports();
-    renderSettings();
-    if (!silent) alert('បានទាញទិន្នន័យពី Google Sheets រួចរាល់!');
-  } catch (e) {
-    if (!silent) alert('មិនអាចភ្ជាប់ Google Sheets បានទេ៖ ' + e.message);
-  } finally { isPulling = false; }
-}
-
-function updateSyncIndicator() {
-  const dot = document.getElementById('syncDot');
-  const txt = document.getElementById('syncText');
-  const pending = state.orders.filter(o => !o.synced).length + (catalogDirty ? 1 : 0);
-  if (!state.settings.apiUrl) { dot.className = 'dot'; txt.textContent = 'Offline Only'; }
-  else if (!navigator.onLine) { dot.className = 'dot pending'; txt.textContent = pending > 0 ? 'Offline (' + pending + ')' : 'Offline'; }
-  else if (pending > 0) { dot.className = 'dot pending'; txt.textContent = 'រង់ចាំ Sync (' + pending + ')'; }
-  else { dot.className = 'dot online'; txt.textContent = 'Cloud Synced'; }
-}
-window.addEventListener('offline', updateSyncIndicator);
-
-function renderOrders() {
-  const todayStr = toLocalDateStr(new Date());
-  const todayOrders = (state.orders || []).filter(o => o && toLocalDateStr(o.created_at) === todayStr);
-  document.getElementById('ordersTable').innerHTML = todayOrders.map(o => {
-    const oidStr = String(o.id).replace(/'/g, "\\'");
-    const arr = extractOrderItems(o);
-    const itemsHtml = arr.length ? arr.map(i => (i.name || i.product_name || 'Item') + ' x' + (i.qty || 1)).join(', ') : '<span style="color:var(--muted);">មិនមានបញ្ជីមុខទំនិញ</span>';
-    return '<tr>' +
-      '<td><strong>' + o.order_code + '</strong></td>' +
-      '<td>' + new Date(o.created_at).toLocaleString() + '</td>' +
-      '<td>' + itemsHtml + '</td>' +
-      '<td>' + (o.discount > 0 ? '-' + fmtUsd(o.discount) : '-') + '</td>' +
-      '<td><strong>' + fmtUsd(o.total_usd) + '</strong></td>' +
-      '<td>' + o.payment_method + '</td>' +
-      '<td>' + (o.synced ? '✅' : '⏳') + '</td>' +
-      '<td style="white-space:nowrap;">' +
-        '<button class="btn btn-primary btn-sm" onclick="openEditOrder(\'' + oidStr + '\')">✏️ កែ</button> ' +
-        '<button class="btn btn-light btn-sm" onclick="printOrderById(\'' + oidStr + '\')">🖨️</button> ' +
-        '<button class="btn btn-danger btn-sm" onclick="deleteOrder(\'' + oidStr + '\')">លុប</button>' +
-      '</td></tr>';
-  }).join('') || '<tr><td colspan="8" style="text-align:center; color:var(--muted);">មិនទាន់មានប្រវត្តិលក់ថ្ងៃនេះនៅឡើយ</td></tr>';
-}
-
-function printOrderById(id) {
-  const o = state.orders.find(x => String(x.id) === String(id));
-  if (o) printReceipt(o);
-}
-
-function resizeImage(file, maxSize, cb) {
-  const reader = new FileReader();
-  reader.onload = e => {
-    const img = new Image();
-    img.onload = () => {
-      const c = document.createElement('canvas');
-      let w = img.width, h = img.height;
-      if (w > h && w > maxSize) { h *= maxSize / w; w = maxSize; }
-      else if (h > maxSize) { w *= maxSize / h; h = maxSize; }
-      c.width = w; c.height = h;
-      c.getContext('2d').drawImage(img, 0, 0, w, h);
-      cb(c.toDataURL('image/jpeg', 0.78));
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
-}
-
-function handleProdImage(e) {
-  const f = e.target.files[0]; if (!f) return;
-  resizeImage(f, 240, dataUrl => {
-    document.getElementById('pImgData').value = dataUrl;
-    const thumb = document.getElementById('pImgThumb');
-    thumb.src = dataUrl; thumb.style.display = 'inline-block';
-    document.getElementById('imgPreviewStatus').textContent = '✅ រូបភាពរួចរាល់!';
-  });
-}
-
-async function saveProduct() {
-  if (!verifyAdminPin('រក្សាទុក/កែប្រែម៉ឺនុយ')) return;
-  const idVal = document.getElementById('editProdId').value;
-  const existing = idVal ? state.products.find(p => String(p.id) === String(idVal)) : null;
-  const sweetIceSel = document.getElementById('pHasSweetIce');
-  const hasSweetIce = sweetIceSel ? (sweetIceSel.value !== '0') : true;
-  const catVal = document.getElementById('pCat').value;
-  const obj = {
-    id: existing ? existing.id : Date.now(),
-    name: document.getElementById('pName').value.trim(),
-    category_id: isNaN(Number(catVal)) ? catVal : Number(catVal),
-    price_usd: Number(document.getElementById('pPrice').value || 0),
-    cost_usd: Number(document.getElementById('pCost').value || 0),
-    icon: document.getElementById('pIcon').value || '☕',
-    image_url: document.getElementById('pImgData').value,
-    has_sweet_ice: hasSweetIce,
-    is_available: existing ? (existing.is_available !== false) : true
-  };
-  if (!obj.name || obj.price_usd <= 0) return alert('សូមបញ្ចូលឈ្មោះ និងតម្លៃលក់!');
-  const idx = existing ? state.products.findIndex(p => String(p.id) === String(existing.id)) : -1;
-  if (idx > -1) state.products[idx] = obj; else state.products.push(obj);
-  saveState(); resetProductForm(); renderMenuTable(); renderProducts();
-  const synced = await syncCatalogToBackend();
-  alert((idx > -1 ? 'បានកែប្រែទំនិញរួចរាល់!' : 'បានបន្ថែមទំនិញថ្មីរួចរាល់!') + (synced ? ' (បាន Sync ទៅ Google Sheets)' : ' (រក្សាទុកក្នុងម៉ាស៊ីន)'));
-}
-
-function editProduct(id) {
-  const p = state.products.find(x => String(x.id) === String(id));
-  if (!p) return alert('រកមិនឃើញទំនិញនេះទេ!');
-  renderCategories();
-  document.getElementById('editProdId').value = String(p.id);
-  document.getElementById('pName').value = p.name || '';
-  document.getElementById('pCat').value = String(p.category_id);
-  document.getElementById('pPrice').value = p.price_usd || '';
-  document.getElementById('pCost').value = p.cost_usd || 0;
-  document.getElementById('pImgData').value = p.image_url || '';
-  const sweetIceSel = document.getElementById('pHasSweetIce');
-  if (sweetIceSel) sweetIceSel.value = isDrinkProduct(p) ? '1' : '0';
-  const thumb = document.getElementById('pImgThumb');
-  if (p.image_url) { thumb.src = p.image_url; thumb.style.display = 'inline-block'; }
-  else { thumb.src = ''; thumb.style.display = 'none'; }
-  document.getElementById('menuFormTitle').textContent = '✏️ កែប្រែទំនិញ (' + p.name + ')';
-
-  const wrap = document.getElementById('menuPageWrap');
-  const formCard = document.getElementById('menuFormCard');
-  if (wrap) wrap.scrollTo({ top: 0, behavior: 'smooth' });
-  if (formCard) {
-    formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    formCard.style.borderColor = '#3b82f6';
-    formCard.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.45)';
-    setTimeout(() => {
-      formCard.style.borderColor = '';
-      formCard.style.boxShadow = '';
-    }, 2000);
-  }
-  setTimeout(() => {
-    const nameInput = document.getElementById('pName');
-    if (nameInput) { nameInput.focus(); nameInput.select(); }
-  }, 250);
-}
-
-function resetProductForm() {
-  ['editProdId','pName','pPrice','pCost','pImgData','pImgFile'].forEach(id => document.getElementById(id).value = '');
-  const thumb = document.getElementById('pImgThumb');
-  thumb.src = ''; thumb.style.display = 'none';
-  document.getElementById('imgPreviewStatus').textContent = '';
-  document.getElementById('menuFormTitle').textContent = '➕ បន្ថែម / កែទំនិញ';
-}
-
-async function toggleStock(id) {
-  if (!verifyAdminPin('ប្តូរស្ថានភាពស្តុកម៉ឺនុយ')) return;
-  const p = state.products.find(x => String(x.id) === String(id));
-  if (p) {
-    p.is_available = p.is_available === false ? true : false;
-    saveState(); renderMenuTable(); renderProducts();
-    await syncCatalogToBackend();
-  }
-}
-
-async function deleteProduct(id) {
-  if (!verifyAdminPin('លុបម៉ឺនុយ')) return;
-  if (!confirm('លុបទំនិញនេះចេញពីម៉ឺនុយ និង Google Sheets?')) return;
-  state.products = state.products.filter(x => String(x.id) !== String(id));
-  saveState(); renderMenuTable(); renderProducts();
-  await syncCatalogToBackend();
-}
-
-function renderMenuTable() {
-  document.getElementById('menuTable').innerHTML = state.products.map(p => {
-    const pidStr = String(p.id).replace(/'/g, "\\'");
-    const catObj = state.categories.find(c => String(c.id) === String(p.category_id));
-    const cat = catObj ? catObj.name : '-';
-    return '<tr>' +
-      '<td><img src="' + (p.image_url || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=300&q=80') + '" style="width:42px;height:42px;border-radius:8px;object-fit:cover;"></td>' +
-      '<td><strong>' + p.name + '</strong><div style="font-size:11px;color:var(--muted);">' + (isDrinkProduct(p) ? '🧊 មានស្ករ & ទឹកកក' : '🚫 គ្មានស្ករ & ទឹកកក') + '</div></td>' +
-      '<td>' + cat + '</td>' +
-      '<td>' + fmtUsd(p.price_usd) + '</td>' +
-      '<td>' + fmtUsd(p.cost_usd) + '</td>' +
-      '<td><button type="button" class="btn btn-sm ' + (p.is_available===false?'btn-light':'btn-success') + '" onclick="toggleStock(\'' + pidStr + '\')">' + (p.is_available===false?'អស់ស្តុក':'មានលក់') + '</button></td>' +
-      '<td style="white-space:nowrap;">' +
-        '<button type="button" class="btn btn-light btn-sm" onclick="editProduct(\'' + pidStr + '\')">កែ</button> ' +
-        '<button type="button" class="btn btn-danger btn-sm" onclick="deleteProduct(\'' + pidStr + '\')">លុប</button>' +
-      '</td></tr>';
-  }).join('');
-}
-
-function initReportFilters() {
-  const now = new Date();
-  const todayLocal = toLocalDateStr(now);
-  document.getElementById('repDate').value = todayLocal;
-  document.getElementById('repMonth').value = todayLocal.slice(0, 7);
-  const curY = now.getFullYear();
-  document.getElementById('repYear').innerHTML = [curY - 1, curY, curY + 1].map(y => '<option value="' + y + '" ' + (y===curY?'selected':'') + '>ឆ្នាំ ' + y + '</option>').join('');
-}
-
-function renderReports() {
-  const mode = document.getElementById('repMode').value;
-  document.getElementById('repDate').style.display = mode === 'daily' ? 'inline-block' : 'none';
-  document.getElementById('repMonth').style.display = mode === 'monthly' ? 'inline-block' : 'none';
-  document.getElementById('repYear').style.display = mode === 'yearly' ? 'inline-block' : 'none';
-  document.getElementById('yearlyChartCard').style.display = mode === 'yearly' ? 'block' : 'none';
-
-  const dVal = document.getElementById('repDate').value;
-  const mVal = document.getElementById('repMonth').value;
-  const yVal = document.getElementById('repYear').value;
-
-  const filtered = state.orders.filter(o => {
-    const dt = toLocalDateStr(o.created_at);
-    if (mode === 'daily') return dt === dVal;
-    if (mode === 'monthly') return dt.startsWith(mVal);
-    return dt.startsWith(yVal);
-  });
-
-  const rev = filtered.reduce((s, o) => s + Number(o.total_usd || 0), 0);
-  const disc = filtered.reduce((s, o) => s + Number(o.discount || 0), 0);
-  const cost = filtered.reduce((s, o) => s + extractOrderItems(o).reduce((is, i) => is + Number(i.unit_cost || 0) * Number(i.qty || 1), 0), 0);
-  const profit = rev - cost;
-
-  document.getElementById('kpiRev').textContent = fmtUsd(rev);
-  document.getElementById('kpiRevKhr').textContent = fmtKhr(rev);
-  document.getElementById('kpiProfit').textContent = fmtUsd(profit);
-  document.getElementById('kpiCost').textContent = 'ដើមទុន: ' + fmtUsd(cost);
-  document.getElementById('kpiCount').textContent = filtered.length;
-  document.getElementById('kpiAvg').textContent = 'មធ្យម: ' + fmtUsd(filtered.length ? rev / filtered.length : 0);
-  document.getElementById('kpiDisc').textContent = fmtUsd(disc);
-
-  const byPay = {};
-  filtered.forEach(o => {
-    byPay[o.payment_method] = byPay[o.payment_method] || { count: 0, sum: 0 };
-    byPay[o.payment_method].count++;
-    byPay[o.payment_method].sum += Number(o.total_usd || 0);
-  });
-  document.getElementById('repPayTable').innerHTML = Object.entries(byPay).map(([k, v]) =>
-    '<tr><td><strong>' + k + '</strong></td><td style="text-align:center;">' + v.count + '</td><td style="text-align:right;">' + fmtUsd(v.sum) + '</td></tr>'
-  ).join('') || '<tr><td colspan="3" style="text-align:center; color:var(--muted);">គ្មានទិន្នន័យ</td></tr>';
-
-  const byItem = {};
-  filtered.forEach(o => {
-    const arr = extractOrderItems(o);
-    if (arr.length) {
-      arr.forEach(i => {
-        const k = i.name || 'Unknown';
-        byItem[k] = byItem[k] || { qty: 0, rev: 0, isMissing: false };
-        byItem[k].qty += Number(i.qty || 1);
-        byItem[k].rev += Number(i.unit_price || 0) * Number(i.qty || 1);
-      });
-    } else if (Number(o.total_usd || 0) > 0) {
-      const k = 'មិនមានបញ្ជីមុខទំនិញ';
-      byItem[k] = byItem[k] || { qty: 0, rev: 0, isMissing: true };
-      byItem[k].qty += 1;
-      byItem[k].rev += Number(o.subtotal !== undefined ? o.subtotal : (o.total_usd || 0));
-    }
-  });
-  const topList = Object.entries(byItem).sort((a, b) => (a[1].isMissing === b[1].isMissing ? b[1].qty - a[1].qty : (a[1].isMissing ? 1 : -1))).slice(0, 10);
-  document.getElementById('repTopItemsTable').innerHTML = topList.map(([name, v]) =>
-    '<tr><td><strong style="' + (v.isMissing ? 'color:var(--muted);font-style:italic;' : '') + '">' + name + '</strong></td><td style="text-align:center;">' + (v.isMissing ? '-' : v.qty) + '</td><td style="text-align:right;">' + fmtUsd(v.rev) + '</td></tr>'
-  ).join('') || '<tr><td colspan="3" style="text-align:center; color:var(--muted);">គ្មានទិន្នន័យ</td></tr>';
-
-  if (mode === 'yearly') {
-    const months = Array(12).fill(0);
-    filtered.forEach(o => { const m = new Date(o.created_at).getMonth(); months[m] += Number(o.total_usd || 0); });
-    const maxV = Math.max(...months, 1);
-    document.getElementById('yearlyChart').innerHTML = months.map((v, i) =>
-      '<div class="bar-col"><div class="bar-val">' + (v > 0 ? '$' + v.toFixed(0) : '') + '</div><div class="bar-fill" style="height:' + ((v / maxV) * 100) + '%;"></div><div class="bar-lbl">ខែ ' + (i + 1) + '</div></div>'
-    ).join('');
-  }
-}
-
-function renderSettings() {
-  document.getElementById('setShopName').value = state.settings.shopName;
-  document.getElementById('setShopAddress').value = state.settings.shopAddress;
-  document.getElementById('setRate').value = state.settings.exchangeRate;
-  document.getElementById('setApiUrl').value = state.settings.apiUrl || '';
-  document.getElementById('setLoginPin').value = state.settings.loginPin || '';
-  document.getElementById('setAdminPin').value = state.settings.adminPin || '';
-  document.getElementById('categoriesTable').innerHTML = state.categories.map(c => {
-    const cidStr = String(c.id).replace(/'/g, "\\'");
-    return '<tr><td>' + (c.icon || '☕') + '</td><td><strong>' + c.name + '</strong></td><td><button type="button" class="btn btn-danger btn-sm" onclick="delCategory(\'' + cidStr + '\')">លុប</button></td></tr>';
-  }).join('');
-  document.getElementById('discountsTable').innerHTML = state.discounts.map(d => {
-    const didStr = String(d.id).replace(/'/g, "\\'");
-    return '<tr><td>' + d.name + '</td><td>' + (d.type === 'percent' ? '%' : '$') + '</td><td>' + d.value + '</td><td><button type="button" class="btn btn-danger btn-sm" onclick="delDiscount(\'' + didStr + '\')">លុប</button></td></tr>';
-  }).join('');
-}
-
-function handleKhqrImage(e) {
-  const f = e.target.files[0]; if (!f) return;
-  resizeImage(f, 450, dataUrl => { state.settings.khqrImage = dataUrl; saveState(); alert('រក្សាទុករូប KHQR រួចរាល់!'); });
-}
-
-function saveSettings() {
-  state.settings.shopName = document.getElementById('setShopName').value;
-  state.settings.shopAddress = document.getElementById('setShopAddress').value;
-  state.settings.exchangeRate = Number(document.getElementById('setRate').value || 4100);
-  state.settings.apiUrl = FIXED_API_URL;
-  state.settings.loginPin = document.getElementById('setLoginPin').value.trim();
-  state.settings.adminPin = document.getElementById('setAdminPin').value.trim();
-  state.settings.apiKey = '';
-  saveState();
-  renderSettings();
-  alert('បានរក្សាទុកការកំណត់ក្នុងម៉ាស៊ីនរួចរាល់!');
-}
-
-async function addDiscount() {
-  if (!verifyAdminPin('បន្ថែមបញ្ចុះតម្លៃ')) return;
-  const name = document.getElementById('dName').value.trim();
-  const type = document.getElementById('dType').value;
-  const value = Number(document.getElementById('dVal').value || 0);
-  if (!name || value <= 0) return alert('សូមបញ្ចូលឈ្មោះ និងចំនួនបញ្ចុះតម្លៃ!');
-  state.discounts.push({ id: Date.now(), name, type, value });
-  saveState(); renderSettings(); renderDiscountOptions();
-  document.getElementById('dName').value = ''; document.getElementById('dVal').value = '';
-  await syncCatalogToBackend();
-}
-async function delDiscount(id) {
-  if (!verifyAdminPin('លុបបញ្ចុះតម្លៃ')) return;
-  if (!confirm('លុបប្រភេទបញ្ចុះតម្លៃនេះ?')) return;
-  state.discounts = state.discounts.filter(d => String(d.id) !== String(id));
-  saveState(); renderSettings(); renderDiscountOptions(); renderCart();
-  await syncCatalogToBackend();
-}
-
-async function addCategory() {
-  if (!verifyAdminPin('បន្ថែមប្រភេទម៉ឺនុយ')) return;
-  const name = document.getElementById('cName').value.trim();
-  const icon = document.getElementById('cIcon').value.trim() || '☕';
-  if (!name) return alert('សូមបញ្ចូលឈ្មោះប្រភេទម៉ឺនុយ!');
-  state.categories.push({ id: Date.now(), name, icon });
-  saveState(); renderCategories(); renderSettings();
-  document.getElementById('cName').value = '';
-  await syncCatalogToBackend();
-}
-async function delCategory(id) {
-  if (!verifyAdminPin('លុបប្រភេទម៉ឺនុយ')) return;
-  if (state.products.some(p => String(p.category_id) === String(id))) return alert('មិនអាចលុបប្រភេទនេះបានទេ ព្រោះមានមុខទំនិញកំពុងប្រើប្រាស់វា!');
-  if (!confirm('លុបប្រភេទម៉ឺនុយនេះ?')) return;
-  state.categories = state.categories.filter(c => String(c.id) !== String(id));
-  saveState(); renderCategories(); renderSettings();
-  await syncCatalogToBackend();
-}
-
-function exportOrdersCSV() {
-  const rows = [['Order Code','Date','Subtotal','Discount Name','Discount','Total USD','Total KHR','Payment','Type']];
-  state.orders.forEach(o => rows.push([o.order_code, o.created_at, o.subtotal, o.discount_name || '', o.discount, o.total_usd, o.total_khr, o.payment_method, o.order_type]));
-  const csv = '\uFEFF' + rows.map(r => r.map(x => '"' + String(x).replace(/"/g,'""') + '"').join(',')).join('\n');
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
-  a.download = 'sak_coffee_sales.csv';
-  a.click();
-}
-
-let editingOrder = null;
-function openEditOrder(id) {
-  if (!verifyAdminPin('កែប្រែ ឬលុបទំនិញក្នុងវិក្កយបត្រ')) return;
-  const o = state.orders.find(x => String(x.id) === String(id));
-  if (!o) return;
-  editingOrder = JSON.parse(JSON.stringify(o));
-  editingOrder.items = JSON.parse(JSON.stringify(extractOrderItems(o)));
-  editingOrder._origSubtotal = Number(o.subtotal || 0);
-  editingOrder._origDiscount = Number(o.discount || 0);
-  document.getElementById('editOrderTitle').textContent = '✏️ កែប្រែវិក្កយបត្រ ' + o.order_code;
-  renderEditOrderModal();
-  document.getElementById('editOrderModal').classList.add('open');
-}
-function closeEditOrder() { editingOrder = null; document.getElementById('editOrderModal').classList.remove('open'); }
-function renderEditOrderModal() {
-  if (!editingOrder) return;
-  const tbody = document.getElementById('editOrderItems');
-  if (!editingOrder.items.length) {
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#f87171;">អស់ទំនិញហើយ! ចុច «រក្សាទុក» ដើម្បីលុបវិក្កយបត្រនេះទាំងមូល។</td></tr>';
-  } else {
-    tbody.innerHTML = editingOrder.items.map((i, idx) => {
-      const drink = isDrinkProduct(i);
-      const sizeLabel = (drink && i.size) ? ' (' + i.size + ')' : '';
-      const subMeta = (drink && (i.sugar_level || i.ice_level)) ? fmtUsd(i.unit_price) + ' • ផ្អែម ' + (i.sugar_level || '50%') : fmtUsd(i.unit_price);
-      return '<tr>' +
-        '<td><strong>' + i.name + sizeLabel + '</strong><div style="font-size:11px; color:var(--muted);">' + subMeta + '</div></td>' +
-        '<td style="text-align:center;"><div class="inline-qty"><button onclick="editOrderQty(' + idx + ', -1)">−</button><strong style="min-width:20px; text-align:center;">' + i.qty + '</strong><button onclick="editOrderQty(' + idx + ', 1)">+</button></div></td>' +
-        '<td style="text-align:right; font-weight:700;">' + fmtUsd(i.unit_price * i.qty) + '</td>' +
-        '<td style="text-align:center;"><button class="btn btn-danger btn-sm" onclick="editOrderRemove(' + idx + ')">✖ លុប</button></td>' +
-      '</tr>';
-    }).join('');
-  }
-  const sub = editingOrder.items.reduce((s, i) => s + i.unit_price * i.qty, 0);
-  let disc = 0;
-  if (editingOrder._origSubtotal > 0 && editingOrder._origDiscount > 0) {
-    const discObj = state.discounts.find(d => d.name === editingOrder.discount_name);
-    if (discObj && discObj.type === 'percent') disc = sub * (discObj.value / 100);
-    else if (discObj && discObj.type === 'fixed') disc = Math.min(sub, discObj.value);
-    else disc = Math.min(sub, editingOrder._origDiscount * (sub / editingOrder._origSubtotal));
-  }
-  const total = Math.max(0, sub - disc);
-  const rate = editingOrder.exchange_rate || state.settings.exchangeRate;
-  editingOrder.subtotal = Number(sub.toFixed(2));
-  editingOrder.discount = Number(disc.toFixed(2));
-  editingOrder.total_usd = Number(total.toFixed(2));
-  editingOrder.total_khr = Math.round(total * rate);
-  document.getElementById('eoSubtotal').textContent = fmtUsd(editingOrder.subtotal);
-  document.getElementById('eoDiscount').textContent = '-' + fmtUsd(editingOrder.discount);
-  document.getElementById('eoTotal').textContent = fmtUsd(editingOrder.total_usd);
-  document.getElementById('eoKhr').textContent = editingOrder.total_khr.toLocaleString('en-US') + ' ៛';
-}
-function editOrderQty(idx, delta) { editingOrder.items[idx].qty += delta; if (editingOrder.items[idx].qty <= 0) editingOrder.items.splice(idx, 1); renderEditOrderModal(); }
-function editOrderRemove(idx) { editingOrder.items.splice(idx, 1); renderEditOrderModal(); }
-async function saveEditedOrder(doPrint) {
-  if (!editingOrder) return;
-  const idx = state.orders.findIndex(x => String(x.id) === String(editingOrder.id));
-  if (idx === -1) return closeEditOrder();
-  if (!editingOrder.items.length) {
-    if (!confirm('លុបវិក្កយបត្រនេះចោលតែម្តងទេ?')) return;
-    const removed = state.orders[idx];
-    state.orders.splice(idx, 1);
-    saveState(); closeEditOrder(); renderOrders(); renderReports();
-    if (getFixedApiUrl() && removed.synced) await pushOrderToBackend(removed, 'delete');
-    return;
-  }
-  delete editingOrder._origSubtotal;
-  delete editingOrder._origDiscount;
-  editingOrder.items_json = JSON.stringify(editingOrder.items);
-  const wasSynced = editingOrder.synced;
-  editingOrder.synced = false;
-  state.orders[idx] = editingOrder;
-  saveState();
-  const updated = state.orders[idx];
-  closeEditOrder(); renderOrders(); renderReports();
-  if (doPrint) printReceipt(updated);
-  updated._syncAction = wasSynced ? 'update' : 'create';
-  saveState();
-  if (getFixedApiUrl() && navigator.onLine) {
-    if (await pushOrderToBackend(updated, updated._syncAction)) { delete updated._syncAction; saveState(); }
-    renderOrders();
-  }
-}
-
-async function deleteOrder(id) {
-  if (!verifyAdminPin('លុបវិក្កយបត្រ')) return;
-  if (!confirm('តើអ្នកពិតជាចង់លុបវិក្កយបត្រនេះមែនទេ?')) return;
-  const target = state.orders.find(o => String(o.id) === String(id));
-  state.deletedOrderIds.push(String(id));
-  if (target && target.order_code) state.deletedOrderCodes.push(String(target.order_code));
-  state.orders = state.orders.filter(o => String(o.id) !== String(id));
-  saveState(); renderOrders(); renderReports();
-  if (target && getFixedApiUrl() && navigator.onLine) await pushOrderToBackend(target, 'delete');
-}
-
-async function resetSalesHistory() {
-  if (!verifyAdminPin('Reset លុបប្រវត្តិលក់')) return;
-  if (!confirm('តើអ្នកពិតជាចង់ Reset លុបប្រវត្តិវិក្កយបត្រលក់ និងរបាយការណ៍ទាំងអស់មែនទេ?')) return;
-  state.orders = [];
-  saveState(); renderOrders(); renderReports();
-  if (getFixedApiUrl() && navigator.onLine) {
-    try {
-      await fetch(getFixedApiUrl(), {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'reset', apiKey: '' })
-      });
-    } catch (e) {}
-  }
-  alert('បាន Reset ប្រវត្តិលក់រួចរាល់!');
-}
-
-function backupJSON() {
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' }));
-  a.download = 'sak_coffee_backup.json';
-  a.click();
-}
-function restoreJSON(e) {
-  if (!verifyAdminPin('Restore ទិន្នន័យ JSON')) { e.target.value = ''; return; }
-  const f = e.target.files[0]; if (!f) return;
-  const r = new FileReader();
-  r.onload = ev => { state = JSON.parse(ev.target.result); saveState(); location.reload(); };
-  r.readAsText(f);
-}
-
-function holdCurrentOrder() {
-  if (!cart.length) return alert('មិនមានទំនិញក្នុងកន្ត្រកសម្រាប់ផ្អាកទេ!');
-  const label = prompt('ដាក់ឈ្មោះ ឬលេខតុសម្រាប់វិក្កយបត្រផ្អាកនេះ៖', 'ភ្ញៀវ #' + (state.heldOrders.length + 1));
-  if (label === null) return;
-  state.heldOrders.push({
-    id: Date.now(),
-    label: label.trim() || ('ភ្ញៀវ #' + (state.heldOrders.length + 1)),
-    orderType: document.getElementById('orderTypeSelect').value,
-    discountVal: document.getElementById('discountSelect').value,
-    items: JSON.parse(JSON.stringify(cart))
-  });
-  saveState(); clearCart(); renderHeldOrders();
-}
-function resumeHeldOrder(id) {
-  const idx = state.heldOrders.findIndex(h => String(h.id) === String(id));
-  if (idx === -1) return;
-  if (cart.length && !confirm('ជំនួសកន្ត្រកបច្ចុប្បន្នដោយវិក្កយបត្រដែលផ្អាកនេះ?')) return;
-  const held = state.heldOrders.splice(idx, 1)[0];
-  cart = held.items || [];
-  document.getElementById('orderTypeSelect').value = held.orderType || 'Takeaway';
-  document.getElementById('discountSelect').value = held.discountVal || 'none';
-  saveState(); renderCart(); renderProducts(); renderHeldOrders();
-}
-function renderHeldOrders() {
-  const bar = document.getElementById('heldOrdersBar');
-  if (!bar) return;
-  if (!state.heldOrders || !state.heldOrders.length) { bar.style.display = 'none'; bar.innerHTML = ''; return; }
-  bar.style.display = 'flex';
-  bar.innerHTML = state.heldOrders.map(h => '<button class="chip" style="background:#fef3c7; border-color:#f59e0b; color:#92400e; font-weight:600;" onclick="resumeHeldOrder(\'' + String(h.id).replace(/'/g, "\\'") + '\')">⏸️ ' + h.label + ' (' + h.items.reduce((s,i)=>s+i.qty,0) + ')</button>').join('');
-}
-
-let sessionLoggedIn = false;
-function showLoginModal() {
-  const lpin = String((state.settings && state.settings.loginPin) || '').trim();
-  if (!lpin || sessionLoggedIn) { sessionLoggedIn = true; return; }
-  const overlay = document.createElement('div');
-  overlay.id = 'loginPinOverlay';
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.92);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;';
-  overlay.innerHTML = '<div style="background:#1e293b;color:#f1f5f9;border:1px solid #334155;width:100%;max-width:380px;border-radius:16px;padding:24px;box-shadow:0 20px 45px rgba(0,0,0,0.45);text-align:center;">' +
-    '<div style="font-size:38px;margin-bottom:6px;">🔐</div>' +
-    '<h2 style="font-size:20px;font-weight:700;">ចូលប្រើប្រព័ន្ធ POS</h2>' +
-    '<p style="font-size:13px;color:#94a3b8;margin:4px 0 16px;">ស័ក្តិ កាហ្វេ (Sak Coffee) — សូមបញ្ចូល Login PIN</p>' +
-    '<input id="loginPinInput" type="password" inputmode="numeric" placeholder="បញ្ចូលលេខកូដ PIN..." style="width:100%;padding:12px;font-size:20px;font-weight:700;text-align:center;letter-spacing:6px;border:2px solid #475569;border-radius:10px;margin-bottom:10px;background:#0f172a;color:#fff;">' +
-    '<div id="loginPinError" style="color:#f87171;font-size:12px;font-weight:600;min-height:18px;margin-bottom:10px;"></div>' +
-    '<button id="loginPinSubmit" type="button" style="width:100%;padding:12px;font-size:15px;font-weight:700;border:none;border-radius:10px;background:#3b82f6;color:#fff;cursor:pointer;">🔓 ចូលប្រើ (Login)</button></div>';
-  document.body.appendChild(overlay);
-  const inp = document.getElementById('loginPinInput');
-  const err = document.getElementById('loginPinError');
-  const attempt = () => {
-    if (String(inp.value || '').trim() === lpin) { sessionLoggedIn = true; overlay.remove(); }
-    else { err.textContent = '❌ លេខកូដ PIN មិនត្រឹមត្រូវទេ!'; inp.value = ''; inp.focus(); }
-  };
-  document.getElementById('loginPinSubmit').onclick = attempt;
-  inp.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); attempt(); } };
-  setTimeout(() => inp.focus(), 40);
-}
-function lockPosSession() {
-  sessionLoggedIn = false; adminUnlocked = false;
-  if (!String((state.settings && state.settings.loginPin) || '').trim()) return alert('សូមកំណត់ Login PIN ក្នុងផ្ទាំង «⚙️ កំណត់» ជាមុនសិន!');
-  showLoginModal();
-}
-
-showLoginModal();
-renderCategories();
-renderProducts();
-renderDiscountOptions();
-renderCart();
-initReportFilters();
-updateSyncIndicator();
-renderHeldOrders();
-
-window.addEventListener('online', async () => { await syncPendingOrders(true); await pullFromBackend(true); });
-window.addEventListener('load', async () => { if (navigator.onLine) { await syncPendingOrders(true); await pullFromBackend(true); } });
-setInterval(async () => {
-  if (!navigator.onLine) return;
-  if (state.orders.some(o => !o.synced) || catalogDirty) { await syncPendingOrders(true); return; }
-  const inSettings = document.getElementById('view-settings') && document.getElementById('view-settings').classList.contains('active');
-  const inMenu = document.getElementById('view-menu') && document.getElementById('view-menu').classList.contains('active');
-  if (!inSettings && !inMenu) await pullFromBackend(true);
-}, 20000);
-</script>
+<script src="app.js"></script>
 </body>
 </html>
