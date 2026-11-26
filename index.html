@@ -7,17 +7,18 @@
 <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
   :root {
-    --nav-bg: #2c3e50;
-    --primary: #4a89dc;
-    --primary-dark: #3b73c4;
-    --success: #27ae60;
-    --danger: #e74c3c;
-    --warning: #f39c12;
-    --bg: #f1f4f8;
-    --card: #ffffff;
-    --text: #1f2937;
-    --muted: #6b7280;
-    --border: #e5e7eb;
+    --nav-bg: #1e293b;
+    --primary: #3b82f6;
+    --primary-dark: #2563eb;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --bg: #0f172a;
+    --card: #1e293b;
+    --card-alt: #162032;
+    --text: #f1f5f9;
+    --muted: #94a3b8;
+    --border: #334155;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Kantumruy Pro', system-ui, sans-serif; }
   body { background: var(--bg); color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
@@ -25,24 +26,24 @@
   .topbar {
     background: var(--nav-bg); color: #fff; min-height: 56px; padding: 6px 16px; gap: 8px; flex-wrap: wrap;
     display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+    border-bottom: 1px solid var(--border); box-shadow: 0 2px 8px rgba(0,0,0,0.3);
   }
   .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 18px; }
   .brand-badge { background: var(--warning); color: #111; font-size: 11px; padding: 2px 8px; border-radius: 99px; font-weight: 700; }
-  .nav-tabs { display: flex; gap: 6px; }
+  .nav-tabs { display: flex; gap: 6px; flex-wrap: wrap; }
   .nav-btn {
     background: transparent; color: #cbd5e1; border: none; padding: 8px 14px;
     border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: .15s;
   }
-  .nav-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+  .nav-btn:hover { background: rgba(255,255,255,0.08); color: #fff; }
   .nav-btn.active { background: var(--primary); color: #fff; }
   .sync-pill {
-    font-size: 12px; padding: 5px 10px; border-radius: 99px; background: rgba(255,255,255,0.12);
-    display: flex; align-items: center; gap: 6px; cursor: pointer;
+    font-size: 12px; padding: 5px 12px; border-radius: 99px; background: rgba(255,255,255,0.08);
+    border: 1px solid var(--border); display: flex; align-items: center; gap: 6px; cursor: pointer;
   }
   .dot { width: 8px; height: 8px; border-radius: 50%; background: #9ca3af; }
-  .dot.online { background: #2ecc71; }
-  .dot.pending { background: #f1c40f; }
+  .dot.online { background: #22c55e; }
+  .dot.pending { background: #f59e0b; }
 
   .view { display: none; flex: 1; overflow: hidden; }
   .view.active { display: flex; }
@@ -51,61 +52,61 @@
     width: 42%; min-width: 360px; max-width: 520px; background: var(--card);
     border-right: 1px solid var(--border); display: flex; flex-direction: column;
   }
-  .pos-right { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 12px; gap: 10px; }
+  .pos-right { flex: 1; display: flex; flex-direction: column; overflow: hidden; padding: 12px; gap: 10px; background: var(--bg); }
 
   .cart-header {
     background: var(--primary); color: #fff; padding: 10px 14px;
     display: grid; grid-template-columns: 1fr 86px 68px 34px; font-size: 13px; font-weight: 600;
   }
-  .cart-list { flex: 1; overflow-y: auto; }
+  .cart-list { flex: 1; overflow-y: auto; background: #111827; }
   .cart-empty { text-align: center; padding: 48px 16px; color: var(--muted); font-size: 14px; }
-  .cart-row { border-bottom: 1px solid var(--border); }
+  .cart-row { border-bottom: 1px solid var(--border); background: var(--card); }
   .cart-row-main {
     display: grid; grid-template-columns: 1fr 86px 68px 34px; align-items: center;
     padding: 10px 14px; cursor: pointer; transition: background .12s; gap: 4px;
   }
+  .cart-row-main:hover { background: #263347; }
   .inline-qty { display: flex; align-items: center; justify-content: center; gap: 4px; }
   .inline-qty button {
     width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--border);
-    background: #f8fafc; font-weight: 700; cursor: pointer; font-size: 14px; line-height: 1;
+    background: #0f172a; color: #fff; font-weight: 700; cursor: pointer; font-size: 14px; line-height: 1;
   }
-  .inline-qty button:hover { background: #e2e8f0; }
+  .inline-qty button:hover { background: var(--primary); border-color: var(--primary); }
   .btn-x {
-    width: 26px; height: 26px; border-radius: 6px; border: none; background: #fee2e2;
-    color: var(--danger); font-weight: 700; cursor: pointer; font-size: 13px;
+    width: 26px; height: 26px; border-radius: 6px; border: none; background: rgba(239,68,68,0.18);
+    color: #f87171; font-weight: 700; cursor: pointer; font-size: 13px;
     display: inline-flex; align-items: center; justify-content: center;
   }
   .btn-x:hover { background: var(--danger); color: #fff; }
-  .cart-row-main:hover { background: #f8fafc; }
-  .cart-item-name { font-weight: 600; font-size: 14px; }
+  .cart-item-name { font-weight: 600; font-size: 14px; color: #f8fafc; }
   .cart-item-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
   .cart-mod {
-    background: #f8fafc; padding: 10px 14px; border-top: 1px dashed var(--border);
+    background: #162032; padding: 10px 14px; border-top: 1px dashed var(--border);
     display: none; flex-direction: column; gap: 8px;
   }
   .cart-row.expanded .cart-mod { display: flex; }
   .mod-line { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12px; }
   .mod-label { width: 58px; font-weight: 600; color: var(--muted); }
   .chip {
-    border: 1px solid var(--border); background: #fff; padding: 4px 10px;
+    border: 1px solid var(--border); background: #0f172a; color: var(--text); padding: 4px 10px;
     border-radius: 6px; cursor: pointer; font-size: 12px; font-weight: 500;
   }
   .chip.active { background: var(--primary); color: #fff; border-color: var(--primary); }
   .qty-btn {
     width: 28px; height: 28px; border-radius: 6px; border: 1px solid var(--border);
-    background: #fff; font-weight: 700; cursor: pointer;
+    background: #0f172a; color: #fff; font-weight: 700; cursor: pointer;
   }
 
-  .cart-footer { border-top: 2px solid var(--border); padding: 12px 14px; background: #fafbfc; display: flex; flex-direction: column; gap: 8px; }
+  .cart-footer { border-top: 2px solid var(--border); padding: 12px 14px; background: var(--card); display: flex; flex-direction: column; gap: 8px; }
   .discount-bar { display: flex; gap: 8px; align-items: center; }
   .discount-bar select, .discount-bar input {
-    padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; background: #fff;
+    padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px; background: #0f172a; color: var(--text);
   }
   .discount-bar select { flex: 1; }
   .totals-line { display: flex; justify-content: space-between; font-size: 14px; color: var(--muted); }
-  .totals-grand { display: flex; justify-content: space-between; font-size: 20px; font-weight: 700; color: var(--nav-bg); }
-  .totals-khr { text-align: right; font-size: 13px; font-weight: 600; color: var(--primary-dark); }
-  .cart-actions { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; margin-top: 4px; }
+  .totals-grand { display: flex; justify-content: space-between; font-size: 20px; font-weight: 700; color: #fff; }
+  .totals-khr { text-align: right; font-size: 13px; font-weight: 600; color: #60a5fa; }
+  .cart-actions { display: grid; grid-template-columns: 1fr 1fr 1.6fr; gap: 8px; margin-top: 4px; }
 
   .btn {
     border: none; border-radius: 8px; padding: 10px 14px; font-size: 14px; font-weight: 600;
@@ -116,37 +117,37 @@
   .btn-success { background: var(--success); color: #fff; }
   .btn-success:hover { filter: brightness(0.95); }
   .btn-danger { background: var(--danger); color: #fff; }
-  .btn-light { background: #e5e7eb; color: var(--text); }
+  .btn-light { background: #334155; color: #f1f5f9; }
+  .btn-light:hover { background: #475569; }
   .btn-sm { padding: 6px 10px; font-size: 12px; }
 
   .search-cats { display: flex; flex-direction: column; gap: 8px; }
   .search-input {
     width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: 10px;
-    font-size: 14px; background: #fff;
+    font-size: 14px; background: var(--card); color: var(--text);
   }
   .cat-bar { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px; }
   .cat-btn {
-    border: none; padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 600;
-    cursor: pointer; white-space: nowrap; background: #fff; color: var(--text);
-    box-shadow: 0 1px 2px rgba(0,0,0,0.06);
+    border: 1px solid var(--border); padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 600;
+    cursor: pointer; white-space: nowrap; background: var(--card); color: var(--text);
   }
-  .cat-btn.active { background: var(--nav-bg); color: #fff; }
+  .cat-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
   .product-grid {
     flex: 1; overflow-y: auto; display: grid;
     grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
     gap: 10px; align-content: start; padding-bottom: 16px;
   }
   .prod-card {
-    background: #fff; border-radius: 12px; padding: 12px 10px; cursor: pointer;
+    background: var(--card); border-radius: 12px; padding: 12px 10px; cursor: pointer;
     border: 1px solid var(--border); position: relative; transition: transform .1s, box-shadow .1s;
     display: flex; flex-direction: column; align-items: center; text-align: center; gap: 6px;
   }
   .prod-card:active { transform: scale(0.97); }
-  .prod-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-color: var(--primary); }
+  .prod-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.35); border-color: var(--primary); }
   .prod-card.soldout { opacity: 0.45; pointer-events: none; }
-  .prod-img { width: 88px; height: 88px; border-radius: 12px; object-fit: cover; background: #f3f4f6; box-shadow: 0 2px 6px rgba(0,0,0,0.08); }
-  .prod-name { font-size: 13px; font-weight: 600; line-height: 1.3; }
-  .prod-price { font-size: 14px; font-weight: 700; color: var(--primary-dark); }
+  .prod-img { width: 88px; height: 88px; border-radius: 12px; object-fit: cover; background: #0f172a; }
+  .prod-name { font-size: 13px; font-weight: 600; line-height: 1.3; color: #f8fafc; }
+  .prod-price { font-size: 14px; font-weight: 700; color: #60a5fa; }
   .prod-badge {
     position: absolute; top: 8px; right: 8px; background: var(--danger); color: #fff;
     width: 24px; height: 24px; border-radius: 50%; font-size: 12px; font-weight: 700;
@@ -154,15 +155,15 @@
   }
 
   .page-wrap { flex: 1; overflow-y: auto; padding: 18px; max-width: 1280px; width: 100%; margin: 0 auto; }
-  .card { background: #fff; border-radius: 12px; padding: 16px; border: 1px solid var(--border); margin-bottom: 16px; }
-  .card-title { font-size: 16px; font-weight: 700; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+  .card { background: var(--card); border-radius: 12px; padding: 16px; border: 1px solid var(--border); margin-bottom: 16px; }
+  .card-title { font-size: 16px; font-weight: 700; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
   table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
   table.tbl th, table.tbl td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; }
-  table.tbl th { background: #f8fafc; font-weight: 700; color: var(--muted); }
+  table.tbl th { background: #162032; font-weight: 700; color: var(--muted); }
   .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-bottom: 16px; }
-  .kpi { background: #fff; border-radius: 12px; padding: 14px; border: 1px solid var(--border); }
+  .kpi { background: var(--card); border-radius: 12px; padding: 14px; border: 1px solid var(--border); }
   .kpi-label { font-size: 12px; color: var(--muted); }
-  .kpi-val { font-size: 22px; font-weight: 700; color: var(--nav-bg); margin-top: 4px; }
+  .kpi-val { font-size: 22px; font-weight: 700; color: #fff; margin-top: 4px; }
   .kpi-sub { font-size: 12px; color: var(--success); margin-top: 2px; }
 
   .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
@@ -170,26 +171,33 @@
   .field label { font-size: 12px; font-weight: 600; color: var(--muted); }
   .field input, .field select, .field textarea {
     padding: 9px 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 13px;
+    background: #0f172a; color: var(--text);
+  }
+
+  .notice-banner {
+    background: rgba(59, 130, 246, 0.14); border: 1px solid rgba(59, 130, 246, 0.45);
+    color: #bfdbfe; padding: 10px 14px; border-radius: 10px; font-size: 13px; margin-bottom: 14px;
+    display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
   }
 
   .modal-bg {
-    position: fixed; inset: 0; background: rgba(0,0,0,0.55); display: none;
+    position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none;
     align-items: center; justify-content: center; z-index: 100; padding: 16px;
   }
   .modal-bg.open { display: flex; }
-  .modal { background: #fff; border-radius: 14px; width: 100%; max-width: 880px; max-height: 92vh; overflow-y: auto; padding: 20px; }
+  .modal { background: var(--card); color: var(--text); border: 1px solid var(--border); border-radius: 14px; width: 100%; max-width: 880px; max-height: 92vh; overflow-y: auto; padding: 20px; }
   .checkout-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
   .pay-btn {
-    border: 2px solid var(--border); background: #fff; border-radius: 10px; padding: 12px 8px;
+    border: 2px solid var(--border); background: #0f172a; color: var(--text); border-radius: 10px; padding: 12px 8px;
     cursor: pointer; font-weight: 700; font-size: 13px; text-align: center;
   }
-  .pay-btn.active { border-color: var(--primary); background: #eff6ff; color: var(--primary-dark); }
+  .pay-btn.active { border-color: var(--primary); background: rgba(59,130,246,0.2); color: #93c5fd; }
   .numpad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
   .num-btn {
     padding: 14px; font-size: 18px; font-weight: 700; border: 1px solid var(--border);
-    background: #f8fafc; border-radius: 10px; cursor: pointer;
+    background: #334155; color: #fff; border-radius: 10px; cursor: pointer;
   }
-  .num-btn:active { background: #e2e8f0; }
+  .num-btn:active { background: #475569; }
   .quick-cash { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6px; margin-top: 8px; }
   .bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 180px; padding-top: 20px; }
   .bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
@@ -203,7 +211,7 @@
     #receipt-print, #receipt-print * { visibility: visible; }
     #receipt-print {
       display: block !important; position: fixed; left: 0; top: 0; width: 76mm;
-      font-family: 'Kantumruy Pro', monospace; font-size: 12px; color: #000; padding: 4mm;
+      font-family: 'Kantumruy Pro', monospace; font-size: 12px; color: #000; padding: 4mm; background: #fff;
     }
   }
   @media (max-width: 900px) {
@@ -217,7 +225,7 @@
 <header class="topbar">
   <div class="brand">
     <span>☕ ស័ក្តិ កាហ្វេ (Sak Coffee)</span>
-    <span class="brand-badge">SKOY</span>
+    <span class="brand-badge">SKOY POS</span>
   </div>
   <nav class="nav-tabs">
     <button class="nav-btn active" onclick="switchView('pos', this)">🛒 លក់ (POS)</button>
@@ -228,7 +236,7 @@
   </nav>
   <div style="display:flex;align-items:center;gap:8px;">
     <button type="button" class="nav-btn" style="padding:6px 12px;font-size:13px;background:#f59e0b;color:#111;font-weight:700;" onclick="lockPosSession()" title="ចាក់សោ Login ភ្លាមៗ">🔒 ចាក់សោ</button>
-    <div class="sync-pill" onclick="syncAllNow()" title="ចុចដើម្បី Sync ទៅ Google Sheets">
+    <div class="sync-pill" onclick="syncAllNow()" title="ចុចដើម្បី Sync ជាមួយ Google Sheets">
       <span class="dot" id="syncDot"></span>
       <span id="syncText">Offline</span>
     </div>
@@ -255,11 +263,11 @@
         </select>
       </div>
       <div class="totals-line"><span>សរុបរង (Subtotal)</span><span id="sumSubtotal">$0.00</span></div>
-      <div class="totals-line"><span>បញ្ចុះតម្លៃ (Discount)</span><span id="sumDiscount" style="color:var(--danger);">-$0.00</span></div>
+      <div class="totals-line"><span>បញ្ចុះតម្លៃ (Discount)</span><span id="sumDiscount" style="color:#f87171;">-$0.00</span></div>
       <div class="totals-grand"><span>ត្រូវបង់ (Total)</span><span id="sumTotal">$0.00</span></div>
       <div class="totals-khr" id="sumKhr">0 ៛</div>
       <div id="heldOrdersBar" style="display:none; gap:6px; flex-wrap:wrap; padding-top:2px;"></div>
-      <div class="cart-actions" style="grid-template-columns: 1fr 1fr 1.6fr;">
+      <div class="cart-actions">
         <button class="btn btn-light" onclick="clearCart()">🗑️ សម្អាត</button>
         <button class="btn" style="background:#f59e0b; color:#111;" onclick="holdCurrentOrder()">⏸️ ផ្អាកទុក</button>
         <button class="btn btn-success" onclick="openCheckout()">💳 គិតលុយ</button>
@@ -269,7 +277,7 @@
 
   <div class="pos-right">
     <div class="search-cats">
-      <input class="search-input" id="searchInput" placeholder="🔍 ស្វែងរកភេសជ្ជៈ..." oninput="renderProducts()">
+      <input class="search-input" id="searchInput" placeholder="🔍 ស្វែងរកទំនិញ ឬភេសជ្ជៈ..." oninput="renderProducts()">
       <div class="cat-bar" id="catBar"></div>
     </div>
     <div class="product-grid" id="productGrid"></div>
@@ -282,7 +290,7 @@
     <div class="card">
       <div class="card-title">
         <span>🧾 ប្រវត្តិវិក្កយបត្រលក់ (ថ្ងៃនេះ)</span>
-        <div style="display:flex; gap:8px;">
+        <div style="display:flex; gap:8px; flex-wrap:wrap;">
           <button class="btn btn-primary btn-sm" onclick="syncAllNow()">☁️ Sync ជាមួយ Google Sheets</button>
           <button class="btn btn-light btn-sm" onclick="exportOrdersCSV()">⬇️ Export CSV</button>
           <button class="btn btn-danger btn-sm" onclick="resetSalesHistory()">🗑️ សម្អាតប្រវត្តិលក់</button>
@@ -298,42 +306,21 @@
   </div>
 </section>
 
-<!-- VIEW 3: MENU -->
+<!-- VIEW 3: MENU (READ-ONLY FROM GOOGLE SHEET) -->
 <section id="view-menu" class="view">
   <div class="page-wrap">
-    <div class="card">
-      <div class="card-title">
-        <span id="menuFormTitle">➕ បន្ថែមភេសជ្ជៈថ្មី</span>
-        <button class="btn btn-light btn-sm" onclick="resetProductForm()">សម្អាតទម្រង់</button>
-      </div>
-      <input type="hidden" id="editProdId">
-      <div class="form-grid">
-        <div class="field"><label>ឈ្មោះភេសជ្ជៈ</label><input id="pName" placeholder="ឧ. Iced Latte"></div>
-        <div class="field"><label>ប្រភេទ (Category)</label><select id="pCat"></select></div>
-        <div class="field"><label>តម្លៃលក់ ($)</label><input id="pPrice" type="number" step="0.05" placeholder="2.00"></div>
-        <div class="field"><label>តម្លៃដើម ($)</label><input id="pCost" type="number" step="0.05" placeholder="0.80"></div>
-        <input type="hidden" id="pIcon" value="☕">
-        <div class="field"><label>Upload រូបភាពពិត (បង្រួមស្វ័យប្រវត្តិ)</label><input id="pImgFile" type="file" accept="image/*" onchange="handleProdImage(event)"></div>
-        <div class="field"><label>ជម្រើសភេសជ្ជៈ</label><select id="pHasSweetIce"><option value="1" selected>🧊 ត្រូវការកម្រិតស្ករ &amp; ទឹកកក</option><option value="0">🚫 មិនត្រូវការស្ករ &amp; ទឹកកក</option></select></div>
-      </div>
-      <input type="hidden" id="pImgData">
-      <div style="margin-top:12px; display:flex; gap:10px; align-items:center;">
-        <button class="btn btn-primary" onclick="saveProduct()">💾 រក្សាទុកទំនិញ</button>
-        <img id="pImgThumb" style="display:none; width:44px; height:44px; border-radius:8px; object-fit:cover; border:1px solid var(--border);">
-        <span id="imgPreviewStatus" style="font-size:12px; color:var(--muted);"></span>
-      </div>
+    <div class="notice-banner">
+      <span>🔒 <strong>ម៉ឺនុយត្រូវបានការពារ (Sheet Master):</strong> បញ្ជីមុខទំនិញ ប្រភេទ និងបញ្ចុះតម្លៃ ត្រូវបានគ្រប់គ្រងផ្ទាល់នៅក្នុង Google Sheet <code>sak_coffee_database-v2</code> ដើម្បីការពារកុំឱ្យ App សរសេរជាន់ ឬលុបដោយស្វ័យប្រវត្តិ។</span>
+      <button class="btn btn-success btn-sm" onclick="pullFromBackend(false)">☁️ ទាញម៉ឺនុយថ្មីពី Sheets</button>
     </div>
 
     <div class="card">
       <div class="card-title">
-        <span>📋 បញ្ជីម៉ឺនុយទាំងអស់</span>
-        <div style="display:flex; gap:8px;">
-          <button class="btn btn-success btn-sm" onclick="pullFromBackend(false)">☁️ ទាញម៉ឺនុយពី Sheets</button>
-          <button class="btn btn-primary btn-sm" onclick="syncCatalogToBackend(false)">☁️ Sync ម៉ឺនុយទៅ Sheets</button>
-        </div>
+        <span>📋 បញ្ជីម៉ឺនុយទាំងអស់ (ទាញពី Google Sheets)</span>
+        <button class="btn btn-primary btn-sm" onclick="pullFromBackend(false)">🔄 ធ្វើបច្ចុប្បន្នភាពបញ្ជី</button>
       </div>
       <table class="tbl">
-        <thead><tr><th>រូប</th><th>ឈ្មោះ</th><th>ប្រភេទ</th><th>តម្លៃលក់</th><th>តម្លៃដើម</th><th>ស្ថានភាព</th><th>សកម្មភាព</th></tr></thead>
+        <thead><tr><th>រូប</th><th>ឈ្មោះ</th><th>ប្រភេទ</th><th>តម្លៃលក់</th><th>តម្លៃដើម</th><th>ជម្រើសភេសជ្ជៈ</th><th>ស្ថានភាព</th></tr></thead>
         <tbody id="menuTable"></tbody>
       </table>
     </div>
@@ -345,14 +332,14 @@
   <div class="page-wrap">
     <div class="card" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
       <strong>តម្រងរបាយការណ៍៖</strong>
-      <select id="repMode" onchange="renderReports()" style="padding:8px 12px; border-radius:8px; border:1px solid var(--border);">
+      <select id="repMode" onchange="renderReports()" style="padding:8px 12px; border-radius:8px; border:1px solid var(--border); background:#0f172a; color:var(--text);">
         <option value="daily">ប្រចាំថ្ងៃ (Daily)</option>
         <option value="monthly">ប្រចាំខែ (Monthly)</option>
         <option value="yearly">ប្រចាំឆ្នាំ (Yearly)</option>
       </select>
-      <input type="date" id="repDate" onchange="renderReports()" style="padding:8px; border-radius:8px; border:1px solid var(--border);">
-      <input type="month" id="repMonth" onchange="renderReports()" style="padding:8px; border-radius:8px; border:1px solid var(--border); display:none;">
-      <select id="repYear" onchange="renderReports()" style="padding:8px; border-radius:8px; border:1px solid var(--border); display:none;"></select>
+      <input type="date" id="repDate" onchange="renderReports()" style="padding:8px; border-radius:8px; border:1px solid var(--border); background:#0f172a; color:var(--text);">
+      <input type="month" id="repMonth" onchange="renderReports()" style="padding:8px; border-radius:8px; border:1px solid var(--border); background:#0f172a; color:var(--text); display:none;">
+      <select id="repYear" onchange="renderReports()" style="padding:8px; border-radius:8px; border:1px solid var(--border); background:#0f172a; color:var(--text); display:none;"></select>
       <button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="exportOrdersCSV()">⬇️ Export CSV</button>
     </div>
 
@@ -370,8 +357,8 @@
 
     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px;">
       <div class="card" style="margin-bottom:0;">
-        <div class="card-title"><span>🏆 ភេសជ្ជៈលក់ដាច់បំផុត (Top Items)</span></div>
-        <table class="tbl"><thead><tr><th>មុខទំនិញ</th><th style="text-align:center;">ចំនួនកែវ</th><th style="text-align:right;">សរុប ($)</th></tr></thead><tbody id="repTopItemsTable"></tbody></table>
+        <div class="card-title"><span>🏆 ទំនិញលក់ដាច់បំផុត (Top Items)</span></div>
+        <table class="tbl"><thead><tr><th>មុខទំនិញ</th><th style="text-align:center;">ចំនួន</th><th style="text-align:right;">សរុប ($)</th></tr></thead><tbody id="repTopItemsTable"></tbody></table>
       </div>
       <div class="card" style="margin-bottom:0;">
         <div class="card-title"><span>💳 ចំណូលតាមវិធីទូទាត់</span></div>
@@ -394,7 +381,6 @@
         <div class="field"><label>Upload រូបភាព KHQR ហាង (ABA / ACLEDA)</label><input type="file" accept="image/*" onchange="handleKhqrImage(event)"></div>
         <div class="field"><label>លេខកូដសម្ងាត់ចូលប្រើដំបូង (Login PIN - ទុកទទេបើមិនប្រើ)</label><input id="setLoginPin" type="password" placeholder="ឧ. 0000"></div>
         <div class="field"><label>លេខកូដសម្ងាត់អ្នកគ្រប់គ្រង (Admin PIN - ទុកទទេបើមិនប្រើ)</label><input id="setAdminPin" type="password" placeholder="ឧ. 1234"></div>
-        <div class="field"><label>លេខសម្ងាត់ភ្ជាប់ API ពីចម្ងាយ (Remote API Key - ជម្រើស)</label><input id="setApiKey" type="password" placeholder="ឧ. SAK-SECRET-2026"></div>
       </div>
       <div style="margin-top:12px; display:flex; gap:10px; flex-wrap:wrap;">
         <button class="btn btn-primary" onclick="saveSettings()">💾 រក្សាទុកការកំណត់</button>
@@ -406,24 +392,13 @@
     </div>
 
     <div class="card">
-      <div class="card-title"><span>📂 គ្រប់គ្រងប្រភេទម៉ឺនុយ (Categories)</span></div>
-      <div class="form-grid" style="margin-bottom:12px;">
-        <div class="field"><label>ឈ្មោះប្រភេទថ្មី</label><input id="cName" placeholder="ឧ. ភេសជ្ជៈក្រឡុក (Frappe)"></div>
-        <div class="field"><label>Icon / Emoji</label><input id="cIcon" placeholder="🥤" value="🥤"></div>
-        <div class="field" style="justify-content:flex-end;"><button class="btn btn-primary" onclick="addCategory()">➕ បន្ថែមប្រភេទ</button></div>
-      </div>
-      <table class="tbl"><thead><tr><th>Icon</th><th>ឈ្មោះប្រភេទ</th><th>សកម្មភាព</th></tr></thead><tbody id="categoriesTable"></tbody></table>
+      <div class="card-title"><span>📂 ប្រភេទម៉ឺនុយ (Categories - គ្រប់គ្រងក្នុង Google Sheets)</span></div>
+      <table class="tbl"><thead><tr><th>Icon</th><th>ឈ្មោះប្រភេទ</th></tr></thead><tbody id="categoriesTable"></tbody></table>
     </div>
 
     <div class="card">
-      <div class="card-title"><span>🏷️ គ្រប់គ្រងប្រភេទបញ្ចុះតម្លៃ (Discounts)</span></div>
-      <div class="form-grid" style="margin-bottom:12px;">
-        <div class="field"><label>ឈ្មោះបញ្ចុះតម្លៃ</label><input id="dName" placeholder="ឧ. និស្សិត CADT"></div>
-        <div class="field"><label>ប្រភេទ</label><select id="dType"><option value="percent">ភាគរយ (%)</option><option value="fixed">ទឹកប្រាក់ផ្ទាល់ ($)</option></select></div>
-        <div class="field"><label>ចំនួន (ឧ. 10 ឬ 0.25)</label><input id="dVal" type="number" step="0.05"></div>
-        <div class="field" style="justify-content:flex-end;"><button class="btn btn-primary" onclick="addDiscount()">➕ បន្ថែម</button></div>
-      </div>
-      <table class="tbl"><thead><tr><th>ឈ្មោះ</th><th>ប្រភេទ</th><th>តម្លៃ</th><th>សកម្មភាព</th></tr></thead><tbody id="discountsTable"></tbody></table>
+      <div class="card-title"><span>🏷️ ប្រភេទបញ្ចុះតម្លៃ (Discounts - គ្រប់គ្រងក្នុង Google Sheets)</span></div>
+      <table class="tbl"><thead><tr><th>ឈ្មោះ</th><th>ប្រភេទ</th><th>តម្លៃ</th></tr></thead><tbody id="discountsTable"></tbody></table>
     </div>
   </div>
 </section>
@@ -437,11 +412,11 @@
     </div>
     <div class="checkout-grid" style="grid-template-columns: 1.1fr 1.15fr 0.85fr; gap:18px; align-items:start;">
       <div>
-        <div style="background:#f8fafc; padding:12px; border-radius:10px; margin-bottom:10px; border:1px solid var(--border);">
+        <div style="background:#0f172a; padding:12px; border-radius:10px; margin-bottom:10px; border:1px solid var(--border);">
           <div style="font-size:12px; color:var(--muted);">ត្រូវបង់សរុប (Total)</div>
           <div style="display:flex; justify-content:space-between; align-items:baseline; margin-top:4px;">
-            <span style="font-size:24px; font-weight:700; color:var(--nav-bg);" id="coTotalUsd">$0.00</span>
-            <span style="font-size:16px; font-weight:700; color:var(--primary-dark);" id="coTotalKhr">0 ៛</span>
+            <span style="font-size:24px; font-weight:700; color:#fff;" id="coTotalUsd">$0.00</span>
+            <span style="font-size:16px; font-weight:700; color:#60a5fa;" id="coTotalKhr">0 ៛</span>
           </div>
         </div>
 
@@ -453,7 +428,7 @@
 
         <div style="display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:6px;">
           <span style="font-size:12px; font-weight:700; color:var(--muted);">ប្រអប់បញ្ចូលសកម្ម៖</span>
-          <div style="display:inline-flex; gap:4px; background:#f1f5f9; padding:3px; border-radius:8px; border:1px solid var(--border);">
+          <div style="display:inline-flex; gap:4px; background:#0f172a; padding:3px; border-radius:8px; border:1px solid var(--border);">
             <button type="button" id="btnCurrUsd" class="chip active" style="padding:3px 10px; font-weight:700;" onclick="setCoCurrency('USD')">💵 ដុល្លា ($)</button>
             <button type="button" id="btnCurrKhr" class="chip" style="padding:3px 10px; font-weight:700;" onclick="setCoCurrency('KHR')">🇰🇭 រៀល (៛)</button>
           </div>
@@ -461,12 +436,12 @@
 
         <div style="margin-bottom:10px;">
           <div style="font-size:12px; font-weight:600; color:var(--muted); margin-bottom:4px;" id="coRecLabel">ប្រាក់ទទួល (USD $)</div>
-          <input id="coReceived" type="text" inputmode="decimal" autocomplete="off" value="0" onclick="this.select()" oninput="onCoReceivedInput(this.value)" style="width:100%; font-size:24px; font-weight:700; padding:10px 12px; text-align:right; border:2px solid var(--primary); border-radius:10px; background:#fff; color:#111;">
+          <input id="coReceived" type="text" inputmode="decimal" autocomplete="off" value="0" onclick="this.select()" oninput="onCoReceivedInput(this.value)" style="width:100%; font-size:24px; font-weight:700; padding:10px 12px; text-align:right; border:2px solid var(--primary); border-radius:10px; background:#0f172a; color:#fff;">
         </div>
 
-        <div style="background:#f0fdf4; border:1px solid #bbf7d0; border-radius:8px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center; font-size:14px; font-weight:700;">
-          <span style="color:#166534;">ប្រាក់អាប់ (Change):</span>
-          <span id="coChange" style="color:var(--success);">$0.00 (0 ៛)</span>
+        <div style="background:rgba(34,197,94,0.12); border:1px solid rgba(34,197,94,0.4); border-radius:8px; padding:8px 12px; display:flex; justify-content:space-between; align-items:center; font-size:14px; font-weight:700;">
+          <span style="color:#86efac;">ប្រាក់អាប់ (Change):</span>
+          <span id="coChange" style="color:#4ade80;">$0.00 (0 ៛)</span>
         </div>
 
         <div id="khqrBox" style="display:none; text-align:center; margin-top:10px; padding:8px; border:1px dashed var(--border); border-radius:10px;">
@@ -477,20 +452,20 @@
 
       <div>
         <div class="numpad" style="grid-template-columns: repeat(3, 1fr); gap:6px;">
-          <button type="button" class="num-btn" onclick="numKey('C')" style="background:#475569; color:#fff; border-color:#475569;">C</button>
-          <button type="button" class="num-btn" onclick="numKey('7')" style="background:#334155; color:#fff; border-color:#334155;">7</button>
-          <button type="button" class="num-btn" onclick="numKey('8')" style="background:#334155; color:#fff; border-color:#334155;">8</button>
-          <button type="button" class="num-btn" onclick="numKey('9')" style="background:#334155; color:#fff; border-color:#334155;">9</button>
-          <button type="button" class="num-btn" onclick="numKey('4')" style="background:#334155; color:#fff; border-color:#334155;">4</button>
-          <button type="button" class="num-btn" onclick="numKey('5')" style="background:#334155; color:#fff; border-color:#334155;">5</button>
-          <button type="button" class="num-btn" onclick="numKey('6')" style="background:#334155; color:#fff; border-color:#334155;">6</button>
-          <button type="button" class="num-btn" onclick="numKey('1')" style="background:#334155; color:#fff; border-color:#334155;">1</button>
-          <button type="button" class="num-btn" onclick="numKey('2')" style="background:#334155; color:#fff; border-color:#334155;">2</button>
-          <button type="button" class="num-btn" onclick="numKey('3')" style="background:#334155; color:#fff; border-color:#334155;">3</button>
-          <button type="button" class="num-btn" onclick="numKey('0')" style="background:#334155; color:#fff; border-color:#334155;">0</button>
-          <button type="button" class="num-btn" onclick="numKey('00')" style="background:#334155; color:#fff; border-color:#334155;">00</button>
-          <button type="button" class="num-btn" onclick="numKey('.')" style="background:#334155; color:#fff; border-color:#334155;">.</button>
-          <button type="button" class="num-btn" onclick="numKey('BKSP')" style="background:#64748b; color:#fff; border-color:#64748b; grid-column: span 2;">⌫ លុប</button>
+          <button type="button" class="num-btn" onclick="numKey('C')" style="background:#475569;">C</button>
+          <button type="button" class="num-btn" onclick="numKey('7')">7</button>
+          <button type="button" class="num-btn" onclick="numKey('8')">8</button>
+          <button type="button" class="num-btn" onclick="numKey('9')">9</button>
+          <button type="button" class="num-btn" onclick="numKey('4')">4</button>
+          <button type="button" class="num-btn" onclick="numKey('5')">5</button>
+          <button type="button" class="num-btn" onclick="numKey('6')">6</button>
+          <button type="button" class="num-btn" onclick="numKey('1')">1</button>
+          <button type="button" class="num-btn" onclick="numKey('2')">2</button>
+          <button type="button" class="num-btn" onclick="numKey('3')">3</button>
+          <button type="button" class="num-btn" onclick="numKey('0')">0</button>
+          <button type="button" class="num-btn" onclick="numKey('00')">00</button>
+          <button type="button" class="num-btn" onclick="numKey('.')">.</button>
+          <button type="button" class="num-btn" onclick="numKey('BKSP')" style="background:#64748b; grid-column: span 2;">⌫ លុប</button>
         </div>
       </div>
 
@@ -527,10 +502,10 @@
       </thead>
       <tbody id="editOrderItems"></tbody>
     </table>
-    <div style="margin-top:14px; padding:12px; background:#f8fafc; border-radius:10px; display:flex; flex-direction:column; gap:6px; font-size:14px;">
+    <div style="margin-top:14px; padding:12px; background:#0f172a; border-radius:10px; display:flex; flex-direction:column; gap:6px; font-size:14px;">
       <div style="display:flex; justify-content:space-between;"><span>សរុបរង (Subtotal):</span><strong id="eoSubtotal">$0.00</strong></div>
-      <div style="display:flex; justify-content:space-between;"><span>បញ្ចុះតម្លៃ (Discount):</span><strong id="eoDiscount" style="color:var(--danger);">-$0.00</strong></div>
-      <div style="display:flex; justify-content:space-between; font-size:17px;"><span>ត្រូវបង់ថ្មី (Total):</span><strong id="eoTotal" style="color:var(--primary-dark);">$0.00</strong></div>
+      <div style="display:flex; justify-content:space-between;"><span>បញ្ចុះតម្លៃ (Discount):</span><strong id="eoDiscount" style="color:#f87171;">-$0.00</strong></div>
+      <div style="display:flex; justify-content:space-between; font-size:17px;"><span>ត្រូវបង់ថ្មី (Total):</span><strong id="eoTotal" style="color:#60a5fa;">$0.00</strong></div>
       <div style="text-align:right; font-size:13px; color:var(--muted);" id="eoKhr">0 ៛</div>
     </div>
     <div style="margin-top:14px; display:flex; justify-content:flex-end; gap:8px;">

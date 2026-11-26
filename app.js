@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'sak_coffee_pos_clean_v1';
+const STORAGE_KEY = 'sak_coffee_pos_clean_v2';
 
 const DEFAULT_DATA = {
   settings: {
@@ -18,27 +18,18 @@ const DEFAULT_DATA = {
     { id: 4, name: 'នំ & អាហារសម្រន់', icon: '🥐' }
   ],
   products: [
-    { id: 1, category_id: 1, name: 'Iced Americano', price_usd: 1.50, cost_usd: 0.45, icon: '☕', image_url: 'https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?auto=format&fit=crop&w=300&q=80', is_available: true },
-    { id: 2, category_id: 1, name: 'Iced Latte', price_usd: 2.00, cost_usd: 0.70, icon: '🥛', image_url: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=300&q=80', is_available: true },
-    { id: 3, category_id: 1, name: 'កាហ្វេទឹកដោះគោខាប់', price_usd: 1.75, cost_usd: 0.60, icon: '🧋', image_url: 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?auto=format&fit=crop&w=300&q=80', is_available: true },
-    { id: 4, category_id: 1, name: 'កាហ្វេពងមាន់ (Egg Coffee)', price_usd: 2.50, cost_usd: 0.90, icon: '🥚', image_url: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=300&q=80', is_available: true },
-    { id: 5, category_id: 2, name: 'Matcha Latte', price_usd: 2.25, cost_usd: 0.85, icon: '🍵', image_url: 'https://images.unsplash.com/photo-1515823064-d6e0c04616a7?auto=format&fit=crop&w=300&q=80', is_available: true },
-    { id: 6, category_id: 2, name: 'តែក្រូចឆ្មារ (Lemon Tea)', price_usd: 1.50, cost_usd: 0.40, icon: '🍋', image_url: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=300&q=80', is_available: true },
-    { id: 7, category_id: 3, name: 'Passion Soda', price_usd: 1.75, cost_usd: 0.50, icon: '🥤', image_url: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=300&q=80', is_available: true },
-    { id: 8, category_id: 4, name: 'Croissant ប័រ', price_usd: 1.75, cost_usd: 0.80, icon: '🥐', image_url: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=300&q=80', is_available: true },
-    { id: 9, category_id: 1, name: 'Iced Mocha', price_usd: 2.25, cost_usd: 0.80, icon: '🍫', image_url: 'https://images.unsplash.com/photo-1578314675249-a6910f80cc4e?auto=format&fit=crop&w=300&q=80', is_available: true },
-    { id: 10, category_id: 1, name: 'Caramel Macchiato', price_usd: 2.25, cost_usd: 0.85, icon: '🍮', image_url: 'https://images.unsplash.com/photo-1485808191679-5f86510681a2?auto=format&fit=crop&w=300&q=80', is_available: true },
-    { id: 11, category_id: 2, name: 'តែបៃតងក្រូចឆ្មារ (Green Lemon Tea)', price_usd: 1.50, cost_usd: 0.45, icon: '🍃', image_url: 'https://images.unsplash.com/photo-1627435601361-ec25f5b1d0e5?auto=format&fit=crop&w=300&q=80', is_available: true },
-    { id: 12, category_id: 2, name: 'តែថៃទឹកដោះគោ (Thai Milk Tea)', price_usd: 1.75, cost_usd: 0.55, icon: '🧡', image_url: 'https://images.unsplash.com/photo-1558857563-b371033873b8?auto=format&fit=crop&w=300&q=80', is_available: true },
-    { id: 13, category_id: 3, name: 'Strawberry Soda', price_usd: 1.75, cost_usd: 0.50, icon: '🍓', image_url: 'https://images.unsplash.com/photo-1497534446932-c925b458314e?auto=format&fit=crop&w=300&q=80', is_available: true },
-    { id: 14, category_id: 3, name: 'Blue Ocean Soda', price_usd: 1.75, cost_usd: 0.50, icon: '🧊', image_url: 'https://images.unsplash.com/photo-1536935338788-846bb9981813?auto=format&fit=crop&w=300&q=80', is_available: true },
-    { id: 15, category_id: 4, name: 'នំខេកសូកូឡា (Chocolate Cake)', price_usd: 2.25, cost_usd: 1.00, icon: '🍰', image_url: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=300&q=80', is_available: true },
-    { id: 16, category_id: 4, name: 'នំប៉័ងសាំងវិច (Club Sandwich)', price_usd: 2.00, cost_usd: 0.90, icon: '🥪', image_url: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=300&q=80', is_available: true }
+    { id: 1, category_id: 1, name: 'Iced Americano', price_usd: 1.50, cost_usd: 0.45, icon: '☕', image_url: 'https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?auto=format&fit=crop&w=300&q=80', has_sweet_ice: true, is_available: true },
+    { id: 2, category_id: 1, name: 'Iced Latte', price_usd: 2.00, cost_usd: 0.70, icon: '🥛', image_url: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=300&q=80', has_sweet_ice: true, is_available: true },
+    { id: 3, category_id: 1, name: 'កាហ្វេទឹកដោះគោខាប់', price_usd: 1.75, cost_usd: 0.60, icon: '🧋', image_url: 'https://images.unsplash.com/photo-1572442388796-11668a67e53d?auto=format&fit=crop&w=300&q=80', has_sweet_ice: true, is_available: true },
+    { id: 4, category_id: 1, name: 'កាហ្វេពងមាន់ (Egg Coffee)', price_usd: 2.50, cost_usd: 0.90, icon: '🥚', image_url: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&w=300&q=80', has_sweet_ice: true, is_available: true },
+    { id: 5, category_id: 2, name: 'Matcha Latte', price_usd: 2.25, cost_usd: 0.85, icon: '🍵', image_url: 'https://images.unsplash.com/photo-1515823064-d6e0c04616a7?auto=format&fit=crop&w=300&q=80', has_sweet_ice: true, is_available: true },
+    { id: 6, category_id: 2, name: 'តែក្រូចឆ្មារ (Lemon Tea)', price_usd: 1.50, cost_usd: 0.40, icon: '🍋', image_url: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?auto=format&fit=crop&w=300&q=80', has_sweet_ice: true, is_available: true },
+    { id: 7, category_id: 3, name: 'Passion Soda', price_usd: 1.75, cost_usd: 0.50, icon: '🥤', image_url: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=300&q=80', has_sweet_ice: true, is_available: true },
+    { id: 8, category_id: 4, name: 'Croissant ប័រ', price_usd: 1.75, cost_usd: 0.80, icon: '🥐', image_url: 'https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=300&q=80', has_sweet_ice: false, is_available: true }
   ],
   discounts: [
     { id: 1, name: 'និស្សិត CADT (10%)', type: 'percent', value: 10 },
-    { id: 2, name: 'យកកែវមកខ្លួនឯង (-$0.25)', type: 'fixed', value: 0.25 },
-    { id: 3, name: 'Happy Hour (15%)', type: 'percent', value: 15 }
+    { id: 2, name: 'យកកែវមកខ្លួនឯង (-$0.25)', type: 'fixed', value: 0.25 }
   ],
   orders: [],
   heldOrders: [],
@@ -48,13 +39,18 @@ const DEFAULT_DATA = {
 
 function loadInitialState() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('sak_coffee_pos_v3');
+    const raw = localStorage.getItem(STORAGE_KEY) || localStorage.getItem('sak_coffee_pos_clean_v1') || localStorage.getItem('sak_coffee_pos_v3');
     if (!raw) return structuredClone(DEFAULT_DATA);
     const parsed = JSON.parse(raw);
     const merged = {
       ...structuredClone(DEFAULT_DATA),
       ...parsed,
-      settings: { ...DEFAULT_DATA.settings, ...(parsed.settings || {}) }
+      settings: {
+        ...DEFAULT_DATA.settings,
+        ...(parsed.settings || {}),
+        apiUrl: DEFAULT_DATA.settings.apiUrl,
+        apiKey: ''
+      }
     };
     if (!merged.settings.shopAddress || merged.settings.shopAddress.includes('011 244 259')) {
       merged.settings.shopAddress = DEFAULT_DATA.settings.shopAddress;
@@ -130,7 +126,7 @@ function verifyAdminPin(actionLabel = 'ចូលប្រើមុខងារ�
 
 function switchView(name, btn) {
   if (name === 'menu' || name === 'reports' || name === 'settings') {
-    const labels = { menu: 'គ្រប់គ្រងម៉ឺនុយ', reports: 'មើលរបាយការណ៍', settings: 'ចូលកំណត់ប្រព័ន្ធ' };
+    const labels = { menu: 'មើលម៉ឺនុយ', reports: 'មើលរបាយការណ៍', settings: 'ចូលកំណត់ប្រព័ន្ធ' };
     if (!verifyAdminPin(labels[name])) return;
   }
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -150,7 +146,6 @@ function renderCategories() {
     html += `<button class="cat-btn ${activeCat === c.id ? 'active' : ''}" onclick="setCat(${c.id})">${c.icon || ''} ${c.name}</button>`;
   });
   bar.innerHTML = html;
-  document.getElementById('pCat').innerHTML = state.categories.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
 }
 
 function setCat(id) { activeCat = id; renderCategories(); renderProducts(); }
@@ -217,7 +212,7 @@ function renderDiscountOptions() {
   sel.innerHTML = `<option value="none">គ្មានបញ្ចុះតម្លៃ</option>` +
     state.discounts.map(d => `<option value="d_${d.id}">${d.name}</option>`).join('') +
     `<option value="custom">បញ្ចុះផ្ទាល់ដៃ ($)</option>`;
-  if (cur) sel.value = cur;
+  if (cur && Array.from(sel.options).some(o => o.value === cur)) sel.value = cur;
 }
 
 function calcTotals() {
@@ -296,7 +291,7 @@ function renderCart() {
           </div>` : ''}
           <div class="mod-line">
             <span class="mod-label">ចំណាំ</span>
-            <input value="${item.note || ''}" placeholder="បន្ថែមកំណត់ចំណាំ..." style="flex:1; padding:4px 8px; border:1px solid var(--border); border-radius:6px; font-size:12px;" onchange="setMod(${idx},'note',this.value)">
+            <input value="${item.note || ''}" placeholder="បន្ថែមកំណត់ចំណាំ..." style="flex:1; padding:4px 8px; border:1px solid var(--border); border-radius:6px; font-size:12px; background:#0f172a; color:#fff;" onchange="setMod(${idx},'note',this.value)">
           </div>
         </div>
       </div>`;
@@ -491,7 +486,7 @@ async function pushOrderToBackend(order, action = 'create') {
         subtotal_usd: order.subtotal,
         discount_usd: order.discount,
         action,
-        apiKey: state.settings?.apiKey || ''
+        apiKey: ''
       })
     });
     const data = await res.json();
@@ -541,39 +536,6 @@ async function syncAllNow() {
   await pullFromBackend(false);
 }
 
-async function syncCatalogToBackend(silent = true) {
-  if (!silent && !verifyAdminPin('Sync ម៉ឺនុយទៅ Google Sheets')) return false;
-  const url = (state.settings.apiUrl || '').trim();
-  if (!url) {
-    if (!silent) alert('សូមបញ្ចូល Google Apps Script URL ក្នុងផ្ទាំង «⚙️ កំណត់» ជាមុនសិន!');
-    return false;
-  }
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({
-        action: 'sync_catalog',
-        apiKey: state.settings?.apiKey || '',
-        categories: state.categories,
-        products: state.products,
-        discounts: state.discounts,
-        settings: state.settings
-      })
-    });
-    const data = await res.json();
-    if (data.status === 'success') {
-      if (!silent) alert('បាន Sync ម៉ឺនុយ និងការកំណត់ទៅ Google Sheets រួចរាល់!');
-      return true;
-    } else if (!silent) {
-      alert('Sync បរាជ័យ៖ ' + (data.message || 'Unknown error'));
-    }
-  } catch (e) {
-    if (!silent) alert('មិនអាច Sync ទៅ Google Sheets បានទេ៖ ' + e.message);
-  }
-  return false;
-}
-
 let isPulling = false;
 async function pullFromBackend(silent = false) {
   if (isPulling) return;
@@ -581,9 +543,8 @@ async function pullFromBackend(silent = false) {
   if (!url || !navigator.onLine) return;
   isPulling = true;
   try {
-    const k = encodeURIComponent((state.settings?.apiKey || '').trim());
     const sep = url.includes('?') ? '&' : '?';
-    const res = await fetch(url + sep + '_t=' + Date.now() + (k ? ('&apiKey=' + k) : ''), { cache: 'no-store' });
+    const res = await fetch(url + sep + '_t=' + Date.now(), { cache: 'no-store' });
     const data = await res.json();
     if (data.status !== 'success') {
       if (!silent) alert('មិនអាចទាញទិន្នន័យពី Google Sheets បានទេ៖ ' + (data.message || ''));
@@ -645,7 +606,6 @@ async function pullFromBackend(silent = false) {
       }
 
       const merged = new Map();
-
       data.orders.forEach((o, idx) => {
         const code = String(o.order_code || o.id || ('ROW-' + (idx + 1))).trim();
         const oid = String(o.id || '');
@@ -695,6 +655,7 @@ async function pullFromBackend(silent = false) {
     renderOrders();
     renderMenuTable();
     renderReports();
+    renderSettings();
     if (!silent) alert('បានទាញទិន្នន័យពី Google Sheets រួចរាល់!');
   } catch (e) {
     if (!silent) alert('មិនអាចភ្ជាប់ Google Sheets បានទេ៖ ' + e.message);
@@ -758,91 +719,17 @@ function resizeImage(file, maxSize, cb) {
   reader.readAsDataURL(file);
 }
 
-function handleProdImage(e) {
-  const f = e.target.files[0]; if (!f) return;
-  resizeImage(f, 240, dataUrl => {
-    document.getElementById('pImgData').value = dataUrl;
-    const thumb = document.getElementById('pImgThumb');
-    thumb.src = dataUrl; thumb.style.display = 'inline-block';
-    document.getElementById('imgPreviewStatus').textContent = '✅ រូបភាពរួចរាល់!';
-  });
-}
-
-function saveProduct() {
-  if (!verifyAdminPin('រក្សាទុក/កែប្រែម៉ឺនុយ')) return;
-  const idVal = document.getElementById('editProdId').value;
-  const existing = idVal ? state.products.find(p => String(p.id) === String(idVal)) : null;
-  const sweetIceSel = document.getElementById('pHasSweetIce');
-  const hasSweetIce = sweetIceSel ? (sweetIceSel.value !== '0') : true;
-  const obj = {
-    id: existing ? existing.id : Date.now(),
-    name: document.getElementById('pName').value.trim(),
-    category_id: Number(document.getElementById('pCat').value),
-    price_usd: Number(document.getElementById('pPrice').value || 0),
-    cost_usd: Number(document.getElementById('pCost').value || 0),
-    icon: document.getElementById('pIcon').value || '☕',
-    image_url: document.getElementById('pImgData').value,
-    has_sweet_ice: hasSweetIce,
-    is_available: existing ? (existing.is_available !== false) : true
-  };
-  if (!obj.name || obj.price_usd <= 0) return alert('សូមបញ្ចូលឈ្មោះ និងតម្លៃលក់!');
-  const idx = existing ? state.products.findIndex(p => String(p.id) === String(existing.id)) : -1;
-  if (idx > -1) state.products[idx] = obj; else state.products.push(obj);
-  saveState(); resetProductForm(); renderMenuTable(); renderProducts(); syncCatalogToBackend(false);
-  alert(idx > -1 ? 'បានកែប្រែទំនិញរួចរាល់!' : 'បានបន្ថែមទំនិញថ្មីរួចរាល់!');
-}
-
-function editProduct(id) {
-  const p = state.products.find(x => String(x.id) === String(id)); if (!p) return;
-  document.getElementById('editProdId').value = p.id;
-  document.getElementById('pName').value = p.name;
-  document.getElementById('pCat').value = p.category_id;
-  document.getElementById('pPrice').value = p.price_usd;
-  document.getElementById('pCost').value = p.cost_usd || 0;
-  document.getElementById('pImgData').value = p.image_url || '';
-  const sweetIceSel = document.getElementById('pHasSweetIce');
-  if (sweetIceSel) sweetIceSel.value = isDrinkProduct(p) ? '1' : '0';
-  const thumb = document.getElementById('pImgThumb');
-  if (p.image_url) { thumb.src = p.image_url; thumb.style.display = 'inline-block'; }
-  else { thumb.src = ''; thumb.style.display = 'none'; }
-  document.getElementById('menuFormTitle').textContent = '✏️ កែប្រែទំនិញ (' + p.name + ')';
-}
-
-function resetProductForm() {
-  ['editProdId','pName','pPrice','pCost','pImgData','pImgFile'].forEach(id => document.getElementById(id).value = '');
-  const thumb = document.getElementById('pImgThumb');
-  thumb.src = ''; thumb.style.display = 'none';
-  document.getElementById('imgPreviewStatus').textContent = '';
-  document.getElementById('menuFormTitle').textContent = '➕ បន្ថែមទំនិញថ្មី';
-}
-
-function toggleStock(id) {
-  if (!verifyAdminPin('ប្តូរស្ថានភាពស្តុកម៉ឺនុយ')) return;
-  const p = state.products.find(x => x.id === id);
-  if (p) { p.is_available = p.is_available === false ? true : false; saveState(); renderMenuTable(); renderProducts(); syncCatalogToBackend(true); }
-}
-
-function deleteProduct(id) {
-  if (!verifyAdminPin('លុបម៉ឺនុយ')) return;
-  if (!confirm('លុបទំនិញនេះ?')) return;
-  state.products = state.products.filter(x => x.id !== id);
-  saveState(); renderMenuTable(); renderProducts(); syncCatalogToBackend(true);
-}
-
 function renderMenuTable() {
   document.getElementById('menuTable').innerHTML = state.products.map(p => {
     const cat = state.categories.find(c => c.id == p.category_id)?.name || '-';
     return `<tr>
       <td><img src="${p.image_url || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=300&q=80'}" style="width:42px;height:42px;border-radius:8px;object-fit:cover;"></td>
-      <td><strong>${p.name}</strong><div style="font-size:11px;color:var(--muted);">${isDrinkProduct(p) ? '🧊 មានស្ករ & ទឹកកក' : '🚫 គ្មានស្ករ & ទឹកកក'}</div></td>
+      <td><strong>${p.name}</strong></td>
       <td>${cat}</td>
       <td>${fmtUsd(p.price_usd)}</td>
       <td>${fmtUsd(p.cost_usd)}</td>
-      <td><button class="btn btn-sm ${p.is_available===false?'btn-light':'btn-success'}" onclick="toggleStock(${p.id})">${p.is_available===false?'អស់ស្តុក':'មានលក់'}</button></td>
-      <td>
-        <button class="btn btn-light btn-sm" onclick="editProduct(${p.id})">កែ</button>
-        <button class="btn btn-danger btn-sm" onclick="deleteProduct(${p.id})">លុប</button>
-      </td>
+      <td>${isDrinkProduct(p) ? '🧊 មានស្ករ & ទឹកកក' : '🚫 គ្មានស្ករ & ទឹកកក'}</td>
+      <td><span style="padding:4px 10px;border-radius:99px;font-size:12px;font-weight:700;background:${p.is_available===false?'#334155':'rgba(34,197,94,0.2)'};color:${p.is_available===false?'#cbd5e1':'#4ade80'};">${p.is_available===false?'អស់ស្តុក':'មានលក់'}</span></td>
     </tr>`;
   }).join('');
 }
@@ -939,12 +826,11 @@ function renderSettings() {
   document.getElementById('setApiUrl').value = state.settings.apiUrl || '';
   document.getElementById('setLoginPin').value = state.settings.loginPin || '';
   document.getElementById('setAdminPin').value = state.settings.adminPin || '';
-  document.getElementById('setApiKey').value = state.settings.apiKey || '';
   document.getElementById('categoriesTable').innerHTML = state.categories.map(c => `
-    <tr><td>${c.icon || '☕'}</td><td><strong>${c.name}</strong></td><td><button class="btn btn-danger btn-sm" onclick="delCategory(${c.id})">លុប</button></td></tr>`
+    <tr><td>${c.icon || '☕'}</td><td><strong>${c.name}</strong></td></tr>`
   ).join('');
   document.getElementById('discountsTable').innerHTML = state.discounts.map(d => `
-    <tr><td>${d.name}</td><td>${d.type === 'percent' ? '%' : '$'}</td><td>${d.value}</td><td><button class="btn btn-danger btn-sm" onclick="delDiscount(${d.id})">លុប</button></td></tr>`
+    <tr><td>${d.name}</td><td>${d.type === 'percent' ? '%' : '$'}</td><td>${d.value}</td></tr>`
   ).join('');
 }
 
@@ -953,57 +839,23 @@ function handleKhqrImage(e) {
   resizeImage(f, 450, dataUrl => { state.settings.khqrImage = dataUrl; saveState(); alert('រក្សាទុករូប KHQR រួចរាល់!'); });
 }
 
-async function saveSettings() {
+function saveSettings() {
   state.settings.shopName = document.getElementById('setShopName').value;
   state.settings.shopAddress = document.getElementById('setShopAddress').value;
   state.settings.exchangeRate = Number(document.getElementById('setRate').value || 4100);
   state.settings.apiUrl = document.getElementById('setApiUrl').value.trim();
   state.settings.loginPin = document.getElementById('setLoginPin').value.trim();
   state.settings.adminPin = document.getElementById('setAdminPin').value.trim();
-  state.settings.apiKey = document.getElementById('setApiKey').value.trim();
+  state.settings.apiKey = '';
   saveState();
-  if (!navigator.onLine) return alert('បានរក្សាទុកក្នុងម៉ាស៊ីនរួចរាល់ (Offline)!');
-  await syncCatalogToBackend(false);
-}
-
-function addDiscount() {
-  if (!verifyAdminPin('បន្ថែមបញ្ចុះតម្លៃ')) return;
-  const name = document.getElementById('dName').value.trim();
-  const type = document.getElementById('dType').value;
-  const value = Number(document.getElementById('dVal').value || 0);
-  if (!name || value <= 0) return alert('សូមបញ្ចូលឈ្មោះ និងចំនួនបញ្ចុះតម្លៃ!');
-  state.discounts.push({ id: Date.now(), name, type, value });
-  saveState(); renderSettings(); renderDiscountOptions(); syncCatalogToBackend(true);
-  document.getElementById('dName').value = ''; document.getElementById('dVal').value = '';
-}
-function delDiscount(id) {
-  if (!verifyAdminPin('លុបបញ្ចុះតម្លៃ')) return;
-  if (!confirm('លុបប្រភេទបញ្ចុះតម្លៃនេះ?')) return;
-  state.discounts = state.discounts.filter(d => String(d.id) !== String(id));
-  saveState(); renderSettings(); renderDiscountOptions(); renderCart(); syncCatalogToBackend(true);
-}
-
-function addCategory() {
-  if (!verifyAdminPin('បន្ថែមប្រភេទម៉ឺនុយ')) return;
-  const name = document.getElementById('cName').value.trim();
-  const icon = document.getElementById('cIcon').value.trim() || '☕';
-  if (!name) return alert('សូមបញ្ចូលឈ្មោះប្រភេទម៉ឺនុយ!');
-  state.categories.push({ id: Date.now(), name, icon });
-  saveState(); renderCategories(); renderSettings(); syncCatalogToBackend(true);
-  document.getElementById('cName').value = '';
-}
-function delCategory(id) {
-  if (!verifyAdminPin('លុបប្រភេទម៉ឺនុយ')) return;
-  if (state.products.some(p => String(p.category_id) === String(id))) return alert('មិនអាចលុបប្រភេទនេះបានទេ ព្រោះមានមុខទំនិញកំពុងប្រើប្រាស់វា!');
-  if (!confirm('លុបប្រភេទម៉ឺនុយនេះ?')) return;
-  state.categories = state.categories.filter(c => String(c.id) !== String(id));
-  saveState(); renderCategories(); renderSettings(); syncCatalogToBackend(true);
+  alert('បានរក្សាទុកការកំណត់រួចរាល់!');
 }
 
 function exportOrdersCSV() {
   const rows = [['Order Code','Date','Subtotal','Discount Name','Discount','Total USD','Total KHR','Payment','Type']];
   state.orders.forEach(o => rows.push([o.order_code, o.created_at, o.subtotal, o.discount_name || '', o.discount, o.total_usd, o.total_khr, o.payment_method, o.order_type]));
-  const csv = '\uFEFF' + rows.map(r => r.map(x => `"${String(x).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const csv = '﻿' + rows.map(r => r.map(x => `"${String(x).replace(/"/g,'""')}"`).join(',')).join('
+');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8;' }));
   a.download = 'sak_coffee_sales.csv';
@@ -1028,7 +880,7 @@ function renderEditOrderModal() {
   if (!editingOrder) return;
   const tbody = document.getElementById('editOrderItems');
   if (!editingOrder.items.length) {
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--danger);">អស់ទំនិញហើយ! ចុច «រក្សាទុក» ដើម្បីលុបវិក្កយបត្រនេះទាំងមូល។</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#f87171;">អស់ទំនិញហើយ! ចុច «រក្សាទុក» ដើម្បីលុបវិក្កយបត្រនេះទាំងមូល។</td></tr>';
   } else {
     tbody.innerHTML = editingOrder.items.map((i, idx) => {
       const drink = isDrinkProduct(i);
@@ -1117,7 +969,7 @@ async function resetSalesHistory() {
       await fetch(state.settings.apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify({ action: 'reset', apiKey: state.settings?.apiKey || '' })
+        body: JSON.stringify({ action: 'reset', apiKey: '' })
       });
     } catch (e) {}
   }
@@ -1175,15 +1027,15 @@ function showLoginModal() {
   if (!lpin || sessionLoggedIn) { sessionLoggedIn = true; return; }
   const overlay = document.createElement('div');
   overlay.id = 'loginPinOverlay';
-  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.88);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;';
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.92);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px;';
   overlay.innerHTML = `
-    <div style="background:#fff;color:#1f2937;width:100%;max-width:380px;border-radius:16px;padding:24px;box-shadow:0 20px 45px rgba(0,0,0,0.35);text-align:center;">
+    <div style="background:#1e293b;color:#f1f5f9;border:1px solid #334155;width:100%;max-width:380px;border-radius:16px;padding:24px;box-shadow:0 20px 45px rgba(0,0,0,0.45);text-align:center;">
       <div style="font-size:38px;margin-bottom:6px;">🔐</div>
       <h2 style="font-size:20px;font-weight:700;">ចូលប្រើប្រព័ន្ធ POS</h2>
-      <p style="font-size:13px;color:#64748b;margin:4px 0 16px;">ស័ក្តិ កាហ្វេ (Sak Coffee) — សូមបញ្ចូល Login PIN</p>
-      <input id="loginPinInput" type="password" inputmode="numeric" placeholder="បញ្ចូលលេខកូដ PIN..." style="width:100%;padding:12px;font-size:20px;font-weight:700;text-align:center;letter-spacing:6px;border:2px solid #cbd5e1;border-radius:10px;margin-bottom:10px;">
-      <div id="loginPinError" style="color:#dc2626;font-size:12px;font-weight:600;min-height:18px;margin-bottom:10px;"></div>
-      <button id="loginPinSubmit" type="button" style="width:100%;padding:12px;font-size:15px;font-weight:700;border:none;border-radius:10px;background:#2563eb;color:#fff;cursor:pointer;">🔓 ចូលប្រើ (Login)</button>
+      <p style="font-size:13px;color:#94a3b8;margin:4px 0 16px;">ស័ក្តិ កាហ្វេ (Sak Coffee) — សូមបញ្ចូល Login PIN</p>
+      <input id="loginPinInput" type="password" inputmode="numeric" placeholder="បញ្ចូលលេខកូដ PIN..." style="width:100%;padding:12px;font-size:20px;font-weight:700;text-align:center;letter-spacing:6px;border:2px solid #475569;border-radius:10px;margin-bottom:10px;background:#0f172a;color:#fff;">
+      <div id="loginPinError" style="color:#f87171;font-size:12px;font-weight:600;min-height:18px;margin-bottom:10px;"></div>
+      <button id="loginPinSubmit" type="button" style="width:100%;padding:12px;font-size:15px;font-weight:700;border:none;border-radius:10px;background:#3b82f6;color:#fff;cursor:pointer;">🔓 ចូលប្រើ (Login)</button>
     </div>`;
   document.body.appendChild(overlay);
   const inp = document.getElementById('loginPinInput');
