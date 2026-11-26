@@ -149,8 +149,8 @@
     display: flex; align-items: center; justify-content: center;
   }
 
-  .page-wrap { flex: 1; overflow-y: auto; padding: 18px; max-width: 1280px; width: 100%; margin: 0 auto; }
-  .card { background: var(--card); border-radius: 12px; padding: 16px; border: 1px solid var(--border); margin-bottom: 16px; }
+  .page-wrap { flex: 1; overflow-y: auto; padding: 18px; max-width: 1280px; width: 100%; margin: 0 auto; scroll-behavior: smooth; }
+  .card { background: var(--card); border-radius: 12px; padding: 16px; border: 1px solid var(--border); margin-bottom: 16px; transition: box-shadow .25s, border-color .25s; }
   .card-title { font-size: 16px; font-weight: 700; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
   table.tbl { width: 100%; border-collapse: collapse; font-size: 13px; }
   table.tbl th, table.tbl td { padding: 10px 12px; border-bottom: 1px solid var(--border); text-align: left; }
@@ -299,15 +299,15 @@
 </section>
 
 <section id="view-menu" class="view">
-  <div class="page-wrap">
+  <div class="page-wrap" id="menuPageWrap">
     <div class="notice-banner">
-      <span>💾 <strong>រក្សាទុកក្នុងម៉ាស៊ីន (Local Safe):</strong> ការបន្ថែម កែ ឬលុបទំនិញលើ POS ត្រូវបានរក្សាទុកក្នុង Browser ម៉ាស៊ីននេះ និង<strong>មិនប៉ះពាល់/មិនលុប</strong> ទិន្នន័យក្នុង Google Sheet <code>sak_coffee_database-v2</code> ឡើយ។</span>
+      <span>☁️ <strong>ភ្ជាប់ Google Sheets ស្វ័យប្រវត្តិ:</strong> ការបន្ថែម កែ ឬលុបទំនិញ នឹងរក្សាទុកក្នុងម៉ាស៊ីន និងបញ្ជូនទៅ Google Sheet <code>sak_coffee_database-v2</code> ដោយស្វ័យប្រវត្តិ។</span>
       <button class="btn btn-success btn-sm" onclick="pullFromBackend(false)">☁️ ទាញម៉ឺនុយពី Sheets</button>
     </div>
 
-    <div class="card">
+    <div class="card" id="menuFormCard" style="scroll-margin-top: 20px;">
       <div class="card-title">
-        <span id="menuFormTitle">➕ បន្ថែម / កែទំនិញ (រក្សាក្នុងម៉ាស៊ីន)</span>
+        <span id="menuFormTitle">➕ បន្ថែម / កែទំនិញ</span>
         <button class="btn btn-light btn-sm" onclick="resetProductForm()">សម្អាតទម្រង់</button>
       </div>
       <input type="hidden" id="editProdId">
@@ -322,7 +322,7 @@
       </div>
       <input type="hidden" id="pImgData">
       <div style="margin-top:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-        <button class="btn btn-primary" onclick="saveProduct()">💾 រក្សាទុកក្នុងម៉ាស៊ីន</button>
+        <button class="btn btn-primary" onclick="saveProduct()">💾 រក្សាទុកទំនិញ</button>
         <img id="pImgThumb" style="display:none; width:44px; height:44px; border-radius:8px; object-fit:cover; border:1px solid var(--border);">
         <span id="imgPreviewStatus" style="font-size:12px; color:var(--muted);"></span>
       </div>
@@ -404,7 +404,7 @@
     </div>
 
     <div class="card">
-      <div class="card-title"><span>📂 គ្រប់គ្រងប្រភេទម៉ឺនុយ (Categories - រក្សាក្នុងម៉ាស៊ីន)</span></div>
+      <div class="card-title"><span>📂 គ្រប់គ្រងប្រភេទម៉ឺនុយ (Categories)</span></div>
       <div class="form-grid" style="margin-bottom:12px;">
         <div class="field"><label>ឈ្មោះប្រភេទថ្មី</label><input id="cName" placeholder="ឧ. គ្រឿងអលង្ការ"></div>
         <div class="field"><label>Icon / Emoji</label><input id="cIcon" placeholder="💍" value="💍"></div>
@@ -414,7 +414,7 @@
     </div>
 
     <div class="card">
-      <div class="card-title"><span>🏷️ គ្រប់គ្រងប្រភេទបញ្ចុះតម្លៃ (Discounts - រក្សាក្នុងម៉ាស៊ីន)</span></div>
+      <div class="card-title"><span>🏷️ គ្រប់គ្រងប្រភេទបញ្ចុះតម្លៃ (Discounts)</span></div>
       <div class="form-grid" style="margin-bottom:12px;">
         <div class="field"><label>ឈ្មោះបញ្ចុះតម្លៃ</label><input id="dName" placeholder="ឧ. និស្សិត CADT"></div>
         <div class="field"><label>ប្រភេទ</label><select id="dType"><option value="percent">ភាគរយ (%)</option><option value="fixed">ទឹកប្រាក់ផ្ទាល់ ($)</option></select></div>
@@ -688,7 +688,7 @@ function renderCategories() {
   const bar = document.getElementById('catBar');
   let html = '<button class="cat-btn ' + (activeCat === 'all' ? 'active' : '') + '" onclick="setCat(\'all\')">ទាំងអស់</button>';
   state.categories.forEach(c => {
-    html += '<button class="cat-btn ' + (activeCat == c.id ? 'active' : '') + '" onclick="setCat(' + c.id + ')">' + (c.icon || '') + ' ' + c.name + '</button>';
+    html += '<button class="cat-btn ' + (activeCat == c.id ? 'active' : '') + '" onclick="setCat(\'' + String(c.id).replace(/'/g, "\\'") + '\')">' + (c.icon || '') + ' ' + c.name + '</button>';
   });
   bar.innerHTML = html;
   const pCat = document.getElementById('pCat');
@@ -702,11 +702,12 @@ function setCat(id) { activeCat = id; renderCategories(); renderProducts(); }
 function renderProducts() {
   const q = document.getElementById('searchInput').value.toLowerCase();
   const grid = document.getElementById('productGrid');
-  const filtered = state.products.filter(p => (activeCat === 'all' || p.category_id == activeCat) && p.name.toLowerCase().includes(q));
+  const filtered = state.products.filter(p => (activeCat === 'all' || String(p.category_id) === String(activeCat)) && p.name.toLowerCase().includes(q));
   grid.innerHTML = filtered.map(p => {
-    const qtyInCart = cart.filter(c => c.product_id === p.id).reduce((s, c) => s + c.qty, 0);
+    const pidStr = String(p.id).replace(/'/g, "\\'");
+    const qtyInCart = cart.filter(c => String(c.product_id) === String(p.id)).reduce((s, c) => s + c.qty, 0);
     const imgSrc = p.image_url || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=300&q=80';
-    return '<div class="prod-card ' + (p.is_available === false ? 'soldout' : '') + '" onclick="addToCart(' + p.id + ')">' +
+    return '<div class="prod-card ' + (p.is_available === false ? 'soldout' : '') + '" onclick="addToCart(\'' + pidStr + '\')">' +
       (qtyInCart ? '<span class="prod-badge">' + qtyInCart + '</span>' : '') +
       '<img class="prod-img" src="' + imgSrc + '" onerror="this.onerror=null;this.src=\'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=300&q=80\';">' +
       '<div class="prod-name">' + p.name + '</div>' +
@@ -718,12 +719,12 @@ function renderProducts() {
 function isDrinkProduct(p) {
   if (!p) return true;
   const pid = p.product_id !== undefined ? p.product_id : p.id;
-  const prod = state.products.find(x => Number(x.id) === Number(pid)) || p;
+  const prod = state.products.find(x => String(x.id) === String(pid)) || p;
   if (prod.has_sweet_ice === false || prod.has_sweet_ice === 0 || String(prod.has_sweet_ice).toUpperCase() === 'FALSE') return false;
   if (prod.has_sweet_ice === true || prod.has_sweet_ice === 1 || String(prod.has_sweet_ice).toUpperCase() === 'TRUE') return true;
   if (p.is_drink === false) return false;
   const catId = Number(prod.category_id);
-  const cat = (state.categories || []).find(c => Number(c.id) === catId);
+  const cat = (state.categories || []).find(c => String(c.id) === String(prod.category_id));
   const text = ((cat && cat.name ? cat.name : '') + ' ' + (prod.name || '')).toLowerCase();
   const nonDrinkKeywords = ['នំ', 'អាហារ', 'សម្រន់', 'បាយ', 'គុយទាវ', 'សាំងវិច', 'ខេក', 'គ្រឿងអលង្ការ', 'ក្រវិល', 'ចិញ្ចៀន', 'ខ្សែក', 'កងដៃ', 'កងជើង', 'food', 'snack', 'cake', 'bread', 'croissant', 'sandwich', 'jewelry', 'ring', 'necklace'];
   if (nonDrinkKeywords.some(kw => text.includes(kw))) return false;
@@ -732,13 +733,13 @@ function isDrinkProduct(p) {
 }
 
 function addToCart(prodId) {
-  const p = state.products.find(x => x.id === prodId);
+  const p = state.products.find(x => String(x.id) === String(prodId));
   if (!p) return;
   const drink = isDrinkProduct(p);
   const defSize = drink ? 'M' : '';
   const defSugar = drink ? '50%' : '';
   const defIce = drink ? 'ធម្មតា' : '';
-  const idx = cart.findIndex(c => c.product_id === prodId && (c.size || '') === defSize && (c.sugar_level || '') === defSugar && (c.ice_level || '') === defIce && !c.note);
+  const idx = cart.findIndex(c => String(c.product_id) === String(prodId) && (c.size || '') === defSize && (c.sugar_level || '') === defSugar && (c.ice_level || '') === defIce && !c.note);
   if (idx > -1) cart[idx].qty++;
   else cart.push({
     product_id: p.id, name: p.name, base_price: Number(p.price_usd), unit_price: Number(p.price_usd),
@@ -985,6 +986,29 @@ function printReceipt(o) {
   window.print();
 }
 
+async function syncCatalogToBackend() {
+  const url = getFixedApiUrl();
+  if (!url || !navigator.onLine) return false;
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        action: 'sync_catalog',
+        categories: state.categories,
+        products: state.products,
+        discounts: state.discounts,
+        apiKey: ''
+      })
+    });
+    const data = await res.json();
+    return data.status === 'success';
+  } catch (e) {
+    console.warn('Catalog sync failed:', e);
+    return false;
+  }
+}
+
 async function pushOrderToBackend(order, action) {
   const url = getFixedApiUrl();
   if (!url) return false;
@@ -1052,24 +1076,24 @@ async function pullFromBackend(silent) {
       return;
     }
     if (Array.isArray(data.categories) && data.categories.length) {
-      const sheetCats = data.categories.map(c => ({ id: Number(c.id), name: String(c.name || '').trim(), icon: String(c.icon || '☕') }));
+      const sheetCats = data.categories.map(c => ({ id: c.id, name: String(c.name || '').trim(), icon: String(c.icon || '☕') }));
       const catMap = new Map(sheetCats.map(c => [String(c.id), c]));
       (state.categories || []).forEach(c => { if (!catMap.has(String(c.id))) catMap.set(String(c.id), c); });
       state.categories = Array.from(catMap.values());
     }
     if (Array.isArray(data.products) && data.products.length) {
-      const defMap = new Map(DEFAULT_DATA.products.map(dp => [Number(dp.id), dp.image_url]));
+      const defMap = new Map(DEFAULT_DATA.products.map(dp => [String(dp.id), dp.image_url]));
       const sheetProds = data.products.filter(p => p && p.name).map((p, idx) => {
-        const pid = Number(p.id) || (1000 + idx);
+        const pid = (p.id !== undefined && p.id !== '') ? p.id : (1000 + idx);
         return {
           ...p,
           id: pid,
-          category_id: Number(p.category_id || 1),
+          category_id: p.category_id || 1,
           name: String(p.name).trim(),
           price_usd: Number(p.price_usd || 0),
           cost_usd: Number(p.cost_usd || 0),
           icon: String(p.icon || '☕'),
-          image_url: p.image_url || defMap.get(pid) || '',
+          image_url: p.image_url || defMap.get(String(pid)) || '',
           has_sweet_ice: p.has_sweet_ice === undefined || p.has_sweet_ice === '' ? undefined : (p.has_sweet_ice !== false && p.has_sweet_ice !== 0 && String(p.has_sweet_ice).toUpperCase() !== 'FALSE'),
           is_available: p.is_available !== false && p.is_available !== 'FALSE'
         };
@@ -1081,7 +1105,7 @@ async function pullFromBackend(silent) {
     if (Array.isArray(data.discounts)) {
       const sheetDiscs = data.discounts
         .filter(d => d && d.name && d.is_active !== false && d.is_active !== 'FALSE')
-        .map((d, idx) => ({ id: Number(d.id) || (1000 + idx), name: String(d.name).trim(), type: d.type === 'fixed' ? 'fixed' : 'percent', value: Number(d.value || 0) }));
+        .map((d, idx) => ({ id: d.id || (1000 + idx), name: String(d.name).trim(), type: d.type === 'fixed' ? 'fixed' : 'percent', value: Number(d.value || 0) }));
       const discMap = new Map(sheetDiscs.map(d => [String(d.id), d]));
       (state.discounts || []).forEach(d => { if (!discMap.has(String(d.id))) discMap.set(String(d.id), d); });
       state.discounts = Array.from(discMap.values());
@@ -1126,7 +1150,7 @@ async function pullFromBackend(silent) {
         const tot = Number(o.total_usd !== undefined ? o.total_usd : Math.max(0, sub - disc));
         merged.set(code, {
           ...o,
-          id: Number(o.id) || (Date.now() + idx),
+          id: o.id || (Date.now() + idx),
           order_code: code,
           subtotal: sub,
           discount: disc,
@@ -1177,6 +1201,7 @@ function renderOrders() {
   const todayStr = toLocalDateStr(new Date());
   const todayOrders = (state.orders || []).filter(o => o && toLocalDateStr(o.created_at) === todayStr);
   document.getElementById('ordersTable').innerHTML = todayOrders.map(o => {
+    const oidStr = String(o.id).replace(/'/g, "\\'");
     const arr = extractOrderItems(o);
     const itemsHtml = arr.length ? arr.map(i => (i.name || i.product_name || 'Item') + ' x' + (i.qty || 1)).join(', ') : '<span style="color:var(--muted);">មិនមានបញ្ជីមុខទំនិញ</span>';
     return '<tr>' +
@@ -1188,9 +1213,9 @@ function renderOrders() {
       '<td>' + o.payment_method + '</td>' +
       '<td>' + (o.synced ? '✅' : '⏳') + '</td>' +
       '<td style="white-space:nowrap;">' +
-        '<button class="btn btn-primary btn-sm" onclick="openEditOrder(' + o.id + ')">✏️ កែ</button> ' +
-        '<button class="btn btn-light btn-sm" onclick="printOrderById(' + o.id + ')">🖨️</button> ' +
-        '<button class="btn btn-danger btn-sm" onclick="deleteOrder(' + o.id + ')">លុប</button>' +
+        '<button class="btn btn-primary btn-sm" onclick="openEditOrder(\'' + oidStr + '\')">✏️ កែ</button> ' +
+        '<button class="btn btn-light btn-sm" onclick="printOrderById(\'' + oidStr + '\')">🖨️</button> ' +
+        '<button class="btn btn-danger btn-sm" onclick="deleteOrder(\'' + oidStr + '\')">លុប</button>' +
       '</td></tr>';
   }).join('') || '<tr><td colspan="8" style="text-align:center; color:var(--muted);">មិនទាន់មានប្រវត្តិលក់ថ្ងៃនេះនៅឡើយ</td></tr>';
 }
@@ -1228,16 +1253,17 @@ function handleProdImage(e) {
   });
 }
 
-function saveProduct() {
+async function saveProduct() {
   if (!verifyAdminPin('រក្សាទុក/កែប្រែម៉ឺនុយ')) return;
   const idVal = document.getElementById('editProdId').value;
   const existing = idVal ? state.products.find(p => String(p.id) === String(idVal)) : null;
   const sweetIceSel = document.getElementById('pHasSweetIce');
   const hasSweetIce = sweetIceSel ? (sweetIceSel.value !== '0') : true;
+  const catVal = document.getElementById('pCat').value;
   const obj = {
     id: existing ? existing.id : Date.now(),
     name: document.getElementById('pName').value.trim(),
-    category_id: Number(document.getElementById('pCat').value),
+    category_id: isNaN(Number(catVal)) ? catVal : Number(catVal),
     price_usd: Number(document.getElementById('pPrice').value || 0),
     cost_usd: Number(document.getElementById('pCost').value || 0),
     icon: document.getElementById('pIcon').value || '☕',
@@ -1249,15 +1275,18 @@ function saveProduct() {
   const idx = existing ? state.products.findIndex(p => String(p.id) === String(existing.id)) : -1;
   if (idx > -1) state.products[idx] = obj; else state.products.push(obj);
   saveState(); resetProductForm(); renderMenuTable(); renderProducts();
-  alert(idx > -1 ? 'បានកែប្រែទំនិញក្នុងម៉ាស៊ីនរួចរាល់!' : 'បានបន្ថែមទំនិញថ្មីក្នុងម៉ាស៊ីនរួចរាល់!');
+  const synced = await syncCatalogToBackend();
+  alert((idx > -1 ? 'បានកែប្រែទំនិញរួចរាល់!' : 'បានបន្ថែមទំនិញថ្មីរួចរាល់!') + (synced ? ' (បានបញ្ជូនទៅ Google Sheets)' : ' (រក្សាទុកក្នុងម៉ាស៊ីន)'));
 }
 
 function editProduct(id) {
-  const p = state.products.find(x => String(x.id) === String(id)); if (!p) return;
-  document.getElementById('editProdId').value = p.id;
-  document.getElementById('pName').value = p.name;
-  document.getElementById('pCat').value = p.category_id;
-  document.getElementById('pPrice').value = p.price_usd;
+  const p = state.products.find(x => String(x.id) === String(id));
+  if (!p) return alert('រកមិនឃើញទំនិញនេះទេ!');
+  renderCategories();
+  document.getElementById('editProdId').value = String(p.id);
+  document.getElementById('pName').value = p.name || '';
+  document.getElementById('pCat').value = String(p.category_id);
+  document.getElementById('pPrice').value = p.price_usd || '';
   document.getElementById('pCost').value = p.cost_usd || 0;
   document.getElementById('pImgData').value = p.image_url || '';
   const sweetIceSel = document.getElementById('pHasSweetIce');
@@ -1266,6 +1295,23 @@ function editProduct(id) {
   if (p.image_url) { thumb.src = p.image_url; thumb.style.display = 'inline-block'; }
   else { thumb.src = ''; thumb.style.display = 'none'; }
   document.getElementById('menuFormTitle').textContent = '✏️ កែប្រែទំនិញ (' + p.name + ')';
+
+  const wrap = document.getElementById('menuPageWrap');
+  const formCard = document.getElementById('menuFormCard');
+  if (wrap) wrap.scrollTo({ top: 0, behavior: 'smooth' });
+  if (formCard) {
+    formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    formCard.style.borderColor = '#3b82f6';
+    formCard.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.45)';
+    setTimeout(() => {
+      formCard.style.borderColor = '';
+      formCard.style.boxShadow = '';
+    }, 2000);
+  }
+  setTimeout(() => {
+    const nameInput = document.getElementById('pName');
+    if (nameInput) { nameInput.focus(); nameInput.select(); }
+  }, 250);
 }
 
 function resetProductForm() {
@@ -1273,25 +1319,31 @@ function resetProductForm() {
   const thumb = document.getElementById('pImgThumb');
   thumb.src = ''; thumb.style.display = 'none';
   document.getElementById('imgPreviewStatus').textContent = '';
-  document.getElementById('menuFormTitle').textContent = '➕ បន្ថែម / កែទំនិញ (រក្សាក្នុងម៉ាស៊ីន)';
+  document.getElementById('menuFormTitle').textContent = '➕ បន្ថែម / កែទំនិញ';
 }
 
-function toggleStock(id) {
+async function toggleStock(id) {
   if (!verifyAdminPin('ប្តូរស្ថានភាពស្តុកម៉ឺនុយ')) return;
-  const p = state.products.find(x => x.id === id);
-  if (p) { p.is_available = p.is_available === false ? true : false; saveState(); renderMenuTable(); renderProducts(); }
+  const p = state.products.find(x => String(x.id) === String(id));
+  if (p) {
+    p.is_available = p.is_available === false ? true : false;
+    saveState(); renderMenuTable(); renderProducts();
+    await syncCatalogToBackend();
+  }
 }
 
-function deleteProduct(id) {
+async function deleteProduct(id) {
   if (!verifyAdminPin('លុបម៉ឺនុយ')) return;
-  if (!confirm('លុបទំនិញនេះចេញពីម៉ាស៊ីន?')) return;
-  state.products = state.products.filter(x => x.id !== id);
+  if (!confirm('លុបទំនិញនេះចេញពីម៉ឺនុយ និង Google Sheets?')) return;
+  state.products = state.products.filter(x => String(x.id) !== String(id));
   saveState(); renderMenuTable(); renderProducts();
+  await syncCatalogToBackend();
 }
 
 function renderMenuTable() {
   document.getElementById('menuTable').innerHTML = state.products.map(p => {
-    const catObj = state.categories.find(c => c.id == p.category_id);
+    const pidStr = String(p.id).replace(/'/g, "\\'");
+    const catObj = state.categories.find(c => String(c.id) === String(p.category_id));
     const cat = catObj ? catObj.name : '-';
     return '<tr>' +
       '<td><img src="' + (p.image_url || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=300&q=80') + '" style="width:42px;height:42px;border-radius:8px;object-fit:cover;"></td>' +
@@ -1299,10 +1351,10 @@ function renderMenuTable() {
       '<td>' + cat + '</td>' +
       '<td>' + fmtUsd(p.price_usd) + '</td>' +
       '<td>' + fmtUsd(p.cost_usd) + '</td>' +
-      '<td><button class="btn btn-sm ' + (p.is_available===false?'btn-light':'btn-success') + '" onclick="toggleStock(' + p.id + ')">' + (p.is_available===false?'អស់ស្តុក':'មានលក់') + '</button></td>' +
+      '<td><button type="button" class="btn btn-sm ' + (p.is_available===false?'btn-light':'btn-success') + '" onclick="toggleStock(\'' + pidStr + '\')">' + (p.is_available===false?'អស់ស្តុក':'មានលក់') + '</button></td>' +
       '<td style="white-space:nowrap;">' +
-        '<button class="btn btn-light btn-sm" onclick="editProduct(' + p.id + ')">កែ</button> ' +
-        '<button class="btn btn-danger btn-sm" onclick="deleteProduct(' + p.id + ')">លុប</button>' +
+        '<button type="button" class="btn btn-light btn-sm" onclick="editProduct(\'' + pidStr + '\')">កែ</button> ' +
+        '<button type="button" class="btn btn-danger btn-sm" onclick="deleteProduct(\'' + pidStr + '\')">លុប</button>' +
       '</td></tr>';
   }).join('');
 }
@@ -1396,12 +1448,14 @@ function renderSettings() {
   document.getElementById('setApiUrl').value = state.settings.apiUrl || '';
   document.getElementById('setLoginPin').value = state.settings.loginPin || '';
   document.getElementById('setAdminPin').value = state.settings.adminPin || '';
-  document.getElementById('categoriesTable').innerHTML = state.categories.map(c =>
-    '<tr><td>' + (c.icon || '☕') + '</td><td><strong>' + c.name + '</strong></td><td><button class="btn btn-danger btn-sm" onclick="delCategory(' + c.id + ')">លុប</button></td></tr>'
-  ).join('');
-  document.getElementById('discountsTable').innerHTML = state.discounts.map(d =>
-    '<tr><td>' + d.name + '</td><td>' + (d.type === 'percent' ? '%' : '$') + '</td><td>' + d.value + '</td><td><button class="btn btn-danger btn-sm" onclick="delDiscount(' + d.id + ')">លុប</button></td></tr>'
-  ).join('');
+  document.getElementById('categoriesTable').innerHTML = state.categories.map(c => {
+    const cidStr = String(c.id).replace(/'/g, "\\'");
+    return '<tr><td>' + (c.icon || '☕') + '</td><td><strong>' + c.name + '</strong></td><td><button type="button" class="btn btn-danger btn-sm" onclick="delCategory(\'' + cidStr + '\')">លុប</button></td></tr>';
+  }).join('');
+  document.getElementById('discountsTable').innerHTML = state.discounts.map(d => {
+    const didStr = String(d.id).replace(/'/g, "\\'");
+    return '<tr><td>' + d.name + '</td><td>' + (d.type === 'percent' ? '%' : '$') + '</td><td>' + d.value + '</td><td><button type="button" class="btn btn-danger btn-sm" onclick="delDiscount(\'' + didStr + '\')">លុប</button></td></tr>';
+  }).join('');
 }
 
 function handleKhqrImage(e) {
@@ -1421,7 +1475,7 @@ function saveSettings() {
   alert('បានរក្សាទុកការកំណត់ក្នុងម៉ាស៊ីនរួចរាល់!');
 }
 
-function addDiscount() {
+async function addDiscount() {
   if (!verifyAdminPin('បន្ថែមបញ្ចុះតម្លៃ')) return;
   const name = document.getElementById('dName').value.trim();
   const type = document.getElementById('dType').value;
@@ -1430,15 +1484,17 @@ function addDiscount() {
   state.discounts.push({ id: Date.now(), name, type, value });
   saveState(); renderSettings(); renderDiscountOptions();
   document.getElementById('dName').value = ''; document.getElementById('dVal').value = '';
+  await syncCatalogToBackend();
 }
-function delDiscount(id) {
+async function delDiscount(id) {
   if (!verifyAdminPin('លុបបញ្ចុះតម្លៃ')) return;
-  if (!confirm('លុបប្រភេទបញ្ចុះតម្លៃនេះចេញពីម៉ាស៊ីន?')) return;
+  if (!confirm('លុបប្រភេទបញ្ចុះតម្លៃនេះ?')) return;
   state.discounts = state.discounts.filter(d => String(d.id) !== String(id));
   saveState(); renderSettings(); renderDiscountOptions(); renderCart();
+  await syncCatalogToBackend();
 }
 
-function addCategory() {
+async function addCategory() {
   if (!verifyAdminPin('បន្ថែមប្រភេទម៉ឺនុយ')) return;
   const name = document.getElementById('cName').value.trim();
   const icon = document.getElementById('cIcon').value.trim() || '☕';
@@ -1446,13 +1502,15 @@ function addCategory() {
   state.categories.push({ id: Date.now(), name, icon });
   saveState(); renderCategories(); renderSettings();
   document.getElementById('cName').value = '';
+  await syncCatalogToBackend();
 }
-function delCategory(id) {
+async function delCategory(id) {
   if (!verifyAdminPin('លុបប្រភេទម៉ឺនុយ')) return;
   if (state.products.some(p => String(p.category_id) === String(id))) return alert('មិនអាចលុបប្រភេទនេះបានទេ ព្រោះមានមុខទំនិញកំពុងប្រើប្រាស់វា!');
-  if (!confirm('លុបប្រភេទម៉ឺនុយនេះចេញពីម៉ាស៊ីន?')) return;
+  if (!confirm('លុបប្រភេទម៉ឺនុយនេះ?')) return;
   state.categories = state.categories.filter(c => String(c.id) !== String(id));
   saveState(); renderCategories(); renderSettings();
+  await syncCatalogToBackend();
 }
 
 function exportOrdersCSV() {
@@ -1468,7 +1526,7 @@ function exportOrdersCSV() {
 let editingOrder = null;
 function openEditOrder(id) {
   if (!verifyAdminPin('កែប្រែ ឬលុបទំនិញក្នុងវិក្កយបត្រ')) return;
-  const o = state.orders.find(x => x.id === id);
+  const o = state.orders.find(x => String(x.id) === String(id));
   if (!o) return;
   editingOrder = JSON.parse(JSON.stringify(o));
   editingOrder.items = JSON.parse(JSON.stringify(extractOrderItems(o)));
@@ -1520,7 +1578,7 @@ function editOrderQty(idx, delta) { editingOrder.items[idx].qty += delta; if (ed
 function editOrderRemove(idx) { editingOrder.items.splice(idx, 1); renderEditOrderModal(); }
 async function saveEditedOrder(doPrint) {
   if (!editingOrder) return;
-  const idx = state.orders.findIndex(x => x.id === editingOrder.id);
+  const idx = state.orders.findIndex(x => String(x.id) === String(editingOrder.id));
   if (idx === -1) return closeEditOrder();
   if (!editingOrder.items.length) {
     if (!confirm('លុបវិក្កយបត្រនេះចោលតែម្តងទេ?')) return;
@@ -1604,7 +1662,7 @@ function holdCurrentOrder() {
   saveState(); clearCart(); renderHeldOrders();
 }
 function resumeHeldOrder(id) {
-  const idx = state.heldOrders.findIndex(h => h.id === id);
+  const idx = state.heldOrders.findIndex(h => String(h.id) === String(id));
   if (idx === -1) return;
   if (cart.length && !confirm('ជំនួសកន្ត្រកបច្ចុប្បន្នដោយវិក្កយបត្រដែលផ្អាកនេះ?')) return;
   const held = state.heldOrders.splice(idx, 1)[0];
@@ -1618,7 +1676,7 @@ function renderHeldOrders() {
   if (!bar) return;
   if (!state.heldOrders || !state.heldOrders.length) { bar.style.display = 'none'; bar.innerHTML = ''; return; }
   bar.style.display = 'flex';
-  bar.innerHTML = state.heldOrders.map(h => '<button class="chip" style="background:#fef3c7; border-color:#f59e0b; color:#92400e; font-weight:600;" onclick="resumeHeldOrder(' + h.id + ')">⏸️ ' + h.label + ' (' + h.items.reduce((s,i)=>s+i.qty,0) + ')</button>').join('');
+  bar.innerHTML = state.heldOrders.map(h => '<button class="chip" style="background:#fef3c7; border-color:#f59e0b; color:#92400e; font-weight:600;" onclick="resumeHeldOrder(\'' + String(h.id).replace(/'/g, "\\'") + '\')">⏸️ ' + h.label + ' (' + h.items.reduce((s,i)=>s+i.qty,0) + ')</button>').join('');
 }
 
 let sessionLoggedIn = false;
