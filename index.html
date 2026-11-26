@@ -169,8 +169,8 @@
     background: #0f172a; color: var(--text);
   }
   .notice-banner {
-    background: rgba(59, 130, 246, 0.14); border: 1px solid rgba(59, 130, 246, 0.45);
-    color: #bfdbfe; padding: 10px 14px; border-radius: 10px; font-size: 13px; margin-bottom: 14px;
+    background: rgba(34, 197, 94, 0.12); border: 1px solid rgba(34, 197, 94, 0.4);
+    color: #bbf7d0; padding: 10px 14px; border-radius: 10px; font-size: 13px; margin-bottom: 14px;
     display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
   }
 
@@ -301,16 +301,40 @@
 <section id="view-menu" class="view">
   <div class="page-wrap">
     <div class="notice-banner">
-      <span>🔒 <strong>ម៉ឺនុយត្រូវបានការពារ (Sheet Master):</strong> បញ្ជីមុខទំនិញ ប្រភេទ និងបញ្ចុះតម្លៃ ត្រូវបានគ្រប់គ្រងផ្ទាល់នៅក្នុង Google Sheet <code>sak_coffee_database-v2</code> ដើម្បីការពារកុំឱ្យ App សរសេរជាន់ ឬលុបដោយស្វ័យប្រវត្តិ។</span>
-      <button class="btn btn-success btn-sm" onclick="pullFromBackend(false)">☁️ ទាញម៉ឺនុយថ្មីពី Sheets</button>
+      <span>💾 <strong>រក្សាទុកក្នុងម៉ាស៊ីន (Local Safe):</strong> ការបន្ថែម កែ ឬលុបទំនិញលើ POS ត្រូវបានរក្សាទុកក្នុង Browser ម៉ាស៊ីននេះ និង<strong>មិនប៉ះពាល់/មិនលុប</strong> ទិន្នន័យក្នុង Google Sheet <code>sak_coffee_database-v2</code> ឡើយ។</span>
+      <button class="btn btn-success btn-sm" onclick="pullFromBackend(false)">☁️ ទាញម៉ឺនុយពី Sheets</button>
     </div>
+
     <div class="card">
       <div class="card-title">
-        <span>📋 បញ្ជីម៉ឺនុយទាំងអស់ (ទាញពី Google Sheets)</span>
-        <button class="btn btn-primary btn-sm" onclick="pullFromBackend(false)">🔄 ធ្វើបច្ចុប្បន្នភាពបញ្ជី</button>
+        <span id="menuFormTitle">➕ បន្ថែម / កែទំនិញ (រក្សាក្នុងម៉ាស៊ីន)</span>
+        <button class="btn btn-light btn-sm" onclick="resetProductForm()">សម្អាតទម្រង់</button>
+      </div>
+      <input type="hidden" id="editProdId">
+      <div class="form-grid">
+        <div class="field"><label>ឈ្មោះទំនិញ ឬភេសជ្ជៈ</label><input id="pName" placeholder="ឧ. Iced Latte ឬ ក្រវិល"></div>
+        <div class="field"><label>ប្រភេទ (Category)</label><select id="pCat"></select></div>
+        <div class="field"><label>តម្លៃលក់ ($)</label><input id="pPrice" type="number" step="0.05" placeholder="2.00"></div>
+        <div class="field"><label>តម្លៃដើម ($)</label><input id="pCost" type="number" step="0.05" placeholder="0.80"></div>
+        <input type="hidden" id="pIcon" value="☕">
+        <div class="field"><label>Upload រូបភាព (បង្រួមស្វ័យប្រវត្តិ)</label><input id="pImgFile" type="file" accept="image/*" onchange="handleProdImage(event)"></div>
+        <div class="field"><label>ជម្រើសភេសជ្ជៈ</label><select id="pHasSweetIce"><option value="1" selected>🧊 ត្រូវការកម្រិតស្ករ &amp; ទឹកកក</option><option value="0">🚫 មិនត្រូវការស្ករ &amp; ទឹកកក</option></select></div>
+      </div>
+      <input type="hidden" id="pImgData">
+      <div style="margin-top:12px; display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="saveProduct()">💾 រក្សាទុកក្នុងម៉ាស៊ីន</button>
+        <img id="pImgThumb" style="display:none; width:44px; height:44px; border-radius:8px; object-fit:cover; border:1px solid var(--border);">
+        <span id="imgPreviewStatus" style="font-size:12px; color:var(--muted);"></span>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">
+        <span>📋 បញ្ជីម៉ឺនុយទាំងអស់</span>
+        <button class="btn btn-success btn-sm" onclick="pullFromBackend(false)">☁️ ទាញម៉ឺនុយពី Sheets</button>
       </div>
       <table class="tbl">
-        <thead><tr><th>រូប</th><th>ឈ្មោះ</th><th>ប្រភេទ</th><th>តម្លៃលក់</th><th>តម្លៃដើម</th><th>ជម្រើសភេសជ្ជៈ</th><th>ស្ថានភាព</th></tr></thead>
+        <thead><tr><th>រូប</th><th>ឈ្មោះ</th><th>ប្រភេទ</th><th>តម្លៃលក់</th><th>តម្លៃដើម</th><th>ស្ថានភាព</th><th>សកម្មភាព</th></tr></thead>
         <tbody id="menuTable"></tbody>
       </table>
     </div>
@@ -380,13 +404,24 @@
     </div>
 
     <div class="card">
-      <div class="card-title"><span>📂 ប្រភេទម៉ឺនុយ (Categories - គ្រប់គ្រងក្នុង Google Sheets)</span></div>
-      <table class="tbl"><thead><tr><th>Icon</th><th>ឈ្មោះប្រភេទ</th></tr></thead><tbody id="categoriesTable"></tbody></table>
+      <div class="card-title"><span>📂 គ្រប់គ្រងប្រភេទម៉ឺនុយ (Categories - រក្សាក្នុងម៉ាស៊ីន)</span></div>
+      <div class="form-grid" style="margin-bottom:12px;">
+        <div class="field"><label>ឈ្មោះប្រភេទថ្មី</label><input id="cName" placeholder="ឧ. គ្រឿងអលង្ការ"></div>
+        <div class="field"><label>Icon / Emoji</label><input id="cIcon" placeholder="💍" value="💍"></div>
+        <div class="field" style="justify-content:flex-end;"><button class="btn btn-primary" onclick="addCategory()">➕ បន្ថែមប្រភេទ</button></div>
+      </div>
+      <table class="tbl"><thead><tr><th>Icon</th><th>ឈ្មោះប្រភេទ</th><th>សកម្មភាព</th></tr></thead><tbody id="categoriesTable"></tbody></table>
     </div>
 
     <div class="card">
-      <div class="card-title"><span>🏷️ ប្រភេទបញ្ចុះតម្លៃ (Discounts - គ្រប់គ្រងក្នុង Google Sheets)</span></div>
-      <table class="tbl"><thead><tr><th>ឈ្មោះ</th><th>ប្រភេទ</th><th>តម្លៃ</th></tr></thead><tbody id="discountsTable"></tbody></table>
+      <div class="card-title"><span>🏷️ គ្រប់គ្រងប្រភេទបញ្ចុះតម្លៃ (Discounts - រក្សាក្នុងម៉ាស៊ីន)</span></div>
+      <div class="form-grid" style="margin-bottom:12px;">
+        <div class="field"><label>ឈ្មោះបញ្ចុះតម្លៃ</label><input id="dName" placeholder="ឧ. និស្សិត CADT"></div>
+        <div class="field"><label>ប្រភេទ</label><select id="dType"><option value="percent">ភាគរយ (%)</option><option value="fixed">ទឹកប្រាក់ផ្ទាល់ ($)</option></select></div>
+        <div class="field"><label>ចំនួន (ឧ. 10 ឬ 0.25)</label><input id="dVal" type="number" step="0.05"></div>
+        <div class="field" style="justify-content:flex-end;"><button class="btn btn-primary" onclick="addDiscount()">➕ បន្ថែម</button></div>
+      </div>
+      <table class="tbl"><thead><tr><th>ឈ្មោះ</th><th>ប្រភេទ</th><th>តម្លៃ</th><th>សកម្មភាព</th></tr></thead><tbody id="discountsTable"></tbody></table>
     </div>
   </div>
 </section>
@@ -500,6 +535,15 @@
 <div id="receipt-print"></div>
 
 <script>
+const FIXED_API_URL = 'https://script.google.com/macros/s/AKfycbxSuY0pxzYKN9E7qt22uO6EOWq3pQCdYkS-aYRByeItuHlB5_-ebTF4kF9oqsW6bDOx/exec';
+function getFixedApiUrl() {
+  if (state && state.settings) {
+    state.settings.apiUrl = FIXED_API_URL;
+    state.settings.apiKey = '';
+  }
+  return FIXED_API_URL;
+}
+
 const STORAGE_KEY = 'sak_coffee_pos_clean_v2';
 
 const DEFAULT_DATA = {
@@ -507,7 +551,7 @@ const DEFAULT_DATA = {
     shopName: 'ស័ក្តិ កាហ្វេ (Sak Coffee)',
     shopAddress: 'ព្រែកលៀប ភ្នំពេញ | Tel: 012 796 756',
     exchangeRate: 4100,
-    apiUrl: 'https://script.google.com/macros/s/AKfycbxSuY0pxzYKN9E7qt22uO6EOWq3pQCdYkS-aYRByeItuHlB5_-ebTF4kF9oqsW6bDOx/exec',
+    apiUrl: FIXED_API_URL,
     khqrImage: '',
     loginPin: '',
     adminPin: '',
@@ -550,7 +594,7 @@ function loadInitialState() {
       settings: {
         ...DEFAULT_DATA.settings,
         ...(parsed.settings || {}),
-        apiUrl: DEFAULT_DATA.settings.apiUrl,
+        apiUrl: FIXED_API_URL,
         apiKey: ''
       }
     };
@@ -627,7 +671,7 @@ function verifyAdminPin(actionLabel) {
 
 function switchView(name, btn) {
   if (name === 'menu' || name === 'reports' || name === 'settings') {
-    const labels = { menu: 'មើលម៉ឺនុយ', reports: 'មើលរបាយការណ៍', settings: 'ចូលកំណត់ប្រព័ន្ធ' };
+    const labels = { menu: 'គ្រប់គ្រងម៉ឺនុយ', reports: 'មើលរបាយការណ៍', settings: 'ចូលកំណត់ប្រព័ន្ធ' };
     if (!verifyAdminPin(labels[name])) return;
   }
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -635,7 +679,7 @@ function switchView(name, btn) {
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
   if (name === 'orders') renderOrders();
-  if (name === 'menu') renderMenuTable();
+  if (name === 'menu') { renderCategories(); renderMenuTable(); }
   if (name === 'reports') renderReports();
   if (name === 'settings') renderSettings();
 }
@@ -647,6 +691,10 @@ function renderCategories() {
     html += '<button class="cat-btn ' + (activeCat == c.id ? 'active' : '') + '" onclick="setCat(' + c.id + ')">' + (c.icon || '') + ' ' + c.name + '</button>';
   });
   bar.innerHTML = html;
+  const pCat = document.getElementById('pCat');
+  if (pCat) {
+    pCat.innerHTML = state.categories.map(c => '<option value="' + c.id + '">' + c.name + '</option>').join('');
+  }
 }
 
 function setCat(id) { activeCat = id; renderCategories(); renderProducts(); }
@@ -905,7 +953,7 @@ async function completeOrder(doPrint) {
   closeCheckout();
   clearCart();
   if (doPrint) printReceipt(order);
-  if (state.settings.apiUrl && navigator.onLine) {
+  if (getFixedApiUrl() && navigator.onLine) {
     await pushOrderToBackend(order, 'create');
     renderOrders();
   }
@@ -938,7 +986,7 @@ function printReceipt(o) {
 }
 
 async function pushOrderToBackend(order, action) {
-  const url = (state.settings.apiUrl || '').trim();
+  const url = getFixedApiUrl();
   if (!url) return false;
   try {
     const itemsArr = extractOrderItems(order);
@@ -967,7 +1015,7 @@ async function pushOrderToBackend(order, action) {
 let isSyncing = false;
 async function syncPendingOrders(silent) {
   if (isSyncing) return;
-  const url = (state.settings.apiUrl || '').trim();
+  const url = getFixedApiUrl();
   if (!url || !navigator.onLine) return;
   const pending = state.orders.filter(o => !o.synced);
   if (!pending.length) return;
@@ -983,7 +1031,7 @@ async function syncPendingOrders(silent) {
 }
 
 async function syncAllNow() {
-  if (!state.settings.apiUrl) return alert('សូមបញ្ចូល Google Apps Script URL ក្នុងផ្ទាំង «⚙️ កំណត់» ជាមុនសិន!');
+  if (!getFixedApiUrl()) return alert('សូមបញ្ចូល Google Apps Script URL ក្នុងផ្ទាំង «⚙️ កំណត់» ជាមុនសិន!');
   if (!navigator.onLine) return alert('មិនមានអ៊ីនធឺណិតទេ! ប្រព័ន្ធកំពុងរក្សាទុកក្នុងម៉ាស៊ីន (Offline)។');
   await syncPendingOrders(true);
   await pullFromBackend(false);
@@ -992,8 +1040,7 @@ async function syncAllNow() {
 let isPulling = false;
 async function pullFromBackend(silent) {
   if (isPulling) return;
-  const urlEl = document.getElementById('setApiUrl');
-  const url = ((urlEl && urlEl.value) || state.settings.apiUrl || '').trim();
+  const url = getFixedApiUrl();
   if (!url || !navigator.onLine) return;
   isPulling = true;
   try {
@@ -1005,11 +1052,14 @@ async function pullFromBackend(silent) {
       return;
     }
     if (Array.isArray(data.categories) && data.categories.length) {
-      state.categories = data.categories.map(c => ({ id: Number(c.id), name: String(c.name || '').trim(), icon: String(c.icon || '☕') }));
+      const sheetCats = data.categories.map(c => ({ id: Number(c.id), name: String(c.name || '').trim(), icon: String(c.icon || '☕') }));
+      const catMap = new Map(sheetCats.map(c => [String(c.id), c]));
+      (state.categories || []).forEach(c => { if (!catMap.has(String(c.id))) catMap.set(String(c.id), c); });
+      state.categories = Array.from(catMap.values());
     }
     if (Array.isArray(data.products) && data.products.length) {
       const defMap = new Map(DEFAULT_DATA.products.map(dp => [Number(dp.id), dp.image_url]));
-      state.products = data.products.filter(p => p && p.name).map((p, idx) => {
+      const sheetProds = data.products.filter(p => p && p.name).map((p, idx) => {
         const pid = Number(p.id) || (1000 + idx);
         return {
           ...p,
@@ -1024,11 +1074,17 @@ async function pullFromBackend(silent) {
           is_available: p.is_available !== false && p.is_available !== 'FALSE'
         };
       });
+      const prodMap = new Map(sheetProds.map(p => [String(p.id), p]));
+      (state.products || []).forEach(p => { if (!prodMap.has(String(p.id))) prodMap.set(String(p.id), p); });
+      state.products = Array.from(prodMap.values());
     }
     if (Array.isArray(data.discounts)) {
-      state.discounts = data.discounts
+      const sheetDiscs = data.discounts
         .filter(d => d && d.name && d.is_active !== false && d.is_active !== 'FALSE')
         .map((d, idx) => ({ id: Number(d.id) || (1000 + idx), name: String(d.name).trim(), type: d.type === 'fixed' ? 'fixed' : 'percent', value: Number(d.value || 0) }));
+      const discMap = new Map(sheetDiscs.map(d => [String(d.id), d]));
+      (state.discounts || []).forEach(d => { if (!discMap.has(String(d.id))) discMap.set(String(d.id), d); });
+      state.discounts = Array.from(discMap.values());
     }
     if (Array.isArray(data.orders)) {
       const deletedCodes = new Set((state.deletedOrderCodes || []).map(String));
@@ -1162,19 +1218,92 @@ function resizeImage(file, maxSize, cb) {
   reader.readAsDataURL(file);
 }
 
+function handleProdImage(e) {
+  const f = e.target.files[0]; if (!f) return;
+  resizeImage(f, 240, dataUrl => {
+    document.getElementById('pImgData').value = dataUrl;
+    const thumb = document.getElementById('pImgThumb');
+    thumb.src = dataUrl; thumb.style.display = 'inline-block';
+    document.getElementById('imgPreviewStatus').textContent = '✅ រូបភាពរួចរាល់!';
+  });
+}
+
+function saveProduct() {
+  if (!verifyAdminPin('រក្សាទុក/កែប្រែម៉ឺនុយ')) return;
+  const idVal = document.getElementById('editProdId').value;
+  const existing = idVal ? state.products.find(p => String(p.id) === String(idVal)) : null;
+  const sweetIceSel = document.getElementById('pHasSweetIce');
+  const hasSweetIce = sweetIceSel ? (sweetIceSel.value !== '0') : true;
+  const obj = {
+    id: existing ? existing.id : Date.now(),
+    name: document.getElementById('pName').value.trim(),
+    category_id: Number(document.getElementById('pCat').value),
+    price_usd: Number(document.getElementById('pPrice').value || 0),
+    cost_usd: Number(document.getElementById('pCost').value || 0),
+    icon: document.getElementById('pIcon').value || '☕',
+    image_url: document.getElementById('pImgData').value,
+    has_sweet_ice: hasSweetIce,
+    is_available: existing ? (existing.is_available !== false) : true
+  };
+  if (!obj.name || obj.price_usd <= 0) return alert('សូមបញ្ចូលឈ្មោះ និងតម្លៃលក់!');
+  const idx = existing ? state.products.findIndex(p => String(p.id) === String(existing.id)) : -1;
+  if (idx > -1) state.products[idx] = obj; else state.products.push(obj);
+  saveState(); resetProductForm(); renderMenuTable(); renderProducts();
+  alert(idx > -1 ? 'បានកែប្រែទំនិញក្នុងម៉ាស៊ីនរួចរាល់!' : 'បានបន្ថែមទំនិញថ្មីក្នុងម៉ាស៊ីនរួចរាល់!');
+}
+
+function editProduct(id) {
+  const p = state.products.find(x => String(x.id) === String(id)); if (!p) return;
+  document.getElementById('editProdId').value = p.id;
+  document.getElementById('pName').value = p.name;
+  document.getElementById('pCat').value = p.category_id;
+  document.getElementById('pPrice').value = p.price_usd;
+  document.getElementById('pCost').value = p.cost_usd || 0;
+  document.getElementById('pImgData').value = p.image_url || '';
+  const sweetIceSel = document.getElementById('pHasSweetIce');
+  if (sweetIceSel) sweetIceSel.value = isDrinkProduct(p) ? '1' : '0';
+  const thumb = document.getElementById('pImgThumb');
+  if (p.image_url) { thumb.src = p.image_url; thumb.style.display = 'inline-block'; }
+  else { thumb.src = ''; thumb.style.display = 'none'; }
+  document.getElementById('menuFormTitle').textContent = '✏️ កែប្រែទំនិញ (' + p.name + ')';
+}
+
+function resetProductForm() {
+  ['editProdId','pName','pPrice','pCost','pImgData','pImgFile'].forEach(id => document.getElementById(id).value = '');
+  const thumb = document.getElementById('pImgThumb');
+  thumb.src = ''; thumb.style.display = 'none';
+  document.getElementById('imgPreviewStatus').textContent = '';
+  document.getElementById('menuFormTitle').textContent = '➕ បន្ថែម / កែទំនិញ (រក្សាក្នុងម៉ាស៊ីន)';
+}
+
+function toggleStock(id) {
+  if (!verifyAdminPin('ប្តូរស្ថានភាពស្តុកម៉ឺនុយ')) return;
+  const p = state.products.find(x => x.id === id);
+  if (p) { p.is_available = p.is_available === false ? true : false; saveState(); renderMenuTable(); renderProducts(); }
+}
+
+function deleteProduct(id) {
+  if (!verifyAdminPin('លុបម៉ឺនុយ')) return;
+  if (!confirm('លុបទំនិញនេះចេញពីម៉ាស៊ីន?')) return;
+  state.products = state.products.filter(x => x.id !== id);
+  saveState(); renderMenuTable(); renderProducts();
+}
+
 function renderMenuTable() {
   document.getElementById('menuTable').innerHTML = state.products.map(p => {
     const catObj = state.categories.find(c => c.id == p.category_id);
     const cat = catObj ? catObj.name : '-';
     return '<tr>' +
       '<td><img src="' + (p.image_url || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=300&q=80') + '" style="width:42px;height:42px;border-radius:8px;object-fit:cover;"></td>' +
-      '<td><strong>' + p.name + '</strong></td>' +
+      '<td><strong>' + p.name + '</strong><div style="font-size:11px;color:var(--muted);">' + (isDrinkProduct(p) ? '🧊 មានស្ករ & ទឹកកក' : '🚫 គ្មានស្ករ & ទឹកកក') + '</div></td>' +
       '<td>' + cat + '</td>' +
       '<td>' + fmtUsd(p.price_usd) + '</td>' +
       '<td>' + fmtUsd(p.cost_usd) + '</td>' +
-      '<td>' + (isDrinkProduct(p) ? '🧊 មានស្ករ & ទឹកកក' : '🚫 គ្មានស្ករ & ទឹកកក') + '</td>' +
-      '<td><span style="padding:4px 10px;border-radius:99px;font-size:12px;font-weight:700;background:' + (p.is_available===false?'#334155':'rgba(34,197,94,0.2)') + ';color:' + (p.is_available===false?'#cbd5e1':'#4ade80') + ';">' + (p.is_available===false?'អស់ស្តុក':'មានលក់') + '</span></td>' +
-    '</tr>';
+      '<td><button class="btn btn-sm ' + (p.is_available===false?'btn-light':'btn-success') + '" onclick="toggleStock(' + p.id + ')">' + (p.is_available===false?'អស់ស្តុក':'មានលក់') + '</button></td>' +
+      '<td style="white-space:nowrap;">' +
+        '<button class="btn btn-light btn-sm" onclick="editProduct(' + p.id + ')">កែ</button> ' +
+        '<button class="btn btn-danger btn-sm" onclick="deleteProduct(' + p.id + ')">លុប</button>' +
+      '</td></tr>';
   }).join('');
 }
 
@@ -1268,10 +1397,10 @@ function renderSettings() {
   document.getElementById('setLoginPin').value = state.settings.loginPin || '';
   document.getElementById('setAdminPin').value = state.settings.adminPin || '';
   document.getElementById('categoriesTable').innerHTML = state.categories.map(c =>
-    '<tr><td>' + (c.icon || '☕') + '</td><td><strong>' + c.name + '</strong></td></tr>'
+    '<tr><td>' + (c.icon || '☕') + '</td><td><strong>' + c.name + '</strong></td><td><button class="btn btn-danger btn-sm" onclick="delCategory(' + c.id + ')">លុប</button></td></tr>'
   ).join('');
   document.getElementById('discountsTable').innerHTML = state.discounts.map(d =>
-    '<tr><td>' + d.name + '</td><td>' + (d.type === 'percent' ? '%' : '$') + '</td><td>' + d.value + '</td></tr>'
+    '<tr><td>' + d.name + '</td><td>' + (d.type === 'percent' ? '%' : '$') + '</td><td>' + d.value + '</td><td><button class="btn btn-danger btn-sm" onclick="delDiscount(' + d.id + ')">លុប</button></td></tr>'
   ).join('');
 }
 
@@ -1284,12 +1413,46 @@ function saveSettings() {
   state.settings.shopName = document.getElementById('setShopName').value;
   state.settings.shopAddress = document.getElementById('setShopAddress').value;
   state.settings.exchangeRate = Number(document.getElementById('setRate').value || 4100);
-  state.settings.apiUrl = document.getElementById('setApiUrl').value.trim();
+  state.settings.apiUrl = (document.getElementById('setApiUrl').value || '').trim() || FIXED_API_URL;
   state.settings.loginPin = document.getElementById('setLoginPin').value.trim();
   state.settings.adminPin = document.getElementById('setAdminPin').value.trim();
   state.settings.apiKey = '';
   saveState();
-  alert('បានរក្សាទុកការកំណត់រួចរាល់!');
+  alert('បានរក្សាទុកការកំណត់ក្នុងម៉ាស៊ីនរួចរាល់!');
+}
+
+function addDiscount() {
+  if (!verifyAdminPin('បន្ថែមបញ្ចុះតម្លៃ')) return;
+  const name = document.getElementById('dName').value.trim();
+  const type = document.getElementById('dType').value;
+  const value = Number(document.getElementById('dVal').value || 0);
+  if (!name || value <= 0) return alert('សូមបញ្ចូលឈ្មោះ និងចំនួនបញ្ចុះតម្លៃ!');
+  state.discounts.push({ id: Date.now(), name, type, value });
+  saveState(); renderSettings(); renderDiscountOptions();
+  document.getElementById('dName').value = ''; document.getElementById('dVal').value = '';
+}
+function delDiscount(id) {
+  if (!verifyAdminPin('លុបបញ្ចុះតម្លៃ')) return;
+  if (!confirm('លុបប្រភេទបញ្ចុះតម្លៃនេះចេញពីម៉ាស៊ីន?')) return;
+  state.discounts = state.discounts.filter(d => String(d.id) !== String(id));
+  saveState(); renderSettings(); renderDiscountOptions(); renderCart();
+}
+
+function addCategory() {
+  if (!verifyAdminPin('បន្ថែមប្រភេទម៉ឺនុយ')) return;
+  const name = document.getElementById('cName').value.trim();
+  const icon = document.getElementById('cIcon').value.trim() || '☕';
+  if (!name) return alert('សូមបញ្ចូលឈ្មោះប្រភេទម៉ឺនុយ!');
+  state.categories.push({ id: Date.now(), name, icon });
+  saveState(); renderCategories(); renderSettings();
+  document.getElementById('cName').value = '';
+}
+function delCategory(id) {
+  if (!verifyAdminPin('លុបប្រភេទម៉ឺនុយ')) return;
+  if (state.products.some(p => String(p.category_id) === String(id))) return alert('មិនអាចលុបប្រភេទនេះបានទេ ព្រោះមានមុខទំនិញកំពុងប្រើប្រាស់វា!');
+  if (!confirm('លុបប្រភេទម៉ឺនុយនេះចេញពីម៉ាស៊ីន?')) return;
+  state.categories = state.categories.filter(c => String(c.id) !== String(id));
+  saveState(); renderCategories(); renderSettings();
 }
 
 function exportOrdersCSV() {
@@ -1364,7 +1527,7 @@ async function saveEditedOrder(doPrint) {
     const removed = state.orders[idx];
     state.orders.splice(idx, 1);
     saveState(); closeEditOrder(); renderOrders(); renderReports();
-    if (state.settings.apiUrl && removed.synced) await pushOrderToBackend(removed, 'delete');
+    if (getFixedApiUrl() && removed.synced) await pushOrderToBackend(removed, 'delete');
     return;
   }
   delete editingOrder._origSubtotal;
@@ -1379,7 +1542,7 @@ async function saveEditedOrder(doPrint) {
   if (doPrint) printReceipt(updated);
   updated._syncAction = wasSynced ? 'update' : 'create';
   saveState();
-  if (state.settings.apiUrl && navigator.onLine) {
+  if (getFixedApiUrl() && navigator.onLine) {
     if (await pushOrderToBackend(updated, updated._syncAction)) { delete updated._syncAction; saveState(); }
     renderOrders();
   }
@@ -1393,7 +1556,7 @@ async function deleteOrder(id) {
   if (target && target.order_code) state.deletedOrderCodes.push(String(target.order_code));
   state.orders = state.orders.filter(o => String(o.id) !== String(id));
   saveState(); renderOrders(); renderReports();
-  if (target && state.settings.apiUrl && navigator.onLine) await pushOrderToBackend(target, 'delete');
+  if (target && getFixedApiUrl() && navigator.onLine) await pushOrderToBackend(target, 'delete');
 }
 
 async function resetSalesHistory() {
@@ -1401,9 +1564,9 @@ async function resetSalesHistory() {
   if (!confirm('តើអ្នកពិតជាចង់ Reset លុបប្រវត្តិវិក្កយបត្រលក់ និងរបាយការណ៍ទាំងអស់មែនទេ?')) return;
   state.orders = [];
   saveState(); renderOrders(); renderReports();
-  if (state.settings.apiUrl && navigator.onLine) {
+  if (getFixedApiUrl() && navigator.onLine) {
     try {
-      await fetch(state.settings.apiUrl, {
+      await fetch(getFixedApiUrl(), {
         method: 'POST',
         headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify({ action: 'reset', apiKey: '' })
